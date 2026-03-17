@@ -15,9 +15,9 @@
     "express": "^4.19.2",
     "express-rate-limit": "^8.3.1",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.1.1",
     "sequelize": "^6.37.3",
-    "sqlite3": "^5.1.7",
+    "sqlite3": "^6.0.1",
     "uuid": "^10.0.0",
     "zod": "^3.23.8"
   },
