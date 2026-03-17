@@ -62,10 +62,18 @@ export default function ProjectEditPage() {
       if (data.summary_en) summary['en'] = data.summary_en;
       if (data.summary_ja) summary['ja'] = data.summary_ja;
       const tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
-      await api.put(`/projects/${id}`, { title, summary, visibility: data.visibility, currency: data.currency, stage: data.stage || null, tags });
+      await api.put(`/projects/${id}`, {
+        title,
+        summary,
+        visibility: data.visibility,
+        currency: data.currency,
+        stage: data.stage || null,
+        tags,
+      });
       navigate(`/projects/${id}`);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update project';
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message || 'Failed to update project';
       setError(msg);
     }
   };
@@ -86,21 +94,47 @@ export default function ProjectEditPage() {
           {langTab === 0 && (
             <Box>
               <Controller name="title_en" control={control} render={({ field }) => (
-                <TextField {...field} label={`${t('project_title')} (EN)`} fullWidth margin="normal" required
-                  error={!!errors.title_en} helperText={errors.title_en?.message} />
+                <TextField
+                  {...field}
+                  label={`${t('project_title')} (EN)`}
+                  fullWidth
+                  margin="normal"
+                  required
+                  error={!!errors.title_en}
+                  helperText={errors.title_en?.message}
+                />
               )} />
               <Controller name="summary_en" control={control} render={({ field }) => (
-                <TextField {...field} label={`${t('project_summary')} (EN)`} fullWidth margin="normal" multiline rows={3} />
+                <TextField
+                  {...field}
+                  label={`${t('project_summary')} (EN)`}
+                  fullWidth
+                  margin="normal"
+                  multiline
+                  rows={3}
+                />
               )} />
             </Box>
           )}
           {langTab === 1 && (
             <Box>
               <Controller name="title_ja" control={control} render={({ field }) => (
-                <TextField {...field} label={`${t('project_title')} (JA)`} fullWidth margin="normal" />
+                <TextField
+                  {...field}
+                  label={`${t('project_title')} (JA)`}
+                  fullWidth
+                  margin="normal"
+                />
               )} />
               <Controller name="summary_ja" control={control} render={({ field }) => (
-                <TextField {...field} label={`${t('project_summary')} (JA)`} fullWidth margin="normal" multiline rows={3} />
+                <TextField
+                  {...field}
+                  label={`${t('project_summary')} (JA)`}
+                  fullWidth
+                  margin="normal"
+                  multiline
+                  rows={3}
+                />
               )} />
             </Box>
           )}
@@ -144,14 +178,21 @@ export default function ProjectEditPage() {
           </Grid>
 
           <Controller name="tags" control={control} render={({ field }) => (
-            <TextField {...field} label={`${t('tags')} (comma-separated)`} fullWidth margin="normal" />
+            <TextField
+              {...field}
+              label={`${t('tags')} (comma-separated)`}
+              fullWidth
+              margin="normal"
+            />
           )} />
 
           <Box mt={3} display="flex" gap={2}>
             <Button type="submit" variant="contained" disabled={isSubmitting}>
               {isSubmitting ? t('loading') : t('save')}
             </Button>
-            <Button variant="outlined" onClick={() => navigate(`/projects/${id}`)}>{t('cancel')}</Button>
+            <Button variant="outlined" onClick={() => navigate(`/projects/${id}`)}>
+              {t('cancel')}
+            </Button>
           </Box>
         </Box>
       </Paper>

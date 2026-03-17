@@ -14,16 +14,30 @@ export interface AuthRequest extends Request {
 export function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ success: false, code: 'unauthorized', message: 'No token provided', data: null });
+    res.status(401).json({
+      success: false,
+      code: 'unauthorized',
+      message: 'No token provided',
+      data: null,
+    });
     return;
   }
   const token = authHeader.slice(7);
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as { id: string; email: string; locale: string };
+    const payload = jwt.verify(token, JWT_SECRET) as {
+      id: string;
+      email: string;
+      locale: string;
+    };
     req.user = payload;
     next();
   } catch {
-    res.status(401).json({ success: false, code: 'unauthorized', message: 'Invalid or expired token', data: null });
+    res.status(401).json({
+      success: false,
+      code: 'unauthorized',
+      message: 'Invalid or expired token',
+      data: null,
+    });
   }
 }
 
@@ -32,7 +46,11 @@ export function optionalAuthenticate(req: AuthRequest, _res: Response, next: Nex
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
     try {
-      const payload = jwt.verify(token, JWT_SECRET) as { id: string; email: string; locale: string };
+      const payload = jwt.verify(token, JWT_SECRET) as {
+        id: string;
+        email: string;
+        locale: string;
+      };
       req.user = payload;
     } catch {
       // ignore

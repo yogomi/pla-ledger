@@ -72,7 +72,13 @@ export default function SearchPage() {
                     </Box>
                   </CardContent>
                   <CardActions>
-                    <Button size="small" component={RouterLink} to={`/projects/${p.id}`}>View</Button>
+                    <Button
+                      size="small"
+                      component={RouterLink}
+                      to={`/projects/${p.id}`}
+                    >
+                      View
+                    </Button>
                   </CardActions>
                 </Card>
               </Grid>

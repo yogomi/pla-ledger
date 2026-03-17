@@ -40,7 +40,12 @@ app.use((_req, res) => {
 // Error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
-  res.status(500).json({ success: false, code: 'internal_error', message: err.message, data: null });
+  res.status(500).json({
+    success: false,
+    code: 'internal_error',
+    message: err.message,
+    data: null,
+  });
 });
 
 sequelize.sync().then(() => {

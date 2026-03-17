@@ -34,8 +34,14 @@ export default function App() {
         <Route path="projects/:id" element={<ProjectViewPage />} />
         <Route path="dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
         <Route path="projects/new" element={<PrivateRoute><ProjectCreatePage /></PrivateRoute>} />
-        <Route path="projects/:id/edit" element={<PrivateRoute><ProjectEditPage /></PrivateRoute>} />
-        <Route path="projects/:id/access" element={<PrivateRoute><AccessManagementPage /></PrivateRoute>} />
+        <Route
+          path="projects/:id/edit"
+          element={<PrivateRoute><ProjectEditPage /></PrivateRoute>}
+        />
+        <Route
+          path="projects/:id/access"
+          element={<PrivateRoute><AccessManagementPage /></PrivateRoute>}
+        />
         <Route path="settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
       </Route>
     </Routes>

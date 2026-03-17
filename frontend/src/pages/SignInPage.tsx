@@ -28,7 +28,8 @@ export default function SignInPage() {
       await login(data.email, data.password);
       navigate('/dashboard');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Sign in failed';
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message || 'Sign in failed';
       setError(msg);
     }
   };
@@ -41,12 +42,34 @@ export default function SignInPage() {
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Box component="form" onSubmit={handleSubmit(onSubmit)}>
             <Controller name="email" control={control} render={({ field }) => (
-              <TextField {...field} label={t('email')} type="email" fullWidth margin="normal" error={!!errors.email} helperText={errors.email?.message} />
+              <TextField
+                {...field}
+                label={t('email')}
+                type="email"
+                fullWidth
+                margin="normal"
+                error={!!errors.email}
+                helperText={errors.email?.message}
+              />
             )} />
             <Controller name="password" control={control} render={({ field }) => (
-              <TextField {...field} label={t('password')} type="password" fullWidth margin="normal" error={!!errors.password} helperText={errors.password?.message} />
+              <TextField
+                {...field}
+                label={t('password')}
+                type="password"
+                fullWidth
+                margin="normal"
+                error={!!errors.password}
+                helperText={errors.password?.message}
+              />
             )} />
-            <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }} disabled={isSubmitting}>
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              sx={{ mt: 2 }}
+              disabled={isSubmitting}
+            >
               {isSubmitting ? t('loading') : t('sign_in')}
             </Button>
           </Box>

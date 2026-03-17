@@ -34,13 +34,29 @@ export default function SettingsPage() {
     <Box>
       <Typography variant="h4" mb={3}>{t('settings')}</Typography>
 
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" mb={2}>{t('account')}</Typography>
-        <TextField label={t('name')} value={name} onChange={e => setName(e.target.value)} fullWidth margin="normal" />
-        <TextField label={t('email')} value={user?.email || ''} fullWidth margin="normal" disabled />
+        <TextField
+          label={t('name')}
+          value={name}
+          onChange={e => setName(e.target.value)}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label={t('email')}
+          value={user?.email || ''}
+          fullWidth
+          margin="normal"
+          disabled
+        />
         <Button variant="contained" sx={{ mt: 1 }} disabled>
           {t('save')}
         </Button>

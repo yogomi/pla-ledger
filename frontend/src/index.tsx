@@ -16,7 +16,13 @@ root.render(
         <CssBaseline />
         <BrowserRouter>
           <AuthProvider>
-            <Suspense fallback={<Box display="flex" justifyContent="center" mt={8}><CircularProgress /></Box>}>
+            <Suspense
+              fallback={
+                <Box display="flex" justifyContent="center" mt={8}>
+                  <CircularProgress />
+                </Box>
+              }
+            >
               <App />
             </Suspense>
           </AuthProvider>

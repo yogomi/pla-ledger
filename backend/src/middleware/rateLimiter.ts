@@ -9,7 +9,12 @@ export const authRateLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, code: 'rate_limit_exceeded', message: 'Too many requests, please try again later.', data: null },
+  message: {
+    success: false,
+    code: 'rate_limit_exceeded',
+    message: 'Too many requests, please try again later.',
+    data: null,
+  },
 });
 
 /**
@@ -21,5 +26,10 @@ export const apiRateLimiter = rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, code: 'rate_limit_exceeded', message: 'Too many requests, please try again later.', data: null },
+  message: {
+    success: false,
+    code: 'rate_limit_exceeded',
+    message: 'Too many requests, please try again later.',
+    data: null,
+  },
 });

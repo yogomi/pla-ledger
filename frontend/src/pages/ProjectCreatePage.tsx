@@ -45,9 +45,17 @@ export default function ProjectCreatePage() {
       if (data.summary_ja) summary['ja'] = data.summary_ja;
       const tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
-      // Default financial sections
       const sections = [
-        { type: 'finances', content: { sales_simulation: {}, expense_breakdown: {}, profit_loss: {}, startup_costs: {}, annual_forecast: {} } },
+        {
+          type: 'finances',
+          content: {
+            sales_simulation: {},
+            expense_breakdown: {},
+            profit_loss: {},
+            startup_costs: {},
+            annual_forecast: {},
+          },
+        },
         { type: 'narrative', content: { description: { en: '', ja: '' } } },
       ];
 
@@ -62,7 +70,8 @@ export default function ProjectCreatePage() {
       });
       navigate(`/projects/${r.data.data.projectId}`);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create project';
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message || 'Failed to create project';
       setError(msg);
     }
   };
@@ -81,11 +90,25 @@ export default function ProjectCreatePage() {
           {langTab === 0 && (
             <Box>
               <Controller name="title_en" control={control} render={({ field }) => (
-                <TextField {...field} label={`${t('project_title')} (EN)`} fullWidth margin="normal" required
-                  error={!!errors.title_en} helperText={errors.title_en?.message} />
+                <TextField
+                  {...field}
+                  label={`${t('project_title')} (EN)`}
+                  fullWidth
+                  margin="normal"
+                  required
+                  error={!!errors.title_en}
+                  helperText={errors.title_en?.message}
+                />
               )} />
               <Controller name="summary_en" control={control} render={({ field }) => (
-                <TextField {...field} label={`${t('project_summary')} (EN)`} fullWidth margin="normal" multiline rows={3} />
+                <TextField
+                  {...field}
+                  label={`${t('project_summary')} (EN)`}
+                  fullWidth
+                  margin="normal"
+                  multiline
+                  rows={3}
+                />
               )} />
             </Box>
           )}
@@ -93,10 +116,22 @@ export default function ProjectCreatePage() {
           {langTab === 1 && (
             <Box>
               <Controller name="title_ja" control={control} render={({ field }) => (
-                <TextField {...field} label={`${t('project_title')} (JA)`} fullWidth margin="normal" />
+                <TextField
+                  {...field}
+                  label={`${t('project_title')} (JA)`}
+                  fullWidth
+                  margin="normal"
+                />
               )} />
               <Controller name="summary_ja" control={control} render={({ field }) => (
-                <TextField {...field} label={`${t('project_summary')} (JA)`} fullWidth margin="normal" multiline rows={3} />
+                <TextField
+                  {...field}
+                  label={`${t('project_summary')} (JA)`}
+                  fullWidth
+                  margin="normal"
+                  multiline
+                  rows={3}
+                />
               )} />
             </Box>
           )}
