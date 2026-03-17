@@ -8,6 +8,7 @@ import { sequelize } from './models';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import searchRoutes from './routes/search';
+import { authRateLimiter, apiRateLimiter } from './middleware/rateLimiter';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,9 +20,9 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/search', searchRoutes);
+app.use('/api/auth', authRateLimiter, authRoutes);
+app.use('/api/projects', apiRateLimiter, projectRoutes);
+app.use('/api/search', apiRateLimiter, searchRoutes);
 
 // Uploads static files
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
