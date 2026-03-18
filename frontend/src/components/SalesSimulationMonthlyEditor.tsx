@@ -24,6 +24,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   useSalesSimulationMonthly,
   useUpdateSalesSimulation,
@@ -51,6 +52,7 @@ export default function SalesSimulationMonthlyEditor({
   projectId,
   yearMonth,
 }: SalesSimulationMonthlyEditorProps) {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useSalesSimulationMonthly(projectId, yearMonth);
   const mutation = useUpdateSalesSimulation(projectId);
   const createCategoryMutation = useCreateSalesCategory(projectId);
@@ -107,7 +109,7 @@ export default function SalesSimulationMonthlyEditor({
 
   /** カテゴリを削除する */
   const handleDeleteCategory = (categoryId: string, categoryName: string) => {
-    if (!window.confirm(`カテゴリ「${categoryName}」と配下の品目をすべて削除しますか？`)) return;
+    if (!window.confirm(t('confirm_delete_category', { name: categoryName }))) return;
     deleteCategoryMutation.mutate({ categoryId });
   };
 
@@ -127,7 +129,7 @@ export default function SalesSimulationMonthlyEditor({
 
   /** アイテムを削除する */
   const handleDeleteItem = (itemId: string, itemName: string) => {
-    if (!window.confirm(`品目「${itemName}」を削除しますか？`)) return;
+    if (!window.confirm(t('confirm_delete_item', { name: itemName }))) return;
     deleteItemMutation.mutate({ itemId });
   };
 
@@ -140,10 +142,8 @@ export default function SalesSimulationMonthlyEditor({
   }
 
   if (isError || !data) {
-    return <Alert severity="error">データの読み込みに失敗しました。</Alert>;
+    return <Alert severity="error">{t('load_error')}</Alert>;
   }
-
-  /** フォームのフラット配列からカテゴリ別インデックスを構築 */
   const categoryGroups = data.categories.map(cat => ({
     ...cat,
     fieldIndices: fields.reduce<number[]>((acc, f, idx) => {
@@ -156,7 +156,7 @@ export default function SalesSimulationMonthlyEditor({
     <Box component="form" onSubmit={handleSubmit(onSubmit)}>
       {data.isInherited && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          このデータは前月から継承されています。
+          {t('inherited_info_sales')}
         </Alert>
       )}
 
@@ -171,7 +171,7 @@ export default function SalesSimulationMonthlyEditor({
               pr={1}
             >
               <Typography fontWeight="bold">{cat.categoryName}</Typography>
-              <Tooltip title="カテゴリを削除">
+              <Tooltip title={t('delete_category')}>
                 <IconButton
                   size="small"
                   color="error"
@@ -179,7 +179,7 @@ export default function SalesSimulationMonthlyEditor({
                     e.stopPropagation();
                     handleDeleteCategory(cat.categoryId, cat.categoryName);
                   }}
-                  aria-label={`カテゴリ ${cat.categoryName} を削除`}
+                  aria-label={t('delete_category')}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -191,14 +191,14 @@ export default function SalesSimulationMonthlyEditor({
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                    <TableCell>品目名</TableCell>
-                    <TableCell align="right">単価</TableCell>
-                    <TableCell align="right">数量</TableCell>
-                    <TableCell align="right">稼働日数</TableCell>
-                    <TableCell align="right">原価率 (%)</TableCell>
-                    <TableCell align="right">月間売上</TableCell>
-                    <TableCell align="right">月間原価</TableCell>
-                    <TableCell align="center">操作</TableCell>
+                    <TableCell>{t('item_name')}</TableCell>
+                    <TableCell align="right">{t('unit_price')}</TableCell>
+                    <TableCell align="right">{t('quantity')}</TableCell>
+                    <TableCell align="right">{t('operating_days')}</TableCell>
+                    <TableCell align="right">{t('cost_rate')}</TableCell>
+                    <TableCell align="right">{t('monthly_sales_col')}</TableCell>
+                    <TableCell align="right">{t('monthly_cost_col')}</TableCell>
+                    <TableCell align="center">{t('action')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -223,7 +223,7 @@ export default function SalesSimulationMonthlyEditor({
                               )}
                             />
                             {originalItem?.isInherited && (
-                              <Chip label="継承" size="small" color="default" />
+                              <Chip label={t('inherited_chip')} size="small" color="default" />
                             )}
                           </Box>
                         </TableCell>
@@ -302,7 +302,7 @@ export default function SalesSimulationMonthlyEditor({
                           {originalItem?.monthlyCost.toLocaleString() ?? '-'}
                         </TableCell>
                         <TableCell align="center">
-                          <Tooltip title="品目を削除">
+                          <Tooltip title={t('delete_item')}>
                             <IconButton
                               size="small"
                               color="error"
@@ -312,7 +312,7 @@ export default function SalesSimulationMonthlyEditor({
                                   fields[idx]?.itemName ?? '',
                                 )
                               }
-                              aria-label={`品目 ${fields[idx]?.itemName ?? ''} を削除`}
+                              aria-label={t('delete_item')}
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
@@ -327,7 +327,7 @@ export default function SalesSimulationMonthlyEditor({
                       <Box display="flex" alignItems="center" gap={1} p={0.5}>
                         <TextField
                           size="small"
-                          placeholder="新しい品目名"
+                          placeholder={t('new_item_name_placeholder')}
                           value={newItemNames[cat.categoryId] ?? ''}
                           onChange={e =>
                             setNewItemNames(prev => ({
@@ -342,7 +342,7 @@ export default function SalesSimulationMonthlyEditor({
                             }
                           }}
                           sx={{ minWidth: '200px' }}
-                          aria-label="新しい品目名"
+                          aria-label={t('new_item_name_placeholder')}
                         />
                         <Button
                           size="small"
@@ -352,7 +352,7 @@ export default function SalesSimulationMonthlyEditor({
                           onClick={() => handleAddItem(cat.categoryId)}
                           disabled={createItemMutation.isPending}
                         >
-                          品目を追加
+                          {t('add_item')}
                         </Button>
                       </Box>
                     </TableCell>
@@ -370,7 +370,7 @@ export default function SalesSimulationMonthlyEditor({
           <Box display="flex" alignItems="center" gap={1}>
             <TextField
               size="small"
-              placeholder="新しいカテゴリ名"
+              placeholder={t('new_category_name_placeholder')}
               value={newCategoryName}
               onChange={e => setNewCategoryName(e.target.value)}
               onKeyDown={e => {
@@ -381,7 +381,7 @@ export default function SalesSimulationMonthlyEditor({
                 if (e.key === 'Escape') setAddingCategory(false);
               }}
               autoFocus
-              aria-label="新しいカテゴリ名"
+              aria-label={t('new_category_name_placeholder')}
             />
             <Button
               size="small"
@@ -390,9 +390,9 @@ export default function SalesSimulationMonthlyEditor({
               onClick={handleAddCategory}
               disabled={createCategoryMutation.isPending}
             >
-              追加
+              {t('add')}
             </Button>
-            <Button size="small" onClick={() => setAddingCategory(false)}>キャンセル</Button>
+            <Button size="small" onClick={() => setAddingCategory(false)}>{t('cancel')}</Button>
           </Box>
         ) : (
           <Button
@@ -402,7 +402,7 @@ export default function SalesSimulationMonthlyEditor({
             onClick={() => setAddingCategory(true)}
             size="small"
           >
-            カテゴリを追加
+            {t('add_category')}
           </Button>
         )}
       </Paper>
@@ -411,10 +411,10 @@ export default function SalesSimulationMonthlyEditor({
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
             <Typography variant="body2" color="text.secondary">
-              月間売上合計: {data.monthlyTotal.toLocaleString()} 円
+              {t('monthly_sales_total', { amount: data.monthlyTotal.toLocaleString() })}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              月間原価合計: {data.monthlyCost.toLocaleString()} 円
+              {t('monthly_cost_total', { amount: data.monthlyCost.toLocaleString() })}
             </Typography>
           </Box>
           <Button
@@ -423,14 +423,14 @@ export default function SalesSimulationMonthlyEditor({
             startIcon={<SaveIcon />}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? '保存中...' : '保存'}
+            {mutation.isPending ? t('saving') : t('save')}
           </Button>
         </Box>
         {mutation.isError && (
-          <Alert severity="error" sx={{ mt: 1 }}>保存に失敗しました。</Alert>
+          <Alert severity="error" sx={{ mt: 1 }}>{t('save_error')}</Alert>
         )}
         {mutation.isSuccess && (
-          <Alert severity="success" sx={{ mt: 1 }}>保存しました。</Alert>
+          <Alert severity="success" sx={{ mt: 1 }}>{t('save_success')}</Alert>
         )}
       </Paper>
     </Box>

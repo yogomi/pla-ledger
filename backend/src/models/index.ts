@@ -515,6 +515,37 @@ VariableExpense.init({
   description: { type: DataTypes.TEXT, defaultValue: null },
 }, { sequelize, tableName: 'variable_expenses', underscored: true });
 
+// ========== FixedExpenseMonth ==========
+// 固定費が明示的に保存された年月を追跡するテーブル。
+// このレコードが存在する年月は前月からの継承を行わない。
+interface FixedExpenseMonthAttributes {
+  id: string;
+  project_id: string;
+  year_month: string;
+  created_at?: Date;
+}
+type FixedExpenseMonthCreation = Optional<FixedExpenseMonthAttributes, 'id'>;
+
+export class FixedExpenseMonth
+  extends Model<FixedExpenseMonthAttributes, FixedExpenseMonthCreation>
+  implements FixedExpenseMonthAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare year_month: string;
+}
+
+FixedExpenseMonth.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  year_month: { type: DataTypes.STRING(7), allowNull: false },
+}, {
+  sequelize,
+  tableName: 'fixed_expense_months',
+  underscored: true,
+  updatedAt: false,
+  indexes: [{ unique: true, fields: ['project_id', 'year_month'] }],
+});
+
 // Associations
 Project.hasMany(ProjectSection, { foreignKey: 'project_id', as: 'sections' });
 ProjectSection.belongsTo(Project, { foreignKey: 'project_id' });

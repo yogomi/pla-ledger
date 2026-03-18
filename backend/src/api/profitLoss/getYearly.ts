@@ -1,5 +1,8 @@
 import { Router, Response } from 'express';
-import { Project, FixedExpense, VariableExpense, SalesSimulationSnapshot } from '../../models';
+import { Op } from 'sequelize';
+import {
+  Project, FixedExpense, VariableExpense, SalesSimulationSnapshot, FixedExpenseMonth,
+} from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
@@ -46,9 +49,31 @@ async function buildMonthData(projectId: string, yearMonth: string): Promise<Mon
     monthlyCost = totals.monthlyCost;
   }
 
-  const fixedExpenses = await FixedExpense.findAll({
+  let fixedExpenses = await FixedExpense.findAll({
     where: { project_id: projectId, year_month: yearMonth },
   });
+
+  // 固定費の継承ロジック（getMonthly.ts と同一）:
+  // FixedExpenseMonth レコードが存在しない（未保存）場合のみ直近の過去月を継承する
+  let isFixedInherited = false;
+  if (fixedExpenses.length === 0) {
+    const savedRecord = await FixedExpenseMonth.findOne({
+      where: { project_id: projectId, year_month: yearMonth },
+    });
+    if (!savedRecord) {
+      const recentFixed = await FixedExpense.findOne({
+        where: { project_id: projectId, year_month: { [Op.lt]: yearMonth } },
+        order: [['year_month', 'DESC']],
+      });
+      if (recentFixed) {
+        fixedExpenses = await FixedExpense.findAll({
+          where: { project_id: projectId, year_month: recentFixed.year_month },
+        });
+        isFixedInherited = true;
+      }
+    }
+  }
+
   const variableExpenses = await VariableExpense.findAll({
     where: { project_id: projectId, year_month: yearMonth },
   });
@@ -70,7 +95,7 @@ async function buildMonthData(projectId: string, yearMonth: string): Promise<Mon
     totalExpense,
     operatingProfit,
     profitRate,
-    isInherited,
+    isInherited: isInherited || isFixedInherited,
   };
 }
 

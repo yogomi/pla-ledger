@@ -19,6 +19,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   useExpenseSimulationMonthly,
   useUpdateFixedExpenses,
@@ -52,6 +53,7 @@ function FixedExpenseForm({
   yearMonth: string;
   defaultExpenses: ExpenseInputItem[];
 }) {
+  const { t } = useTranslation();
   const mutation = useUpdateFixedExpenses(projectId);
   const { control, handleSubmit, reset } = useForm<FixedFormValues>({
     defaultValues: { expenses: defaultExpenses },
@@ -71,17 +73,17 @@ function FixedExpenseForm({
       <Table size="small">
         <TableHead>
           <TableRow sx={{ backgroundColor: 'grey.100' }}>
-            <TableCell>カテゴリ名</TableCell>
-            <TableCell align="right">月額</TableCell>
-            <TableCell>備考</TableCell>
-            <TableCell align="center">操作</TableCell>
+            <TableCell>{t('category_name_col')}</TableCell>
+            <TableCell align="right">{t('monthly_amount')}</TableCell>
+            <TableCell>{t('notes')}</TableCell>
+            <TableCell align="center">{t('action')}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {fields.length === 0 && (
             <TableRow>
               <TableCell colSpan={4} align="center">
-                <Typography variant="body2" color="text.secondary">項目なし</Typography>
+                <Typography variant="body2" color="text.secondary">{t('no_items')}</Typography>
               </TableCell>
             </TableRow>
           )}
@@ -129,12 +131,12 @@ function FixedExpenseForm({
                 />
               </TableCell>
               <TableCell align="center">
-                <Tooltip title="行を削除">
+                <Tooltip title={t('delete_row')}>
                   <IconButton
                     size="small"
                     color="error"
                     onClick={() => remove(idx)}
-                    aria-label="行を削除"
+                    aria-label={t('delete_row')}
                   >
                     <DeleteIcon fontSize="small" />
                   </IconButton>
@@ -151,7 +153,7 @@ function FixedExpenseForm({
           startIcon={<AddIcon />}
           onClick={() => append({ categoryName: '', amount: 0, description: null })}
         >
-          行を追加
+          {t('add_row')}
         </Button>
         <Button
           type="submit"
@@ -160,11 +162,11 @@ function FixedExpenseForm({
           startIcon={<SaveIcon />}
           disabled={mutation.isPending}
         >
-          {mutation.isPending ? '保存中...' : '保存'}
+          {mutation.isPending ? t('saving') : t('save')}
         </Button>
       </Box>
-      {mutation.isError && <Alert severity="error">固定費の保存に失敗しました。</Alert>}
-      {mutation.isSuccess && <Alert severity="success">固定費を保存しました。</Alert>}
+      {mutation.isError && <Alert severity="error">{t('fixed_save_error')}</Alert>}
+      {mutation.isSuccess && <Alert severity="success">{t('fixed_save_success')}</Alert>}
     </Box>
   );
 }
@@ -182,6 +184,7 @@ function VariableExpenseForm({
   yearMonth: string;
   defaultExpenses: ExpenseInputItem[];
 }) {
+  const { t } = useTranslation();
   const mutation = useUpdateVariableExpenses(projectId);
   const { control, handleSubmit, reset } = useForm<VariableFormValues>({
     defaultValues: { expenses: defaultExpenses },
@@ -201,17 +204,17 @@ function VariableExpenseForm({
       <Table size="small">
         <TableHead>
           <TableRow sx={{ backgroundColor: 'grey.100' }}>
-            <TableCell>カテゴリ名</TableCell>
-            <TableCell align="right">月額</TableCell>
-            <TableCell>備考</TableCell>
-            <TableCell align="center">操作</TableCell>
+            <TableCell>{t('category_name_col')}</TableCell>
+            <TableCell align="right">{t('monthly_amount')}</TableCell>
+            <TableCell>{t('notes')}</TableCell>
+            <TableCell align="center">{t('action')}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {fields.length === 0 && (
             <TableRow>
               <TableCell colSpan={4} align="center">
-                <Typography variant="body2" color="text.secondary">項目なし</Typography>
+                <Typography variant="body2" color="text.secondary">{t('no_items')}</Typography>
               </TableCell>
             </TableRow>
           )}
@@ -259,12 +262,12 @@ function VariableExpenseForm({
                 />
               </TableCell>
               <TableCell align="center">
-                <Tooltip title="行を削除">
+                <Tooltip title={t('delete_row')}>
                   <IconButton
                     size="small"
                     color="error"
                     onClick={() => remove(idx)}
-                    aria-label="行を削除"
+                    aria-label={t('delete_row')}
                   >
                     <DeleteIcon fontSize="small" />
                   </IconButton>
@@ -281,7 +284,7 @@ function VariableExpenseForm({
           startIcon={<AddIcon />}
           onClick={() => append({ categoryName: '', amount: 0, description: null })}
         >
-          行を追加
+          {t('add_row')}
         </Button>
         <Button
           type="submit"
@@ -290,11 +293,11 @@ function VariableExpenseForm({
           startIcon={<SaveIcon />}
           disabled={mutation.isPending}
         >
-          {mutation.isPending ? '保存中...' : '保存'}
+          {mutation.isPending ? t('saving') : t('save')}
         </Button>
       </Box>
-      {mutation.isError && <Alert severity="error">変動費の保存に失敗しました。</Alert>}
-      {mutation.isSuccess && <Alert severity="success">変動費を保存しました。</Alert>}
+      {mutation.isError && <Alert severity="error">{t('variable_save_error')}</Alert>}
+      {mutation.isSuccess && <Alert severity="success">{t('variable_save_success')}</Alert>}
     </Box>
   );
 }
@@ -306,6 +309,7 @@ export default function ExpenseMonthlyEditor({
   projectId,
   yearMonth,
 }: ExpenseMonthlyEditorProps) {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useExpenseSimulationMonthly(projectId, yearMonth);
 
   if (isLoading) {
@@ -317,7 +321,7 @@ export default function ExpenseMonthlyEditor({
   }
 
   if (isError || !data) {
-    return <Alert severity="error">データの読み込みに失敗しました。</Alert>;
+    return <Alert severity="error">{t('load_error')}</Alert>;
   }
 
   const fixedExpenses: ExpenseInputItem[] = data.fixedExpenses.map(e => ({
@@ -334,10 +338,16 @@ export default function ExpenseMonthlyEditor({
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
+      {data.isInherited && (
+        <Alert severity="info">
+          {t('inherited_info_expense')}
+        </Alert>
+      )}
+
       {/* 固定費セクション */}
       <Paper variant="outlined">
         <Box p={2} borderBottom={1} borderColor="divider">
-          <Typography variant="h6">固定費</Typography>
+          <Typography variant="h6">{t('fixed_expenses_section')}</Typography>
         </Box>
         <FixedExpenseForm
           projectId={projectId}
@@ -349,7 +359,7 @@ export default function ExpenseMonthlyEditor({
       {/* 変動費セクション */}
       <Paper variant="outlined">
         <Box p={2} borderBottom={1} borderColor="divider">
-          <Typography variant="h6">変動費</Typography>
+          <Typography variant="h6">{t('variable_expenses_section')}</Typography>
         </Box>
         <VariableExpenseForm
           projectId={projectId}
@@ -361,31 +371,31 @@ export default function ExpenseMonthlyEditor({
       {/* 損益サマリー */}
       <Paper variant="outlined">
         <Box p={2}>
-          <Typography variant="h6" gutterBottom>損益サマリー</Typography>
+          <Typography variant="h6" gutterBottom>{t('profit_loss_summary')}</Typography>
           <Table size="small">
             <TableBody>
               <TableRow>
-                <TableCell>売上</TableCell>
+                <TableCell>{t('sales_row')}</TableCell>
                 <TableCell align="right">{data.monthlySales.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>原価</TableCell>
+                <TableCell>{t('cost_row')}</TableCell>
                 <TableCell align="right">{data.monthlyCost.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>固定費合計</TableCell>
+                <TableCell>{t('fixed_total_row')}</TableCell>
                 <TableCell align="right">{data.fixedTotal.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>変動費合計</TableCell>
+                <TableCell>{t('variable_total_row')}</TableCell>
                 <TableCell align="right">{data.variableTotal.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>経費合計</TableCell>
+                <TableCell>{t('expense_total_row')}</TableCell>
                 <TableCell align="right">{data.totalExpense.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow sx={{ backgroundColor: 'grey.50' }}>
-                <TableCell><Typography fontWeight="bold">営業利益</Typography></TableCell>
+                <TableCell><Typography fontWeight="bold">{t('operating_profit')}</Typography></TableCell>
                 <TableCell align="right">
                   <Typography
                     fontWeight="bold"

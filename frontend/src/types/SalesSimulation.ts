@@ -43,6 +43,7 @@ export interface ExpenseItem {
 /** 経費シミュレーション月次データ */
 export interface ExpenseSimulationData {
   yearMonth: string;
+  isInherited: boolean;
   monthlySales: number;
   monthlyCost: number;
   fixedExpenses: ExpenseItem[];

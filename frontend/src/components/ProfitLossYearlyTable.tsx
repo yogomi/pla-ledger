@@ -11,6 +11,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { useProfitLossYearly } from '../hooks/useSalesSimulation';
 
 interface ProfitLossYearlyTableProps {
@@ -23,6 +24,7 @@ interface ProfitLossYearlyTableProps {
  * 最終行に年次合計を表示する。
  */
 export default function ProfitLossYearlyTable({ projectId, year }: ProfitLossYearlyTableProps) {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useProfitLossYearly(projectId, year);
 
   if (isLoading) {
@@ -34,7 +36,7 @@ export default function ProfitLossYearlyTable({ projectId, year }: ProfitLossYea
   }
 
   if (isError || !data) {
-    return <Alert severity="error">データの読み込みに失敗しました。</Alert>;
+    return <Alert severity="error">{t('load_error')}</Alert>;
   }
 
   const { months, yearly } = data;
@@ -44,14 +46,14 @@ export default function ProfitLossYearlyTable({ projectId, year }: ProfitLossYea
       <Table size="small">
         <TableHead>
           <TableRow sx={{ backgroundColor: 'grey.100' }}>
-            <TableCell>月</TableCell>
-            <TableCell align="right">売上</TableCell>
-            <TableCell align="right">原価</TableCell>
-            <TableCell align="right">固定費</TableCell>
-            <TableCell align="right">変動費</TableCell>
-            <TableCell align="right">経費合計</TableCell>
-            <TableCell align="right">営業利益</TableCell>
-            <TableCell align="right">利益率</TableCell>
+            <TableCell>{t('month_col')}</TableCell>
+            <TableCell align="right">{t('sales_row')}</TableCell>
+            <TableCell align="right">{t('cost_row')}</TableCell>
+            <TableCell align="right">{t('fixed_expenses_section')}</TableCell>
+            <TableCell align="right">{t('variable_expenses_section')}</TableCell>
+            <TableCell align="right">{t('expense_total_row')}</TableCell>
+            <TableCell align="right">{t('operating_profit')}</TableCell>
+            <TableCell align="right">{t('profit_rate')}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -61,10 +63,10 @@ export default function ProfitLossYearlyTable({ projectId, year }: ProfitLossYea
               <TableRow key={row.yearMonth}>
                 <TableCell>
                   <Box display="flex" alignItems="center" gap={0.5}>
-                    {`${m}月`}
+                    {t('month_label_short', { month: Number(m) })}
                     {row.isInherited && (
                       <Typography variant="caption" color="text.secondary">
-                        (継承)
+                        {t('inherited_badge')}
                       </Typography>
                     )}
                   </Box>
@@ -88,7 +90,7 @@ export default function ProfitLossYearlyTable({ projectId, year }: ProfitLossYea
           })}
           {/* 年次合計行 */}
           <TableRow sx={{ backgroundColor: 'grey.50', fontWeight: 'bold' }}>
-            <TableCell><Typography fontWeight="bold">年間合計</Typography></TableCell>
+            <TableCell><Typography fontWeight="bold">{t('yearly_total')}</Typography></TableCell>
             <TableCell align="right">
               <Typography fontWeight="bold">{yearly.totalSales.toLocaleString()}</Typography>
             </TableCell>

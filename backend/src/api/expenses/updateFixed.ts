@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { Project, FixedExpense } from '../../models';
+import { Project, FixedExpense, FixedExpenseMonth } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
@@ -107,6 +107,12 @@ router.put('/:yearMonth', authenticate, async (req: AuthRequest, res: Response) 
       description: e.description ?? null,
     })),
   );
+
+  // 保存済み年月として記録する（空保存の場合でも継承しないようにするため）
+  await FixedExpenseMonth.findOrCreate({
+    where: { project_id: projectId, year_month: yearMonth },
+    defaults: { project_id: projectId, year_month: yearMonth },
+  });
 
   res.json({
     success: true,

@@ -1,5 +1,8 @@
 import { Router, Response } from 'express';
-import { Project, FixedExpense, VariableExpense, SalesSimulationSnapshot } from '../../models';
+import { Op } from 'sequelize';
+import {
+  Project, FixedExpense, VariableExpense, SalesSimulationSnapshot, FixedExpenseMonth,
+} from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
@@ -12,6 +15,8 @@ import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesS
  *   - 指定年月の経費シミュレーションデータを取得する
  *   - 売上原価はスナップショット（継承を含む）から取得する
  *   - 固定費・変動費は当月のデータを使用する
+ *   - 固定費は未保存月のみ直近の過去月データを継承する（空保存後は継承しない）
+ *   - 変動費は継承しない（当月データのみ返す）
  *   - viewer 以上の権限が必要
  *
  * @request
@@ -25,7 +30,7 @@ import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesS
  *   { success: false, code: 'invalid_query', message: エラー内容, data: null }
  *
  * @response
- *   成功時: { success: true, code: '', message: 'OK', data: { yearMonth, monthlySales, monthlyCost, fixedExpenses, fixedTotal, variableExpenses, variableTotal, totalExpense, operatingProfit } }
+ *   成功時: { success: true, code: '', message: 'OK', data: { yearMonth, isInherited, monthlySales, monthlyCost, fixedExpenses, fixedTotal, variableExpenses, variableTotal, totalExpense, operatingProfit } }
  *   失敗時:
  *     - 400: { success: false, code: 'invalid_query', message: エラー内容, data: null }
  *     - 401: { success: false, code: 'unauthorized', message: 'No token provided', data: null }
@@ -39,6 +44,7 @@ import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesS
  *     "message": "OK",
  *     "data": {
  *       "yearMonth": "2026-01",
+ *       "isInherited": false,
  *       "monthlySales": 1250000,
  *       "monthlyCost": 500000,
  *       "fixedExpenses": [{ "id": "uuid", "categoryName": "人件費", "amount": 300000, "description": null }],
@@ -109,10 +115,36 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
     monthlyCost = totals.monthlyCost;
   }
 
-  // 固定費・変動費取得
-  const fixedExpenses = await FixedExpense.findAll({
+  // 固定費取得
+  let fixedExpenses = await FixedExpense.findAll({
     where: { project_id: projectId, year_month: yearMonth },
   });
+
+  // 固定費の継承ロジック:
+  // FixedExpenseMonth レコードが存在しない（一度も保存されていない）場合のみ、
+  // 直近の過去月データを継承する。
+  // 空で保存された場合は FixedExpenseMonth レコードが存在するため継承しない。
+  let isInherited = false;
+  if (fixedExpenses.length === 0) {
+    const savedRecord = await FixedExpenseMonth.findOne({
+      where: { project_id: projectId, year_month: yearMonth },
+    });
+    if (!savedRecord) {
+      // 未保存月 → 直近の過去月固定費を継承する
+      const recentFixed = await FixedExpense.findOne({
+        where: { project_id: projectId, year_month: { [Op.lt]: yearMonth } },
+        order: [['year_month', 'DESC']],
+      });
+      if (recentFixed) {
+        fixedExpenses = await FixedExpense.findAll({
+          where: { project_id: projectId, year_month: recentFixed.year_month },
+        });
+        isInherited = true;
+      }
+    }
+  }
+
+  // 変動費取得（継承なし）
   const variableExpenses = await VariableExpense.findAll({
     where: { project_id: projectId, year_month: yearMonth },
   });
@@ -128,6 +160,7 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
     message: 'OK',
     data: {
       yearMonth,
+      isInherited,
       monthlySales,
       monthlyCost,
       fixedExpenses: fixedExpenses.map(e => ({

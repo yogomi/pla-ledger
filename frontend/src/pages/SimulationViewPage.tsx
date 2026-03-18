@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { Box, Button, Typography } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import { useTranslation } from 'react-i18next';
 import SimulationViewContainer from '../components/SimulationViewContainer';
 
 /**
@@ -11,18 +12,19 @@ import SimulationViewContainer from '../components/SimulationViewContainer';
  */
 export default function SimulationViewPage() {
   const { id } = useParams<{ id: string }>();
-  if (!id) return <Typography>プロジェクトが見つかりません</Typography>;
+  const { t } = useTranslation();
+  if (!id) return <Typography>{t('project_not_found')}</Typography>;
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5">シミュレーション</Typography>
+        <Typography variant="h5">{t('simulation')}</Typography>
         <Button
           variant="outlined"
           startIcon={<EditIcon />}
           component={RouterLink}
           to={`/projects/${id}/simulation/edit`}
         >
-          入力・編集
+          {t('edit_input')}
         </Button>
       </Box>
       <SimulationViewContainer projectId={id} />

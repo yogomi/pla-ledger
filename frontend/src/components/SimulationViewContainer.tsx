@@ -18,6 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { useTranslation } from 'react-i18next';
 import { useSalesSimulationMonthly, useExpenseSimulationMonthly } from '../hooks/useSalesSimulation';
 import ProfitLossYearlyTable from './ProfitLossYearlyTable';
 import SalesSimulationPagination from './SalesSimulationPagination';
@@ -42,6 +43,7 @@ function SalesSimulationMonthlyView({
   projectId: string;
   yearMonth: string;
 }) {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useSalesSimulationMonthly(projectId, yearMonth);
 
   if (isLoading) {
@@ -53,14 +55,14 @@ function SalesSimulationMonthlyView({
   }
 
   if (isError || !data) {
-    return <Alert severity="error">データの読み込みに失敗しました。</Alert>;
+    return <Alert severity="error">{t('load_error')}</Alert>;
   }
 
   return (
     <Box>
       {data.isInherited && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          このデータは前月から継承されています。
+          {t('inherited_info_sales')}
         </Alert>
       )}
 
@@ -74,13 +76,13 @@ function SalesSimulationMonthlyView({
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                    <TableCell>品目名</TableCell>
-                    <TableCell align="right">単価</TableCell>
-                    <TableCell align="right">数量</TableCell>
-                    <TableCell align="right">稼働日数</TableCell>
-                    <TableCell align="right">原価率 (%)</TableCell>
-                    <TableCell align="right">月間売上</TableCell>
-                    <TableCell align="right">月間原価</TableCell>
+                    <TableCell>{t('item_name')}</TableCell>
+                    <TableCell align="right">{t('unit_price')}</TableCell>
+                    <TableCell align="right">{t('quantity')}</TableCell>
+                    <TableCell align="right">{t('operating_days')}</TableCell>
+                    <TableCell align="right">{t('cost_rate')}</TableCell>
+                    <TableCell align="right">{t('monthly_sales_col')}</TableCell>
+                    <TableCell align="right">{t('monthly_cost_col')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -88,7 +90,7 @@ function SalesSimulationMonthlyView({
                     <TableRow>
                       <TableCell colSpan={7} align="center">
                         <Typography variant="body2" color="text.secondary">
-                          品目なし
+                          {t('no_items')}
                         </Typography>
                       </TableCell>
                     </TableRow>
@@ -113,10 +115,10 @@ function SalesSimulationMonthlyView({
 
       <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
         <Typography variant="body2" color="text.secondary">
-          月間売上合計: {data.monthlyTotal.toLocaleString()} 円
+          {t('monthly_sales_total', { amount: data.monthlyTotal.toLocaleString() })}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          月間原価合計: {data.monthlyCost.toLocaleString()} 円
+          {t('monthly_cost_total', { amount: data.monthlyCost.toLocaleString() })}
         </Typography>
       </Paper>
     </Box>
@@ -131,6 +133,7 @@ function ExpenseMonthlyView({
   projectId: string;
   yearMonth: string;
 }) {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useExpenseSimulationMonthly(projectId, yearMonth);
 
   if (isLoading) {
@@ -142,29 +145,35 @@ function ExpenseMonthlyView({
   }
 
   if (isError || !data) {
-    return <Alert severity="error">データの読み込みに失敗しました。</Alert>;
+    return <Alert severity="error">{t('load_error')}</Alert>;
   }
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
+      {data.isInherited && (
+        <Alert severity="info">
+          {t('inherited_info_expense')}
+        </Alert>
+      )}
+
       {/* 固定費 */}
       <Paper variant="outlined">
         <Box p={2} borderBottom={1} borderColor="divider">
-          <Typography variant="h6">固定費</Typography>
+          <Typography variant="h6">{t('fixed_expenses_section')}</Typography>
         </Box>
         <Table size="small">
           <TableHead>
             <TableRow sx={{ backgroundColor: 'grey.100' }}>
-              <TableCell>カテゴリ名</TableCell>
-              <TableCell align="right">月額</TableCell>
-              <TableCell>備考</TableCell>
+              <TableCell>{t('category_name_col')}</TableCell>
+              <TableCell align="right">{t('monthly_amount')}</TableCell>
+              <TableCell>{t('notes')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {data.fixedExpenses.length === 0 && (
               <TableRow>
                 <TableCell colSpan={3} align="center">
-                  <Typography variant="body2" color="text.secondary">項目なし</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('no_items')}</Typography>
                 </TableCell>
               </TableRow>
             )}
@@ -182,21 +191,21 @@ function ExpenseMonthlyView({
       {/* 変動費 */}
       <Paper variant="outlined">
         <Box p={2} borderBottom={1} borderColor="divider">
-          <Typography variant="h6">変動費</Typography>
+          <Typography variant="h6">{t('variable_expenses_section')}</Typography>
         </Box>
         <Table size="small">
           <TableHead>
             <TableRow sx={{ backgroundColor: 'grey.100' }}>
-              <TableCell>カテゴリ名</TableCell>
-              <TableCell align="right">月額</TableCell>
-              <TableCell>備考</TableCell>
+              <TableCell>{t('category_name_col')}</TableCell>
+              <TableCell align="right">{t('monthly_amount')}</TableCell>
+              <TableCell>{t('notes')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {data.variableExpenses.length === 0 && (
               <TableRow>
                 <TableCell colSpan={3} align="center">
-                  <Typography variant="body2" color="text.secondary">項目なし</Typography>
+                  <Typography variant="body2" color="text.secondary">{t('no_items')}</Typography>
                 </TableCell>
               </TableRow>
             )}
@@ -214,31 +223,31 @@ function ExpenseMonthlyView({
       {/* 損益サマリー */}
       <Paper variant="outlined">
         <Box p={2}>
-          <Typography variant="h6" gutterBottom>損益サマリー</Typography>
+          <Typography variant="h6" gutterBottom>{t('profit_loss_summary')}</Typography>
           <Table size="small">
             <TableBody>
               <TableRow>
-                <TableCell>売上</TableCell>
+                <TableCell>{t('sales_row')}</TableCell>
                 <TableCell align="right">{data.monthlySales.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>原価</TableCell>
+                <TableCell>{t('cost_row')}</TableCell>
                 <TableCell align="right">{data.monthlyCost.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>固定費合計</TableCell>
+                <TableCell>{t('fixed_total_row')}</TableCell>
                 <TableCell align="right">{data.fixedTotal.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>変動費合計</TableCell>
+                <TableCell>{t('variable_total_row')}</TableCell>
                 <TableCell align="right">{data.variableTotal.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>経費合計</TableCell>
+                <TableCell>{t('expense_total_row')}</TableCell>
                 <TableCell align="right">{data.totalExpense.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow sx={{ backgroundColor: 'grey.50' }}>
-                <TableCell><Typography fontWeight="bold">営業利益</Typography></TableCell>
+                <TableCell><Typography fontWeight="bold">{t('operating_profit')}</Typography></TableCell>
                 <TableCell align="right">
                   <Typography
                     fontWeight="bold"
@@ -261,6 +270,7 @@ function ExpenseMonthlyView({
  * 月次・年次を切り替えてデータを閲覧できる。
  */
 export default function SimulationViewContainer({ projectId }: SimulationViewContainerProps) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
   const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
@@ -272,12 +282,12 @@ export default function SimulationViewContainer({ projectId }: SimulationViewCon
       <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" mb={2}>
         {viewMode === 'monthly' && (
           <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
-            <Tab label="売上シミュレーション" />
-            <Tab label="経費管理" />
+            <Tab label={t('sales_simulation_tab')} />
+            <Tab label={t('expense_management_tab')} />
           </Tabs>
         )}
         {viewMode === 'yearly' && (
-          <Typography variant="h6">損益計算表（年次）</Typography>
+          <Typography variant="h6">{t('profit_loss_yearly_label')}</Typography>
         )}
         <SalesSimulationPagination
           yearMonth={yearMonth}
