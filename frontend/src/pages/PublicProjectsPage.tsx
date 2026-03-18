@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
-  Box, Typography, Grid, Card, CardContent, CardActions, Button,
-  Chip, CircularProgress, Alert, TextField, FormControl, InputLabel, Select, MenuItem,
+  Box, Typography, Grid, Card, CardContent, CardActionArea,
+  Chip, CircularProgress, Alert, TextField, FormControl, InputLabel, Select, MenuItem, Button,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
@@ -19,6 +19,7 @@ interface Project {
 
 export default function PublicProjectsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -82,37 +83,31 @@ export default function PublicProjectsPage() {
             {projects.map(p => (
               <Grid item xs={12} sm={6} md={4} key={p.id}>
                 <Card>
-                  <CardContent>
-                    <Typography variant="h6" noWrap>{p.title}</Typography>
-                    {p.summary && (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mt: 0.5, mb: 1 }}
-                        noWrap
-                      >
-                        {p.summary}
-                      </Typography>
-                    )}
-                    <Box display="flex" gap={0.5} flexWrap="wrap">
-                      <Chip label={p.currency} size="small" variant="outlined" />
-                      {p.stage && <Chip label={p.stage} size="small" variant="outlined" />}
-                    </Box>
-                    {p.tags && p.tags.length > 0 && (
-                      <Box mt={1} display="flex" gap={0.5} flexWrap="wrap">
-                        {p.tags.slice(0, 3).map(tag => <Chip key={tag} label={tag} size="small" />)}
+                  {/* カード全体をクリック可能にして /projects/:id?tab=project へ遷移 */}
+                  <CardActionArea onClick={() => navigate(`/projects/${p.id}?tab=project`)}>
+                    <CardContent>
+                      <Typography variant="h6" noWrap>{p.title}</Typography>
+                      {p.summary && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 0.5, mb: 1 }}
+                          noWrap
+                        >
+                          {p.summary}
+                        </Typography>
+                      )}
+                      <Box display="flex" gap={0.5} flexWrap="wrap">
+                        <Chip label={p.currency} size="small" variant="outlined" />
+                        {p.stage && <Chip label={p.stage} size="small" variant="outlined" />}
                       </Box>
-                    )}
-                  </CardContent>
-                  <CardActions>
-                    <Button
-                      size="small"
-                      component={RouterLink}
-                      to={`/projects/${p.id}`}
-                    >
-                      View
-                    </Button>
-                  </CardActions>
+                      {p.tags && p.tags.length > 0 && (
+                        <Box mt={1} display="flex" gap={0.5} flexWrap="wrap">
+                          {p.tags.slice(0, 3).map(tag => <Chip key={tag} label={tag} size="small" />)}
+                        </Box>
+                      )}
+                    </CardContent>
+                  </CardActionArea>
                 </Card>
               </Grid>
             ))}
