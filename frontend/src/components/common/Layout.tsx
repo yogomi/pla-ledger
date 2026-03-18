@@ -68,21 +68,39 @@ export default function Layout() {
           </Button>
           {user ? (
             <>
-              <Button color="inherit" component={RouterLink} to="/dashboard">{t('dashboard')}</Button>
+              <Button
+                color="inherit"
+                component={RouterLink}
+                to="/dashboard"
+              >
+                {t('dashboard')}
+              </Button>
               <IconButton color="inherit" onClick={handleUserMenu}>
                 <AccountCircleIcon />
               </IconButton>
               <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleUserMenuClose}>
                 <MenuItem disabled>{user.name}</MenuItem>
                 <Divider />
-                <MenuItem component={RouterLink} to="/settings" onClick={handleUserMenuClose}>{t('settings')}</MenuItem>
+                <MenuItem
+                  component={RouterLink}
+                  to="/settings"
+                  onClick={handleUserMenuClose}
+                >
+                  {t('settings')}
+                </MenuItem>
                 <MenuItem onClick={handleLogout}>{t('sign_out')}</MenuItem>
               </Menu>
             </>
           ) : (
             <>
               <Button color="inherit" component={RouterLink} to="/signin">{t('sign_in')}</Button>
-              <Button color="inherit" variant="outlined" component={RouterLink} to="/signup" sx={{ ml: 1 }}>
+              <Button
+                color="inherit"
+                variant="outlined"
+                component={RouterLink}
+                to="/signup"
+                sx={{ ml: 1 }}
+              >
                 {t('sign_up')}
               </Button>
             </>
@@ -108,7 +126,16 @@ export default function Layout() {
         <Outlet />
       </Container>
 
-      <Box component="footer" sx={{ py: 2, textAlign: 'center', bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider' }}>
+      <Box
+        component="footer"
+        sx={{
+          py: 2,
+          textAlign: 'center',
+          bgcolor: 'background.paper',
+          borderTop: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <Typography variant="body2" color="text.secondary">
           © 2024 PlaLedger
         </Typography>

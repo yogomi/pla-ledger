@@ -70,7 +70,11 @@ export default function DashboardPage() {
                     <CardContent>
                       <Typography variant="h6" noWrap>{getTitle(p.title)}</Typography>
                       <Box mt={1} display="flex" gap={0.5} flexWrap="wrap">
-                        <Chip label={t(p.visibility)} size="small" color={p.visibility === 'public' ? 'success' : 'default'} />
+                        <Chip
+                          label={t(p.visibility)}
+                          size="small"
+                          color={p.visibility === 'public' ? 'success' : 'default'}
+                        />
                         <Chip label={p.currency} size="small" variant="outlined" />
                         {p.stage && <Chip label={p.stage} size="small" variant="outlined" />}
                       </Box>

@@ -51,9 +51,14 @@ interface ProjectAttributes {
   created_at?: Date;
   updated_at?: Date;
 }
-type ProjectCreation = Optional<ProjectAttributes, 'id' | 'summary' | 'stage' | 'tags' | 'published_at'>;
+type ProjectCreation = Optional<
+  ProjectAttributes,
+  'id' | 'summary' | 'stage' | 'tags' | 'published_at'
+>;
 
-export class Project extends Model<ProjectAttributes, ProjectCreation> implements ProjectAttributes {
+export class Project
+  extends Model<ProjectAttributes, ProjectCreation>
+  implements ProjectAttributes {
   declare id: string;
   declare owner_id: string;
   declare title: Record<string, string>;
@@ -70,7 +75,11 @@ Project.init({
   owner_id: { type: DataTypes.UUID, allowNull: false },
   title: { type: DataTypes.JSON, allowNull: false },
   summary: { type: DataTypes.JSON, defaultValue: null },
-  visibility: { type: DataTypes.ENUM('public', 'private', 'unlisted'), allowNull: false, defaultValue: 'private' },
+  visibility: {
+    type: DataTypes.ENUM('public', 'private', 'unlisted'),
+    allowNull: false,
+    defaultValue: 'private',
+  },
   currency: { type: DataTypes.STRING(10), allowNull: false, defaultValue: 'JPY' },
   stage: { type: DataTypes.STRING, defaultValue: null },
   tags: { type: DataTypes.JSON, defaultValue: [] },
@@ -88,7 +97,9 @@ interface PermissionAttributes {
 }
 type PermissionCreation = Optional<PermissionAttributes, 'id' | 'granted_by'>;
 
-export class Permission extends Model<PermissionAttributes, PermissionCreation> implements PermissionAttributes {
+export class Permission
+  extends Model<PermissionAttributes, PermissionCreation>
+  implements PermissionAttributes {
   declare id: string;
   declare project_id: string;
   declare user_id: string;
@@ -116,9 +127,14 @@ interface AccessRequestAttributes {
   processed_at: Date | null;
   created_at?: Date;
 }
-type AccessRequestCreation = Optional<AccessRequestAttributes, 'id' | 'message' | 'processed_by' | 'processed_at'>;
+type AccessRequestCreation = Optional<
+  AccessRequestAttributes,
+  'id' | 'message' | 'processed_by' | 'processed_at'
+>;
 
-export class AccessRequest extends Model<AccessRequestAttributes, AccessRequestCreation> implements AccessRequestAttributes {
+export class AccessRequest
+  extends Model<AccessRequestAttributes, AccessRequestCreation>
+  implements AccessRequestAttributes {
   declare id: string;
   declare project_id: string;
   declare requester_id: string;
@@ -152,7 +168,9 @@ interface ProjectSectionAttributes {
 }
 type ProjectSectionCreation = Optional<ProjectSectionAttributes, 'id' | 'version'>;
 
-export class ProjectSection extends Model<ProjectSectionAttributes, ProjectSectionCreation> implements ProjectSectionAttributes {
+export class ProjectSection
+  extends Model<ProjectSectionAttributes, ProjectSectionCreation>
+  implements ProjectSectionAttributes {
   declare id: string;
   declare project_id: string;
   declare type: string;
@@ -181,7 +199,9 @@ interface ProjectVersionAttributes {
 }
 type ProjectVersionCreation = Optional<ProjectVersionAttributes, 'id' | 'summary'>;
 
-export class ProjectVersion extends Model<ProjectVersionAttributes, ProjectVersionCreation> implements ProjectVersionAttributes {
+export class ProjectVersion
+  extends Model<ProjectVersionAttributes, ProjectVersionCreation>
+  implements ProjectVersionAttributes {
   declare id: string;
   declare project_id: string;
   declare snapshot: Record<string, unknown>;
@@ -210,7 +230,9 @@ interface AttachmentAttributes {
 }
 type AttachmentCreation = Optional<AttachmentAttributes, 'id'>;
 
-export class Attachment extends Model<AttachmentAttributes, AttachmentCreation> implements AttachmentAttributes {
+export class Attachment
+  extends Model<AttachmentAttributes, AttachmentCreation>
+  implements AttachmentAttributes {
   declare id: string;
   declare project_id: string;
   declare filename: string;
@@ -241,7 +263,9 @@ interface CommentAttributes {
 }
 type CommentCreation = Optional<CommentAttributes, 'id' | 'section_id'>;
 
-export class Comment extends Model<CommentAttributes, CommentCreation> implements CommentAttributes {
+export class Comment
+  extends Model<CommentAttributes, CommentCreation>
+  implements CommentAttributes {
   declare id: string;
   declare project_id: string;
   declare section_id: string | null;
@@ -268,7 +292,9 @@ interface ActivityLogAttributes {
 }
 type ActivityLogCreation = Optional<ActivityLogAttributes, 'id' | 'project_id' | 'meta'>;
 
-export class ActivityLog extends Model<ActivityLogAttributes, ActivityLogCreation> implements ActivityLogAttributes {
+export class ActivityLog
+  extends Model<ActivityLogAttributes, ActivityLogCreation>
+  implements ActivityLogAttributes {
   declare id: string;
   declare project_id: string | null;
   declare user_id: string;

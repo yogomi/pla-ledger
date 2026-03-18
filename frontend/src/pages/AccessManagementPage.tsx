@@ -55,7 +55,8 @@ export default function AccessManagementPage() {
       setGrantUserId('');
       load();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to grant';
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message || 'Failed to grant';
       alert(msg);
     }
   };
@@ -63,7 +64,8 @@ export default function AccessManagementPage() {
   if (loading) return <CircularProgress />;
   if (error) return <Alert severity="error">{error}</Alert>;
 
-  const statusColor = (s: string) => s === 'approved' ? 'success' : s === 'rejected' ? 'error' : 'warning';
+  const statusColor = (s: string) =>
+    s === 'approved' ? 'success' : s === 'rejected' ? 'error' : 'warning';
 
   return (
     <Box>
@@ -81,7 +83,11 @@ export default function AccessManagementPage() {
           />
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Role</InputLabel>
-            <Select value={grantRole} label="Role" onChange={e => setGrantRole(e.target.value as 'editor' | 'viewer')}>
+            <Select
+              value={grantRole}
+              label="Role"
+              onChange={e => setGrantRole(e.target.value as 'editor' | 'viewer')}
+            >
               <MenuItem value="editor">{t('editor')}</MenuItem>
               <MenuItem value="viewer">{t('viewer')}</MenuItem>
             </Select>
@@ -99,10 +105,20 @@ export default function AccessManagementPage() {
                 primary={p.user ? `${p.user.name} (${p.user.email})` : p.user_id}
                 secondary={`Role: ${p.role}`}
               />
-              <Chip label={p.role} size="small" color={p.role === 'owner' ? 'primary' : p.role === 'editor' ? 'secondary' : 'default'} />
+              <Chip
+                label={p.role}
+                size="small"
+                color={
+                  p.role === 'owner' ? 'primary'
+                  : p.role === 'editor' ? 'secondary'
+                  : 'default'
+                }
+              />
             </ListItem>
           ))}
-          {permissions.length === 0 && <Typography color="text.secondary">No permissions</Typography>}
+          {permissions.length === 0 && (
+            <Typography color="text.secondary">No permissions</Typography>
+          )}
         </List>
       </Paper>
 
@@ -113,7 +129,9 @@ export default function AccessManagementPage() {
         {requests.map(r => (
           <ListItem key={r.id} divider alignItems="flex-start">
             <ListItemText
-              primary={`${r.request_type === 'edit' ? 'Edit' : 'View'} request from ${r.requester_id}`}
+              primary={
+                `${r.request_type === 'edit' ? 'Edit' : 'View'} request from ${r.requester_id}`
+              }
               secondary={
                 <>
                   {r.message && <span>{r.message}<br /></span>}
@@ -122,13 +140,26 @@ export default function AccessManagementPage() {
               }
             />
             <ListItemSecondaryAction>
-              <Chip label={t(r.status)} size="small" color={statusColor(r.status) as 'success' | 'error' | 'warning'} sx={{ mr: 1 }} />
+              <Chip
+                label={t(r.status)}
+                size="small"
+                color={statusColor(r.status) as 'success' | 'error' | 'warning'}
+                sx={{ mr: 1 }}
+              />
               {r.status === 'pending' && (
                 <>
-                  <IconButton size="small" color="success" onClick={() => handleProcess(r.id, 'approve')}>
+                  <IconButton
+                    size="small"
+                    color="success"
+                    onClick={() => handleProcess(r.id, 'approve')}
+                  >
                     <CheckIcon />
                   </IconButton>
-                  <IconButton size="small" color="error" onClick={() => handleProcess(r.id, 'reject')}>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => handleProcess(r.id, 'reject')}
+                  >
                     <CloseIcon />
                   </IconButton>
                 </>
@@ -136,7 +167,9 @@ export default function AccessManagementPage() {
             </ListItemSecondaryAction>
           </ListItem>
         ))}
-        {requests.length === 0 && <Typography color="text.secondary">No access requests</Typography>}
+        {requests.length === 0 && (
+          <Typography color="text.secondary">No access requests</Typography>
+        )}
       </List>
     </Box>
   );

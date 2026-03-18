@@ -63,9 +63,18 @@ export default function PublicProjectsPage() {
         />
         <FormControl size="small" sx={{ minWidth: 120 }}>
           <InputLabel>{t('currency')}</InputLabel>
-          <Select value={currency} label={t('currency')} onChange={e => { setCurrency(e.target.value); load(keyword, e.target.value); }}>
+          <Select
+            value={currency}
+            label={t('currency')}
+            onChange={e => {
+              setCurrency(e.target.value);
+              load(keyword, e.target.value);
+            }}
+          >
             <MenuItem value="">All</MenuItem>
-            {['JPY', 'USD', 'EUR', 'GBP', 'CNY', 'KRW'].map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+            {['JPY', 'USD', 'EUR', 'GBP', 'CNY', 'KRW'].map(c => (
+              <MenuItem key={c} value={c}>{c}</MenuItem>
+            ))}
           </Select>
         </FormControl>
         <Button variant="contained" onClick={() => load()}>{t('search')}</Button>
@@ -84,7 +93,12 @@ export default function PublicProjectsPage() {
                   <CardContent>
                     <Typography variant="h6" noWrap>{getTitle(p.title)}</Typography>
                     {getSummary(p.summary) && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1 }} noWrap>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 0.5, mb: 1 }}
+                        noWrap
+                      >
                         {getSummary(p.summary)}
                       </Typography>
                     )}
@@ -99,7 +113,13 @@ export default function PublicProjectsPage() {
                     )}
                   </CardContent>
                   <CardActions>
-                    <Button size="small" component={RouterLink} to={`/projects/${p.id}`}>View</Button>
+                    <Button
+                      size="small"
+                      component={RouterLink}
+                      to={`/projects/${p.id}`}
+                    >
+                      View
+                    </Button>
                   </CardActions>
                 </Card>
               </Grid>

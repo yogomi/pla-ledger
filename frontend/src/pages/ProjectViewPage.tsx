@@ -14,7 +14,12 @@ import { useAuth } from '../app/AuthContext';
 import api from '../utils/api';
 
 interface Comment { id: string; author_id: string; body: string; created_at: string; }
-interface Version { id: string; created_by: string; summary: Record<string, string> | null; created_at: string; }
+interface Version {
+  id: string;
+  created_by: string;
+  summary: Record<string, string> | null;
+  created_at: string;
+}
 interface Attachment { id: string; filename: string; url: string; mime_type: string; size: number; }
 interface Section { id: string; type: string; content: Record<string, unknown>; version: number; }
 interface Project {
@@ -78,8 +83,14 @@ export default function ProjectViewPage() {
     const form = new FormData();
     form.append('file', file);
     try {
-      const r = await api.post(`/projects/${id}/attachments`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setProject(prev => prev ? { ...prev, attachments: [...prev.attachments, r.data.data.attachment] } : prev);
+      const r = await api.post(
+        `/projects/${id}/attachments`,
+        form,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+      setProject(prev =>
+        prev ? { ...prev, attachments: [...prev.attachments, r.data.data.attachment] } : prev,
+      );
     } catch {
       alert('Failed to upload file');
     }
@@ -100,7 +111,11 @@ export default function ProjectViewPage() {
         <Box>
           <Typography variant="h4">{getTitle(project.title)}</Typography>
           <Box mt={1} display="flex" gap={1} flexWrap="wrap">
-            <Chip label={t(project.visibility)} color={project.visibility === 'public' ? 'success' : 'default'} size="small" />
+            <Chip
+              label={t(project.visibility)}
+              color={project.visibility === 'public' ? 'success' : 'default'}
+              size="small"
+            />
             <Chip label={project.currency} variant="outlined" size="small" />
             {project.stage && <Chip label={project.stage} variant="outlined" size="small" />}
             {owner && <Chip label={`Owner: ${owner.name}`} variant="outlined" size="small" />}
@@ -108,13 +123,23 @@ export default function ProjectViewPage() {
         </Box>
         <Box display="flex" gap={1}>
           {canEdit && (
-            <Button variant="outlined" startIcon={<EditIcon />} component={RouterLink} to={`/projects/${id}/edit`}>
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              component={RouterLink}
+              to={`/projects/${id}/edit`}
+            >
               {t('edit_project')}
             </Button>
           )}
           {isOwner && (
             <>
-              <Button variant="outlined" startIcon={<SecurityIcon />} component={RouterLink} to={`/projects/${id}/access`}>
+              <Button
+                variant="outlined"
+                startIcon={<SecurityIcon />}
+                component={RouterLink}
+                to={`/projects/${id}/access`}
+              >
                 {t('access_management')}
               </Button>
               <IconButton color="error" onClick={handleDelete}><DeleteIcon /></IconButton>
@@ -163,7 +188,10 @@ export default function ProjectViewPage() {
                         <TableRow key={key}>
                           <TableCell>{t(key) || key}</TableCell>
                           <TableCell>
-                            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
+                            >
                               {JSON.stringify(val)}
                             </Typography>
                           </TableCell>
@@ -179,7 +207,10 @@ export default function ProjectViewPage() {
             <Grid item xs={12} key={s.id}>
               <Paper elevation={1} sx={{ p: 2 }}>
                 <Typography variant="h6" mb={1}>{t(s.type) || s.type}</Typography>
-                <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.8rem' }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.8rem' }}
+                >
                   {JSON.stringify(s.content, null, 2)}
                 </Typography>
               </Paper>
@@ -198,12 +229,18 @@ export default function ProjectViewPage() {
               </Button>
             </Box>
           )}
-          {project.attachments?.length === 0 && <Typography color="text.secondary">No attachments</Typography>}
+          {project.attachments?.length === 0 && (
+            <Typography color="text.secondary">No attachments</Typography>
+          )}
           <List>
             {project.attachments?.map(att => (
               <ListItem key={att.id} divider>
                 <ListItemText
-                  primary={<a href={att.url} target="_blank" rel="noopener noreferrer">{att.filename}</a>}
+                  primary={
+                    <a href={att.url} target="_blank" rel="noopener noreferrer">
+                      {att.filename}
+                    </a>
+                  }
                   secondary={`${att.mime_type} — ${(att.size / 1024).toFixed(1)} KB`}
                 />
               </ListItem>
@@ -217,7 +254,10 @@ export default function ProjectViewPage() {
           <List>
             {comments.map(c => (
               <ListItem key={c.id} alignItems="flex-start" divider>
-                <ListItemText primary={c.body} secondary={new Date(c.created_at).toLocaleString()} />
+                <ListItemText
+                  primary={c.body}
+                  secondary={new Date(c.created_at).toLocaleString()}
+                />
               </ListItem>
             ))}
           </List>
@@ -249,7 +289,11 @@ export default function ProjectViewPage() {
           {versions.map(v => (
             <ListItem key={v.id} divider>
               <ListItemText
-                primary={v.summary ? (v.summary[i18n.language] || v.summary['en'] || '') : 'Version'}
+                primary={
+                  v.summary
+                    ? (v.summary[i18n.language] || v.summary['en'] || '')
+                    : 'Version'
+                }
                 secondary={new Date(v.created_at).toLocaleString()}
               />
             </ListItem>
