@@ -78,6 +78,7 @@ const en = {
     total: 'Total',
     startup_costs_section: 'Startup Costs',
     no_items: 'No items',
+    simulation: 'Simulation',
   },
 };
 
@@ -158,6 +159,7 @@ const ja = {
     total: '合計',
     startup_costs_section: 'スタートアップコスト',
     no_items: '項目がありません',
+    simulation: 'シミュレーション',
   },
 };
 

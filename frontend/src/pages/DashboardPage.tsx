@@ -95,7 +95,7 @@ export default function DashboardPage() {
                         component={RouterLink}
                         to={`/projects/${p.id}/simulation`}
                       >
-                        シミュレーション
+                        {t('simulation')}
                       </Button>
                     </CardActions>
                   </Card>

@@ -120,14 +120,15 @@ export default function ProjectViewPage() {
           </Box>
         </Box>
         <Box display="flex" gap={1}>
-          {(canEdit || role === 'viewer') && (
+          {/* viewer・editor・owner いずれかのロールを持つユーザーがシミュレーションにアクセスできる */}
+          {role && (
             <Button
               variant="outlined"
               startIcon={<BarChartIcon />}
               component={RouterLink}
               to={`/projects/${id}/simulation`}
             >
-              シミュレーション
+              {t('simulation')}
             </Button>
           )}
           {canEdit && (
