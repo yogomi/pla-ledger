@@ -61,6 +61,7 @@ export default function SalesSimulationMonthlyEditor({
   const deleteItemMutation = useDeleteSalesItem(projectId);
 
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryOrder, setNewCategoryOrder] = useState<number | ''>('');
   const [addingCategory, setAddingCategory] = useState(false);
   /** カテゴリごとの新規アイテム名入力状態 */
   const [newItemNames, setNewItemNames] = useState<Record<string, string>>({});
@@ -97,10 +98,14 @@ export default function SalesSimulationMonthlyEditor({
   const handleAddCategory = () => {
     if (!newCategoryName.trim()) return;
     createCategoryMutation.mutate(
-      { categoryName: newCategoryName.trim() },
+      {
+        categoryName: newCategoryName.trim(),
+        categoryOrder: typeof newCategoryOrder === 'number' ? newCategoryOrder : undefined,
+      },
       {
         onSuccess: () => {
           setNewCategoryName('');
+          setNewCategoryOrder('');
           setAddingCategory(false);
         },
       },
@@ -382,6 +387,18 @@ export default function SalesSimulationMonthlyEditor({
               }}
               autoFocus
               aria-label={t('new_category_name_placeholder')}
+            />
+            <TextField
+              size="small"
+              type="number"
+              label={t('priority')}
+              value={newCategoryOrder}
+              onChange={e =>
+                setNewCategoryOrder(e.target.value === '' ? '' : parseInt(e.target.value, 10))
+              }
+              inputProps={{ min: 0, step: 1 }}
+              sx={{ width: 100 }}
+              aria-label={t('priority')}
             />
             <Button
               size="small"
