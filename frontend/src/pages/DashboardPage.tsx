@@ -90,6 +90,13 @@ export default function DashboardPage() {
                       <Button size="small" component={RouterLink} to={`/projects/${p.id}/edit`}>
                         {t('edit_project')}
                       </Button>
+                      <Button
+                        size="small"
+                        component={RouterLink}
+                        to={`/projects/${p.id}/simulation`}
+                      >
+                        シミュレーション
+                      </Button>
                     </CardActions>
                   </Card>
                 </Grid>

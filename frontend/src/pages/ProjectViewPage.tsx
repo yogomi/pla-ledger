@@ -8,6 +8,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SecurityIcon from '@mui/icons-material/Security';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../app/AuthContext';
 import api from '../utils/api';
@@ -119,6 +120,16 @@ export default function ProjectViewPage() {
           </Box>
         </Box>
         <Box display="flex" gap={1}>
+          {(canEdit || role === 'viewer') && (
+            <Button
+              variant="outlined"
+              startIcon={<BarChartIcon />}
+              component={RouterLink}
+              to={`/projects/${id}/simulation`}
+            >
+              シミュレーション
+            </Button>
+          )}
           {canEdit && (
             <Button
               variant="outlined"

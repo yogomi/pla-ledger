@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -8,6 +8,7 @@ import {
   Button,
   Chip,
   CircularProgress,
+  IconButton,
   Paper,
   Table,
   TableBody,
@@ -15,12 +16,22 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SaveIcon from '@mui/icons-material/Save';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
-import { useSalesSimulationMonthly, useUpdateSalesSimulation } from '../hooks/useSalesSimulation';
+import {
+  useSalesSimulationMonthly,
+  useUpdateSalesSimulation,
+  useCreateSalesCategory,
+  useDeleteSalesCategory,
+  useCreateSalesItem,
+  useDeleteSalesItem,
+} from '../hooks/useSalesSimulation';
 import { ItemInputData } from '../types/SalesSimulation';
 
 interface SalesSimulationMonthlyEditorProps {
@@ -34,6 +45,7 @@ interface FormValues {
 
 /**
  * 指定月の売上シミュレーションをカテゴリ別アコーディオンで表示・編集するコンポーネント。
+ * カテゴリ・アイテムの追加・削除も行える。
  */
 export default function SalesSimulationMonthlyEditor({
   projectId,
@@ -41,6 +53,15 @@ export default function SalesSimulationMonthlyEditor({
 }: SalesSimulationMonthlyEditorProps) {
   const { data, isLoading, isError } = useSalesSimulationMonthly(projectId, yearMonth);
   const mutation = useUpdateSalesSimulation(projectId);
+  const createCategoryMutation = useCreateSalesCategory(projectId);
+  const deleteCategoryMutation = useDeleteSalesCategory(projectId);
+  const createItemMutation = useCreateSalesItem(projectId);
+  const deleteItemMutation = useDeleteSalesItem(projectId);
+
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [addingCategory, setAddingCategory] = useState(false);
+  /** カテゴリごとの新規アイテム名入力状態 */
+  const [newItemNames, setNewItemNames] = useState<Record<string, string>>({});
 
   const { control, handleSubmit, reset } = useForm<FormValues>({ defaultValues: { items: [] } });
   const { fields } = useFieldArray({ control, name: 'items' });
@@ -68,6 +89,46 @@ export default function SalesSimulationMonthlyEditor({
 
   const onSubmit = (values: FormValues) => {
     mutation.mutate({ yearMonth, items: values.items });
+  };
+
+  /** カテゴリを追加する */
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) return;
+    createCategoryMutation.mutate(
+      { categoryName: newCategoryName.trim() },
+      {
+        onSuccess: () => {
+          setNewCategoryName('');
+          setAddingCategory(false);
+        },
+      },
+    );
+  };
+
+  /** カテゴリを削除する */
+  const handleDeleteCategory = (categoryId: string, categoryName: string) => {
+    if (!window.confirm(`カテゴリ「${categoryName}」と配下の品目をすべて削除しますか？`)) return;
+    deleteCategoryMutation.mutate({ categoryId });
+  };
+
+  /** アイテムを追加する */
+  const handleAddItem = (categoryId: string) => {
+    const name = (newItemNames[categoryId] ?? '').trim();
+    if (!name) return;
+    createItemMutation.mutate(
+      { categoryId, itemName: name },
+      {
+        onSuccess: () => {
+          setNewItemNames(prev => ({ ...prev, [categoryId]: '' }));
+        },
+      },
+    );
+  };
+
+  /** アイテムを削除する */
+  const handleDeleteItem = (itemId: string, itemName: string) => {
+    if (!window.confirm(`品目「${itemName}」を削除しますか？`)) return;
+    deleteItemMutation.mutate({ itemId });
   };
 
   if (isLoading) {
@@ -102,7 +163,28 @@ export default function SalesSimulationMonthlyEditor({
       {categoryGroups.map(cat => (
         <Accordion key={cat.categoryId} defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography fontWeight="bold">{cat.categoryName}</Typography>
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              width="100%"
+              pr={1}
+            >
+              <Typography fontWeight="bold">{cat.categoryName}</Typography>
+              <Tooltip title="カテゴリを削除">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDeleteCategory(cat.categoryId, cat.categoryName);
+                  }}
+                  aria-label={`カテゴリ ${cat.categoryName} を削除`}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Box>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0 }}>
             <Paper variant="outlined" square>
@@ -116,6 +198,7 @@ export default function SalesSimulationMonthlyEditor({
                     <TableCell align="right">原価率 (%)</TableCell>
                     <TableCell align="right">月間売上</TableCell>
                     <TableCell align="right">月間原価</TableCell>
+                    <TableCell align="center">操作</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -218,15 +301,108 @@ export default function SalesSimulationMonthlyEditor({
                         <TableCell align="right">
                           {originalItem?.monthlyCost.toLocaleString() ?? '-'}
                         </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title="品目を削除">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() =>
+                                handleDeleteItem(
+                                  fields[idx]?.itemId ?? '',
+                                  fields[idx]?.itemName ?? '',
+                                )
+                              }
+                              aria-label={`品目 ${fields[idx]?.itemName ?? ''} を削除`}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
+                  {/* 新規品目追加行 */}
+                  <TableRow>
+                    <TableCell colSpan={8}>
+                      <Box display="flex" alignItems="center" gap={1} p={0.5}>
+                        <TextField
+                          size="small"
+                          placeholder="新しい品目名"
+                          value={newItemNames[cat.categoryId] ?? ''}
+                          onChange={e =>
+                            setNewItemNames(prev => ({
+                              ...prev,
+                              [cat.categoryId]: e.target.value,
+                            }))
+                          }
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddItem(cat.categoryId);
+                            }
+                          }}
+                          sx={{ minWidth: '200px' }}
+                          aria-label="新しい品目名"
+                        />
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<AddIcon />}
+                          onClick={() => handleAddItem(cat.categoryId)}
+                          disabled={createItemMutation.isPending}
+                        >
+                          品目を追加
+                        </Button>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </Paper>
           </AccordionDetails>
         </Accordion>
       ))}
+
+      {/* カテゴリ追加エリア */}
+      <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
+        {addingCategory ? (
+          <Box display="flex" alignItems="center" gap={1}>
+            <TextField
+              size="small"
+              placeholder="新しいカテゴリ名"
+              value={newCategoryName}
+              onChange={e => setNewCategoryName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCategory();
+                }
+                if (e.key === 'Escape') setAddingCategory(false);
+              }}
+              autoFocus
+              aria-label="新しいカテゴリ名"
+            />
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleAddCategory}
+              disabled={createCategoryMutation.isPending}
+            >
+              追加
+            </Button>
+            <Button size="small" onClick={() => setAddingCategory(false)}>キャンセル</Button>
+          </Box>
+        ) : (
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={() => setAddingCategory(true)}
+            size="small"
+          >
+            カテゴリを追加
+          </Button>
+        )}
+      </Paper>
 
       <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center">

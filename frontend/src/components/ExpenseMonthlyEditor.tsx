@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  IconButton,
   Paper,
   Table,
   TableBody,
@@ -11,9 +12,12 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
 import {
   useExpenseSimulationMonthly,
@@ -37,6 +41,7 @@ interface VariableFormValues {
 
 /**
  * 固定費テーブルの編集フォームコンポーネント。
+ * 行の追加・削除ができる。
  */
 function FixedExpenseForm({
   projectId,
@@ -51,7 +56,7 @@ function FixedExpenseForm({
   const { control, handleSubmit, reset } = useForm<FixedFormValues>({
     defaultValues: { expenses: defaultExpenses },
   });
-  const { fields } = useFieldArray({ control, name: 'expenses' });
+  const { fields, append, remove } = useFieldArray({ control, name: 'expenses' });
 
   useEffect(() => {
     reset({ expenses: defaultExpenses });
@@ -69,9 +74,17 @@ function FixedExpenseForm({
             <TableCell>カテゴリ名</TableCell>
             <TableCell align="right">月額</TableCell>
             <TableCell>備考</TableCell>
+            <TableCell align="center">操作</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
+          {fields.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={4} align="center">
+                <Typography variant="body2" color="text.secondary">項目なし</Typography>
+              </TableCell>
+            </TableRow>
+          )}
           {fields.map((field, idx) => (
             <TableRow key={field.id}>
               <TableCell>
@@ -115,11 +128,31 @@ function FixedExpenseForm({
                   )}
                 />
               </TableCell>
+              <TableCell align="center">
+                <Tooltip title="行を削除">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => remove(idx)}
+                    aria-label="行を削除"
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-      <Box display="flex" justifyContent="flex-end" p={1} gap={1}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" p={1} gap={1}>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<AddIcon />}
+          onClick={() => append({ categoryName: '', amount: 0, description: null })}
+        >
+          行を追加
+        </Button>
         <Button
           type="submit"
           variant="contained"
@@ -138,6 +171,7 @@ function FixedExpenseForm({
 
 /**
  * 変動費テーブルの編集フォームコンポーネント。
+ * 行の追加・削除ができる。
  */
 function VariableExpenseForm({
   projectId,
@@ -152,7 +186,7 @@ function VariableExpenseForm({
   const { control, handleSubmit, reset } = useForm<VariableFormValues>({
     defaultValues: { expenses: defaultExpenses },
   });
-  const { fields } = useFieldArray({ control, name: 'expenses' });
+  const { fields, append, remove } = useFieldArray({ control, name: 'expenses' });
 
   useEffect(() => {
     reset({ expenses: defaultExpenses });
@@ -170,9 +204,17 @@ function VariableExpenseForm({
             <TableCell>カテゴリ名</TableCell>
             <TableCell align="right">月額</TableCell>
             <TableCell>備考</TableCell>
+            <TableCell align="center">操作</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
+          {fields.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={4} align="center">
+                <Typography variant="body2" color="text.secondary">項目なし</Typography>
+              </TableCell>
+            </TableRow>
+          )}
           {fields.map((field, idx) => (
             <TableRow key={field.id}>
               <TableCell>
@@ -216,11 +258,31 @@ function VariableExpenseForm({
                   )}
                 />
               </TableCell>
+              <TableCell align="center">
+                <Tooltip title="行を削除">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => remove(idx)}
+                    aria-label="行を削除"
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-      <Box display="flex" justifyContent="flex-end" p={1} gap={1}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" p={1} gap={1}>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<AddIcon />}
+          onClick={() => append({ categoryName: '', amount: 0, description: null })}
+        >
+          行を追加
+        </Button>
         <Button
           type="submit"
           variant="contained"

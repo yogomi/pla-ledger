@@ -96,3 +96,64 @@ export async function updateVariableExpenses(
 ): Promise<void> {
   await api.put(`/projects/${projectId}/variable-expenses/${yearMonth}`, { expenses });
 }
+
+/**
+ * 売上シミュレーションカテゴリを作成する。
+ * @param projectId プロジェクトID
+ * @param categoryName カテゴリ名
+ * @param categoryOrder 表示順序
+ */
+export async function createSalesCategory(
+  projectId: string,
+  categoryName: string,
+  categoryOrder?: number,
+): Promise<{ id: string; project_id: string; category_name: string; category_order: number }> {
+  const res = await api.post(
+    `/projects/${projectId}/sales-simulations/categories`,
+    { categoryName, categoryOrder },
+  );
+  return res.data.data.category;
+}
+
+/**
+ * 売上シミュレーションカテゴリを削除する。
+ * @param projectId プロジェクトID
+ * @param categoryId カテゴリID
+ */
+export async function deleteSalesCategory(
+  projectId: string,
+  categoryId: string,
+): Promise<void> {
+  await api.delete(`/projects/${projectId}/sales-simulations/categories/${categoryId}`);
+}
+
+/**
+ * 売上シミュレーションアイテムを作成する。
+ * @param projectId プロジェクトID
+ * @param categoryId カテゴリID
+ * @param itemName アイテム名
+ */
+export async function createSalesItem(
+  projectId: string,
+  categoryId: string,
+  itemName: string,
+): Promise<{ id: string; category_id: string; project_id: string; item_name: string }> {
+  const res = await api.post(
+    `/projects/${projectId}/sales-simulations/items`,
+    { categoryId, itemName },
+  );
+  return res.data.data.item;
+}
+
+/**
+ * 売上シミュレーションアイテムを削除する。
+ * @param projectId プロジェクトID
+ * @param itemId アイテムID
+ */
+export async function deleteSalesItem(
+  projectId: string,
+  itemId: string,
+): Promise<void> {
+  await api.delete(`/projects/${projectId}/sales-simulations/items/${itemId}`);
+}
+

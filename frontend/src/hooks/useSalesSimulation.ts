@@ -6,6 +6,10 @@ import {
   getProfitLossYearly,
   updateFixedExpenses,
   updateVariableExpenses,
+  createSalesCategory,
+  deleteSalesCategory,
+  createSalesItem,
+  deleteSalesItem,
 } from '../api/salesSimulations';
 import { ItemInputData, ExpenseInputItem } from '../types/SalesSimulation';
 
@@ -89,6 +93,65 @@ export function useUpdateVariableExpenses(projectId: string) {
       void queryClient.invalidateQueries({
         queryKey: ['expenseSimulation', projectId, variables.yearMonth],
       });
+    },
+  });
+}
+
+/**
+ * 売上シミュレーションカテゴリを作成するミューテーションフック。
+ * 成功後に該当プロジェクト・月の売上シミュレーションキャッシュを無効化する。
+ */
+export function useCreateSalesCategory(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ categoryName, categoryOrder }: {
+      categoryName: string;
+      categoryOrder?: number;
+    }) => createSalesCategory(projectId, categoryName, categoryOrder),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['salesSimulation', projectId] });
+    },
+  });
+}
+
+/**
+ * 売上シミュレーションカテゴリを削除するミューテーションフック。
+ */
+export function useDeleteSalesCategory(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ categoryId }: { categoryId: string }) =>
+      deleteSalesCategory(projectId, categoryId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['salesSimulation', projectId] });
+    },
+  });
+}
+
+/**
+ * 売上シミュレーションアイテムを作成するミューテーションフック。
+ */
+export function useCreateSalesItem(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ categoryId, itemName }: { categoryId: string; itemName: string }) =>
+      createSalesItem(projectId, categoryId, itemName),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['salesSimulation', projectId] });
+    },
+  });
+}
+
+/**
+ * 売上シミュレーションアイテムを削除するミューテーションフック。
+ */
+export function useDeleteSalesItem(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ itemId }: { itemId: string }) =>
+      deleteSalesItem(projectId, itemId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['salesSimulation', projectId] });
     },
   });
 }
