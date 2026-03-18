@@ -3,7 +3,6 @@ import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, CircularProgress, Alert, Chip, Button, Divider,
   Paper, Grid, TextField, List, ListItem, ListItemText, Tab, Tabs,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -12,6 +11,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../app/AuthContext';
 import api from '../utils/api';
+import StartupCostTable, { StartupCostItem } from '../components/StartupCostTable';
 
 interface Comment { id: string; author_id: string; body: string; created_at: string; }
 interface Version {
@@ -171,32 +171,20 @@ export default function ProjectViewPage() {
           {financeSection && (
             <Grid item xs={12}>
               <Paper elevation={1} sx={{ p: 2 }}>
-                <Typography variant="h6" mb={2}>{t('financial_template')}</Typography>
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>{t('sections')}</TableCell>
-                        <TableCell>Content</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {Object.entries(financeSection.content).map(([key, val]) => (
-                        <TableRow key={key}>
-                          <TableCell>{t(key) || key}</TableCell>
-                          <TableCell>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
-                            >
-                              {JSON.stringify(val)}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                <Typography variant="h6" mb={2}>{t('startup_costs_section')}</Typography>
+                {(() => {
+                  const sc = financeSection.content?.startup_costs as
+                    | { items?: StartupCostItem[] }
+                    | undefined;
+                  const items: StartupCostItem[] = sc?.items ?? [];
+                  return (
+                    <StartupCostTable
+                      items={items}
+                      currency={project.currency}
+                      readOnly
+                    />
+                  );
+                })()}
               </Paper>
             </Grid>
           )}

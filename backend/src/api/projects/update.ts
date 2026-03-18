@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { Project, ProjectVersion, ActivityLog } from '../../models';
+import { Project, ProjectSection, ProjectVersion, ActivityLog } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { ProjectUpdateSchema } from '../../schemas';
 import { getProjectRole } from './utils';
@@ -24,6 +24,7 @@ import { getProjectRole } from './utils';
  *   - currency: string (optional) - 通貨コード
  *   - stage: string (optional) - ステージ
  *   - tags: string[] (optional) - タグ一覧
+ *   - sections: Array<{ type: string, content: any }> (optional) - セクション一覧（upsert）
  *   バリデーションはZodで行い、失敗時は
  *   { success: false, code: 'invalid_query', message: エラー内容, data: null }
  *
@@ -87,15 +88,36 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     });
     return;
   }
-  const updates = parsed.data;
-  if (updates.visibility === 'public' && !project.published_at) {
-    (updates as Record<string, unknown>)['published_at'] = new Date();
+  const { sections, ...projectUpdates } = parsed.data;
+  if (projectUpdates.visibility === 'public' && !project.published_at) {
+    (projectUpdates as Record<string, unknown>)['published_at'] = new Date();
   }
-  await project.update(updates);
+  await project.update(projectUpdates);
+  if (sections && sections.length > 0) {
+    // 同一typeの競合を避けるため、逐次処理する
+    for (const s of sections) {
+      const sContent = (s.content as Record<string, unknown>) ?? {};
+      const existing = await ProjectSection.findOne({
+        where: { project_id: project.id, type: s.type },
+      });
+      if (existing) {
+        // シャローマージ: contentの各トップレベルキーを上書き
+        const merged = { ...existing.content, ...sContent };
+        await existing.update({ content: merged, version: existing.version + 1 });
+      } else {
+        await ProjectSection.create({
+          project_id: project.id,
+          type: s.type,
+          content: sContent,
+          created_by: req.user!.id,
+        });
+      }
+    }
+  }
   await ProjectVersion.create({
     project_id: project.id,
     snapshot: { ...project.toJSON() },
-    summary: updates.summary ?? null,
+    summary: projectUpdates.summary ?? null,
     created_by: req.user!.id,
   });
   await ActivityLog.create({
