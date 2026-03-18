@@ -310,6 +310,211 @@ ActivityLog.init({
   meta: { type: DataTypes.JSON, defaultValue: {} },
 }, { sequelize, tableName: 'activity_logs', underscored: true, updatedAt: false });
 
+// ========== SalesSimulationCategory ==========
+interface SalesSimulationCategoryAttributes {
+  id: string;
+  project_id: string;
+  category_name: string;
+  category_order: number;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type SalesSimulationCategoryCreation = Optional<
+  SalesSimulationCategoryAttributes,
+  'id' | 'category_order'
+>;
+
+export class SalesSimulationCategory
+  extends Model<SalesSimulationCategoryAttributes, SalesSimulationCategoryCreation>
+  implements SalesSimulationCategoryAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare category_name: string;
+  declare category_order: number;
+}
+
+SalesSimulationCategory.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  category_name: { type: DataTypes.STRING, allowNull: false },
+  category_order: { type: DataTypes.INTEGER, defaultValue: 0 },
+}, { sequelize, tableName: 'sales_simulation_categories', underscored: true });
+
+// ========== SalesSimulationItem ==========
+interface SalesSimulationItemAttributes {
+  id: string;
+  category_id: string;
+  project_id: string;
+  item_name: string;
+  item_order: number;
+  unit_price: number;
+  quantity: number;
+  operating_days: number;
+  cost_rate: number;
+  description: string | null;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type SalesSimulationItemCreation = Optional<
+  SalesSimulationItemAttributes,
+  'id' | 'item_order' | 'unit_price' | 'quantity' | 'operating_days' | 'cost_rate' | 'description'
+>;
+
+export class SalesSimulationItem
+  extends Model<SalesSimulationItemAttributes, SalesSimulationItemCreation>
+  implements SalesSimulationItemAttributes {
+  declare id: string;
+  declare category_id: string;
+  declare project_id: string;
+  declare item_name: string;
+  declare item_order: number;
+  declare unit_price: number;
+  declare quantity: number;
+  declare operating_days: number;
+  declare cost_rate: number;
+  declare description: string | null;
+}
+
+SalesSimulationItem.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  category_id: { type: DataTypes.UUID, allowNull: false },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  item_name: { type: DataTypes.STRING, allowNull: false },
+  item_order: { type: DataTypes.INTEGER, defaultValue: 0 },
+  unit_price: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
+  quantity: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
+  operating_days: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
+  cost_rate: { type: DataTypes.DECIMAL(5, 2), defaultValue: 0 },
+  description: { type: DataTypes.TEXT, defaultValue: null },
+}, { sequelize, tableName: 'sales_simulation_items', underscored: true });
+
+// ========== SalesSimulationSnapshot ==========
+interface ItemSnapshotData {
+  itemId: string;
+  categoryId: string;
+  categoryName: string;
+  categoryOrder: number;
+  itemName: string;
+  itemOrder: number;
+  unitPrice: number;
+  quantity: number;
+  operatingDays: number;
+  costRate: number;
+  description: string | null | undefined;
+}
+
+interface SalesSimulationSnapshotAttributes {
+  id: string;
+  project_id: string;
+  year_month: string;
+  items_snapshot: ItemSnapshotData[];
+  monthly_total: number;
+  monthly_cost: number;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type SalesSimulationSnapshotCreation = Optional<
+  SalesSimulationSnapshotAttributes,
+  'id' | 'items_snapshot' | 'monthly_total' | 'monthly_cost'
+>;
+
+export class SalesSimulationSnapshot
+  extends Model<SalesSimulationSnapshotAttributes, SalesSimulationSnapshotCreation>
+  implements SalesSimulationSnapshotAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare year_month: string;
+  declare items_snapshot: ItemSnapshotData[];
+  declare monthly_total: number;
+  declare monthly_cost: number;
+}
+
+SalesSimulationSnapshot.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  year_month: { type: DataTypes.STRING(7), allowNull: false },
+  items_snapshot: { type: DataTypes.JSON, defaultValue: [] },
+  monthly_total: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
+  monthly_cost: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
+}, {
+  sequelize,
+  tableName: 'sales_simulation_snapshots',
+  underscored: true,
+  indexes: [{ unique: true, fields: ['project_id', 'year_month'] }],
+});
+
+// ========== FixedExpense ==========
+interface FixedExpenseAttributes {
+  id: string;
+  project_id: string;
+  year_month: string;
+  category_name: string;
+  amount: number;
+  description: string | null;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type FixedExpenseCreation = Optional<
+  FixedExpenseAttributes,
+  'id' | 'amount' | 'description'
+>;
+
+export class FixedExpense
+  extends Model<FixedExpenseAttributes, FixedExpenseCreation>
+  implements FixedExpenseAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare year_month: string;
+  declare category_name: string;
+  declare amount: number;
+  declare description: string | null;
+}
+
+FixedExpense.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  year_month: { type: DataTypes.STRING(7), allowNull: false },
+  category_name: { type: DataTypes.STRING, allowNull: false },
+  amount: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
+  description: { type: DataTypes.TEXT, defaultValue: null },
+}, { sequelize, tableName: 'fixed_expenses', underscored: true });
+
+// ========== VariableExpense ==========
+interface VariableExpenseAttributes {
+  id: string;
+  project_id: string;
+  year_month: string;
+  category_name: string;
+  amount: number;
+  description: string | null;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type VariableExpenseCreation = Optional<
+  VariableExpenseAttributes,
+  'id' | 'amount' | 'description'
+>;
+
+export class VariableExpense
+  extends Model<VariableExpenseAttributes, VariableExpenseCreation>
+  implements VariableExpenseAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare year_month: string;
+  declare category_name: string;
+  declare amount: number;
+  declare description: string | null;
+}
+
+VariableExpense.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  year_month: { type: DataTypes.STRING(7), allowNull: false },
+  category_name: { type: DataTypes.STRING, allowNull: false },
+  amount: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
+  description: { type: DataTypes.TEXT, defaultValue: null },
+}, { sequelize, tableName: 'variable_expenses', underscored: true });
+
 // Associations
 Project.hasMany(ProjectSection, { foreignKey: 'project_id', as: 'sections' });
 ProjectSection.belongsTo(Project, { foreignKey: 'project_id' });
@@ -325,5 +530,20 @@ Comment.belongsTo(Project, { foreignKey: 'project_id' });
 
 User.hasMany(Permission, { foreignKey: 'user_id', as: 'permissions' });
 Permission.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+Project.hasMany(SalesSimulationCategory, { foreignKey: 'project_id', as: 'salesCategories' });
+SalesSimulationCategory.belongsTo(Project, { foreignKey: 'project_id' });
+
+SalesSimulationCategory.hasMany(SalesSimulationItem, { foreignKey: 'category_id', as: 'items' });
+SalesSimulationItem.belongsTo(SalesSimulationCategory, { foreignKey: 'category_id' });
+
+Project.hasMany(SalesSimulationSnapshot, { foreignKey: 'project_id', as: 'salesSnapshots' });
+SalesSimulationSnapshot.belongsTo(Project, { foreignKey: 'project_id' });
+
+Project.hasMany(FixedExpense, { foreignKey: 'project_id', as: 'fixedExpenses' });
+FixedExpense.belongsTo(Project, { foreignKey: 'project_id' });
+
+Project.hasMany(VariableExpense, { foreignKey: 'project_id', as: 'variableExpenses' });
+VariableExpense.belongsTo(Project, { foreignKey: 'project_id' });
 
 export default sequelize;
