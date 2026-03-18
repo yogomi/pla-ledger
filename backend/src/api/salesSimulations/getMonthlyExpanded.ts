@@ -144,6 +144,7 @@ router.get('/monthly-expanded', authenticate, async (req: AuthRequest, res: Resp
   const categoryData = categories.map(cat => {
     const items = (cat.get('items') as SalesSimulationItem[] | undefined) ?? [];
     const itemData = items.map(item => {
+      let itemName = item.item_name;
       let unitPrice = Number(item.unit_price);
       let quantity = Number(item.quantity);
       let operatingDays = Number(item.operating_days);
@@ -155,6 +156,7 @@ router.get('/monthly-expanded', authenticate, async (req: AuthRequest, res: Resp
         // スナップショット内の一致するアイテムを検索
         const snapItem = snapshot.items_snapshot.find(s => s.itemId === item.id);
         if (snapItem) {
+          itemName = snapItem.itemName;
           unitPrice = snapItem.unitPrice;
           quantity = snapItem.quantity;
           operatingDays = snapItem.operatingDays;
@@ -170,7 +172,7 @@ router.get('/monthly-expanded', authenticate, async (req: AuthRequest, res: Resp
 
       return {
         itemId: item.id,
-        itemName: item.item_name,
+        itemName,
         itemOrder: item.item_order,
         unitPrice,
         quantity,
