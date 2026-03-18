@@ -136,6 +136,16 @@ export default function ProjectViewPage() {
               variant="outlined"
               startIcon={<EditIcon />}
               component={RouterLink}
+              to={`/projects/${id}/simulation/edit`}
+            >
+              {t('simulation_edit')}
+            </Button>
+          )}
+          {canEdit && (
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              component={RouterLink}
               to={`/projects/${id}/edit`}
             >
               {t('edit_project')}

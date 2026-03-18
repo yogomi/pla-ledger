@@ -18,13 +18,12 @@ function getCurrentYearMonth(): string {
 }
 
 /**
- * 売上シミュレーション・経費管理・損益計算表の3タブコンテナ。
- * ページネーションで表示月/年を切り替えられる。
+ * 売上シミュレーション・経費管理・損益計算表の3タブコンテナ（入力ページ用）。
+ * ページネーションで表示月を切り替えられる。月次表示のみ。
  */
 export default function SimulationSheetContainer({ projectId }: SimulationSheetContainerProps) {
   const [tab, setTab] = useState(0);
   const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
-  const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
 
   const year = yearMonth.split('-')[0];
 
@@ -39,8 +38,9 @@ export default function SimulationSheetContainer({ projectId }: SimulationSheetC
         <SalesSimulationPagination
           yearMonth={yearMonth}
           onYearMonthChange={setYearMonth}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
+          viewMode="monthly"
+          onViewModeChange={() => undefined}
+          showViewMode={false}
         />
       </Box>
 

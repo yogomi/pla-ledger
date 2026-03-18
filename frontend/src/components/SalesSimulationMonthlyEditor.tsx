@@ -348,6 +348,7 @@ export default function SalesSimulationMonthlyEditor({
                           size="small"
                           variant="outlined"
                           startIcon={<AddIcon />}
+                          type="button"
                           onClick={() => handleAddItem(cat.categoryId)}
                           disabled={createItemMutation.isPending}
                         >
@@ -385,6 +386,7 @@ export default function SalesSimulationMonthlyEditor({
             <Button
               size="small"
               variant="contained"
+              type="button"
               onClick={handleAddCategory}
               disabled={createCategoryMutation.isPending}
             >
@@ -396,6 +398,7 @@ export default function SalesSimulationMonthlyEditor({
           <Button
             variant="outlined"
             startIcon={<AddIcon />}
+            type="button"
             onClick={() => setAddingCategory(true)}
             size="small"
           >

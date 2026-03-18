@@ -8,6 +8,7 @@ interface SalesSimulationPaginationProps {
   onYearMonthChange: (ym: string) => void;
   viewMode: 'monthly' | 'yearly';
   onViewModeChange: (mode: 'monthly' | 'yearly') => void;
+  showViewMode?: boolean;
 }
 
 /** YYYY-MM 文字列に月数を加算して返す */
@@ -34,6 +35,7 @@ export default function SalesSimulationPagination({
   onYearMonthChange,
   viewMode,
   onViewModeChange,
+  showViewMode = true,
 }: SalesSimulationPaginationProps) {
   const [year, month] = yearMonth.split('-');
 
@@ -59,17 +61,19 @@ export default function SalesSimulationPagination({
 
   return (
     <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-      <ToggleButtonGroup
-        value={viewMode}
-        exclusive
-        size="small"
-        onChange={(_e, val: 'monthly' | 'yearly' | null) => {
-          if (val !== null) onViewModeChange(val);
-        }}
-      >
-        <ToggleButton value="monthly">月次</ToggleButton>
-        <ToggleButton value="yearly">年次</ToggleButton>
-      </ToggleButtonGroup>
+      {showViewMode && (
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          size="small"
+          onChange={(_e, val: 'monthly' | 'yearly' | null) => {
+            if (val !== null) onViewModeChange(val);
+          }}
+        >
+          <ToggleButton value="monthly">月次</ToggleButton>
+          <ToggleButton value="yearly">年次</ToggleButton>
+        </ToggleButtonGroup>
+      )}
       <Box display="flex" alignItems="center">
         <IconButton size="small" onClick={handlePrev} aria-label="前へ">
           <ChevronLeftIcon />

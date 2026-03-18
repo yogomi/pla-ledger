@@ -14,6 +14,7 @@ import AccessManagementPage from '../pages/AccessManagementPage';
 import SettingsPage from '../pages/SettingsPage';
 import SearchPage from '../pages/SearchPage';
 import SimulationSheetPage from '../pages/SimulationSheetPage';
+import SimulationViewPage from '../pages/SimulationViewPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -46,6 +47,10 @@ export default function App() {
         <Route path="settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
         <Route
           path="projects/:id/simulation"
+          element={<SimulationViewPage />}
+        />
+        <Route
+          path="projects/:id/simulation/edit"
           element={<PrivateRoute><SimulationSheetPage /></PrivateRoute>}
         />
       </Route>
