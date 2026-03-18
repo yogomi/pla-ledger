@@ -1,0 +1,217 @@
+import { Router, Response } from 'express';
+import { Project, FixedExpense, VariableExpense, SalesSimulationSnapshot } from '../../models';
+import { authenticate, AuthRequest } from '../../middleware/auth';
+import { getProjectRole } from '../projects/utils';
+import { formatZodError } from '../../utils/zodError';
+import { YearQuerySchema } from '../../schemas/salesSimulation';
+import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesSimulationHelper';
+
+/** 月次集計データの型 */
+interface MonthData {
+  yearMonth: string;
+  monthlySales: number;
+  monthlyCost: number;
+  fixedTotal: number;
+  variableTotal: number;
+  totalExpense: number;
+  operatingProfit: number;
+  profitRate: number;
+  isInherited: boolean;
+}
+
+/**
+ * 指定年月の月次損益データを計算する
+ * @param projectId - プロジェクトID
+ * @param yearMonth - 対象年月 (YYYY-MM)
+ * @returns 月次損益データ
+ */
+async function buildMonthData(projectId: string, yearMonth: string): Promise<MonthData> {
+  let snapshot: SalesSimulationSnapshot | null = await SalesSimulationSnapshot.findOne({
+    where: { project_id: projectId, year_month: yearMonth },
+  });
+  let isInherited = false;
+
+  if (!snapshot) {
+    snapshot = await getPreviousSnapshot(projectId, yearMonth);
+    if (snapshot) {
+      isInherited = true;
+    }
+  }
+
+  let monthlySales = 0;
+  let monthlyCost = 0;
+  if (snapshot) {
+    const totals = calculateSnapshotTotals(snapshot.items_snapshot);
+    monthlySales = totals.monthlyTotal;
+    monthlyCost = totals.monthlyCost;
+  }
+
+  const fixedExpenses = await FixedExpense.findAll({
+    where: { project_id: projectId, year_month: yearMonth },
+  });
+  const variableExpenses = await VariableExpense.findAll({
+    where: { project_id: projectId, year_month: yearMonth },
+  });
+
+  const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+  const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+  const totalExpense = monthlyCost + fixedTotal + variableTotal;
+  const operatingProfit = monthlySales - totalExpense;
+  const profitRate = monthlySales > 0
+    ? Math.round((operatingProfit / monthlySales) * 10000) / 100
+    : 0;
+
+  return {
+    yearMonth,
+    monthlySales,
+    monthlyCost,
+    fixedTotal,
+    variableTotal,
+    totalExpense,
+    operatingProfit,
+    profitRate,
+    isInherited,
+  };
+}
+
+/**
+ * @api {GET} /api/projects/:projectId/profit-loss/yearly 年次損益取得
+ * @description
+ *   - 指定年の1月〜12月の損益データを一覧で取得する
+ *   - 各月の売上はスナップショット（継承を含む）から計算する
+ *   - 固定費・変動費は各月のデータを使用する
+ *   - viewer 以上の権限が必要
+ *
+ * @request
+ *   Header:
+ *   - Authorization: Bearer <token> (required)
+ *   Path:
+ *   - projectId: string (required) - プロジェクトID
+ *   Query:
+ *   - year: string (required) - 対象年 (YYYY形式)
+ *   バリデーション失敗時:
+ *   { success: false, code: 'invalid_query', message: エラー内容, data: null }
+ *
+ * @response
+ *   成功時: { success: true, code: '', message: 'OK', data: { year, months, yearly } }
+ *   失敗時:
+ *     - 400: { success: false, code: 'invalid_query', message: エラー内容, data: null }
+ *     - 401: { success: false, code: 'unauthorized', message: 'No token provided', data: null }
+ *     - 403: { success: false, code: 'forbidden', message: 'View permission required', data: null }
+ *     - 404: { success: false, code: 'not_found', message: 'Project not found', data: null }
+ *
+ * @responseExample 成功例
+ *   {
+ *     "success": true,
+ *     "code": "",
+ *     "message": "OK",
+ *     "data": {
+ *       "year": "2026",
+ *       "months": [
+ *         {
+ *           "yearMonth": "2026-01",
+ *           "monthlySales": 1250000,
+ *           "monthlyCost": 500000,
+ *           "fixedTotal": 300000,
+ *           "variableTotal": 50000,
+ *           "totalExpense": 850000,
+ *           "operatingProfit": 400000,
+ *           "profitRate": 32.0,
+ *           "isInherited": false
+ *         }
+ *       ],
+ *       "yearly": {
+ *         "totalSales": 15000000,
+ *         "totalCost": 6000000,
+ *         "totalFixed": 3600000,
+ *         "totalVariable": 600000,
+ *         "totalExpense": 10200000,
+ *         "totalOperatingProfit": 4800000,
+ *         "averageProfitRate": 32.0
+ *       }
+ *     }
+ *   }
+ *
+ * @author copilot
+ * @date 2026-06-01
+ */
+const router = Router({ mergeParams: true });
+
+router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
+  const { projectId } = req.params;
+
+  const project = await Project.findByPk(projectId);
+  if (!project) {
+    res.status(404).json({
+      success: false,
+      code: 'not_found',
+      message: 'Project not found',
+      data: null,
+    });
+    return;
+  }
+
+  const role = await getProjectRole(projectId, req.user!.id);
+  if (!role) {
+    res.status(403).json({
+      success: false,
+      code: 'forbidden',
+      message: 'View permission required',
+      data: null,
+    });
+    return;
+  }
+
+  const parsed = YearQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({
+      success: false,
+      code: 'invalid_query',
+      message: formatZodError(parsed.error),
+      data: null,
+    });
+    return;
+  }
+
+  const { year } = parsed.data;
+
+  // 1月〜12月の月次データを順次計算
+  const months: MonthData[] = [];
+  for (let m = 1; m <= 12; m++) {
+    const yearMonth = `${year}-${String(m).padStart(2, '0')}`;
+    const monthData = await buildMonthData(projectId, yearMonth);
+    months.push(monthData);
+  }
+
+  // 年間集計
+  const totalSales = months.reduce((sum, m) => sum + m.monthlySales, 0);
+  const totalCost = months.reduce((sum, m) => sum + m.monthlyCost, 0);
+  const totalFixed = months.reduce((sum, m) => sum + m.fixedTotal, 0);
+  const totalVariable = months.reduce((sum, m) => sum + m.variableTotal, 0);
+  const totalExpense = months.reduce((sum, m) => sum + m.totalExpense, 0);
+  const totalOperatingProfit = months.reduce((sum, m) => sum + m.operatingProfit, 0);
+  const averageProfitRate = totalSales > 0
+    ? Math.round((totalOperatingProfit / totalSales) * 10000) / 100
+    : 0;
+
+  res.json({
+    success: true,
+    code: '',
+    message: 'OK',
+    data: {
+      year,
+      months,
+      yearly: {
+        totalSales,
+        totalCost,
+        totalFixed,
+        totalVariable,
+        totalExpense,
+        totalOperatingProfit,
+        averageProfitRate,
+      },
+    },
+  });
+});
+
+export default router;

@@ -14,6 +14,11 @@ import uploadAttachmentRouter from '../api/projects/uploadAttachment';
 import getCommentsRouter from '../api/projects/getComments';
 import addCommentRouter from '../api/projects/addComment';
 import listRouter from '../api/projects/list';
+import salesSimulationsRouter from './salesSimulations';
+import expenseSimulationsRouter from './expenseSimulations';
+import profitLossRouter from './profitLoss';
+import fixedExpensesRouter from './fixedExpenses';
+import variableExpensesRouter from './variableExpenses';
 
 const router = Router();
 
@@ -32,5 +37,11 @@ router.use('/', uploadAttachmentRouter);
 router.use('/', getCommentsRouter);
 router.use('/', addCommentRouter);
 router.use('/', listRouter);
+
+router.use('/:projectId/sales-simulations', salesSimulationsRouter);
+router.use('/:projectId/expense-simulations', expenseSimulationsRouter);
+router.use('/:projectId/profit-loss', profitLossRouter);
+router.use('/:projectId/fixed-expenses', fixedExpensesRouter);
+router.use('/:projectId/variable-expenses', variableExpensesRouter);
 
 export default router;
