@@ -128,6 +128,25 @@ export async function deleteSalesCategory(
 }
 
 /**
+ * 売上シミュレーションカテゴリを更新する。
+ * @param projectId プロジェクトID
+ * @param categoryId カテゴリID
+ * @param categoryName カテゴリ名（省略可）
+ * @param categoryOrder 表示順序（省略可）
+ */
+export async function updateSalesCategory(
+  projectId: string,
+  categoryId: string,
+  params: { categoryName?: string; categoryOrder?: number },
+): Promise<{ id: string; project_id: string; category_name: string; category_order: number }> {
+  const res = await api.patch(
+    `/projects/${projectId}/sales-simulations/categories/${categoryId}`,
+    params,
+  );
+  return res.data.data.category;
+}
+
+/**
  * 売上シミュレーションアイテムを作成する。
  * @param projectId プロジェクトID
  * @param categoryId カテゴリID

@@ -29,6 +29,7 @@ import {
   useSalesSimulationMonthly,
   useUpdateSalesSimulation,
   useCreateSalesCategory,
+  useUpdateSalesCategory,
   useDeleteSalesCategory,
   useCreateSalesItem,
   useDeleteSalesItem,
@@ -56,6 +57,7 @@ export default function SalesSimulationMonthlyEditor({
   const { data, isLoading, isError } = useSalesSimulationMonthly(projectId, yearMonth);
   const mutation = useUpdateSalesSimulation(projectId);
   const createCategoryMutation = useCreateSalesCategory(projectId);
+  const updateCategoryMutation = useUpdateSalesCategory(projectId);
   const deleteCategoryMutation = useDeleteSalesCategory(projectId);
   const createItemMutation = useCreateSalesItem(projectId);
   const deleteItemMutation = useDeleteSalesItem(projectId);
@@ -63,6 +65,8 @@ export default function SalesSimulationMonthlyEditor({
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryOrder, setNewCategoryOrder] = useState<number | ''>('');
   const [addingCategory, setAddingCategory] = useState(false);
+  /** カテゴリごとの優先度編集中の値（categoryId -> 入力中の値） */
+  const [editingOrders, setEditingOrders] = useState<Record<string, number | ''>>({});
   /** カテゴリごとの新規アイテム名入力状態 */
   const [newItemNames, setNewItemNames] = useState<Record<string, string>>({});
 
@@ -112,9 +116,16 @@ export default function SalesSimulationMonthlyEditor({
     );
   };
 
+  /** カテゴリの優先度をサーバーに保存する */
+  const handleSaveCategoryOrder = (categoryId: string, currentOrder: number) => {
+    const editing = editingOrders[categoryId];
+    const newOrder = typeof editing === 'number' ? editing : currentOrder;
+    if (newOrder === currentOrder) return;
+    updateCategoryMutation.mutate({ categoryId, categoryOrder: newOrder });
+  };
+
   /** カテゴリを削除する */
-  const handleDeleteCategory = (categoryId: string, categoryName: string) => {
-    if (!window.confirm(t('confirm_delete_category', { name: categoryName }))) return;
+  const handleDeleteCategory = (categoryId: string, categoryName: string) => {    if (!window.confirm(t('confirm_delete_category', { name: categoryName }))) return;
     deleteCategoryMutation.mutate({ categoryId });
   };
 
@@ -176,19 +187,52 @@ export default function SalesSimulationMonthlyEditor({
               pr={1}
             >
               <Typography fontWeight="bold">{cat.categoryName}</Typography>
-              <Tooltip title={t('delete_category')}>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleDeleteCategory(cat.categoryId, cat.categoryName);
-                  }}
-                  aria-label={t('delete_category')}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Tooltip title={t('priority')}>
+                  <TextField
+                    size="small"
+                    type="number"
+                    label={t('priority')}
+                    value={
+                      editingOrders[cat.categoryId] !== undefined
+                        ? editingOrders[cat.categoryId]
+                        : cat.categoryOrder
+                    }
+                    onChange={e => {
+                      const v = e.target.value;
+                      setEditingOrders(prev => ({
+                        ...prev,
+                        [cat.categoryId]: v === '' ? '' : parseInt(v, 10),
+                      }));
+                    }}
+                    onBlur={() => handleSaveCategoryOrder(cat.categoryId, cat.categoryOrder)}
+                    onKeyDown={e => {
+                      e.stopPropagation();
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSaveCategoryOrder(cat.categoryId, cat.categoryOrder);
+                      }
+                    }}
+                    onClick={e => e.stopPropagation()}
+                    inputProps={{ min: 0, step: 1 }}
+                    sx={{ width: 90 }}
+                    aria-label={t('priority')}
+                  />
+                </Tooltip>
+                <Tooltip title={t('delete_category')}>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleDeleteCategory(cat.categoryId, cat.categoryName);
+                    }}
+                    aria-label={t('delete_category')}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0 }}>
