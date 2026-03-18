@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
 import { Op } from 'sequelize';
-import { Project, FixedExpense, VariableExpense, SalesSimulationSnapshot } from '../../models';
+import {
+  Project, FixedExpense, VariableExpense, SalesSimulationSnapshot, FixedExpenseMonth,
+} from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
@@ -12,7 +14,9 @@ import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesS
  * @description
  *   - 指定年月の経費シミュレーションデータを取得する
  *   - 売上原価はスナップショット（継承を含む）から取得する
- *   - 固定費・変動費は当月のデータを使用する。当月データが存在しない場合は前月データを継承する
+ *   - 固定費・変動費は当月のデータを使用する
+ *   - 固定費は未保存月のみ直近の過去月データを継承する（空保存後は継承しない）
+ *   - 変動費は継承しない（当月データのみ返す）
  *   - viewer 以上の権限が必要
  *
  * @request
@@ -111,48 +115,39 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
     monthlyCost = totals.monthlyCost;
   }
 
-  // 固定費・変動費取得
+  // 固定費取得
   let fixedExpenses = await FixedExpense.findAll({
     where: { project_id: projectId, year_month: yearMonth },
   });
-  let variableExpenses = await VariableExpense.findAll({
-    where: { project_id: projectId, year_month: yearMonth },
-  });
 
-  // 当月データが存在しない場合、直近の過去月データを継承する
+  // 固定費の継承ロジック:
+  // FixedExpenseMonth レコードが存在しない（一度も保存されていない）場合のみ、
+  // 直近の過去月データを継承する。
+  // 空で保存された場合は FixedExpenseMonth レコードが存在するため継承しない。
   let isInherited = false;
-  if (fixedExpenses.length === 0 && variableExpenses.length === 0) {
-    const recentFixed = await FixedExpense.findOne({
-      where: { project_id: projectId, year_month: { [Op.lt]: yearMonth } },
-      order: [['year_month', 'DESC']],
+  if (fixedExpenses.length === 0) {
+    const savedRecord = await FixedExpenseMonth.findOne({
+      where: { project_id: projectId, year_month: yearMonth },
     });
-    const recentVariable = await VariableExpense.findOne({
-      where: { project_id: projectId, year_month: { [Op.lt]: yearMonth } },
-      order: [['year_month', 'DESC']],
-    });
-
-    let prevYearMonth: string | null = null;
-    // year_month は YYYY-MM 形式のため、文字列の辞書順比較で日付の前後を正しく判定できる
-    if (recentFixed && recentVariable) {
-      prevYearMonth = recentFixed.year_month >= recentVariable.year_month
-        ? recentFixed.year_month
-        : recentVariable.year_month;
-    } else if (recentFixed) {
-      prevYearMonth = recentFixed.year_month;
-    } else if (recentVariable) {
-      prevYearMonth = recentVariable.year_month;
-    }
-
-    if (prevYearMonth) {
-      fixedExpenses = await FixedExpense.findAll({
-        where: { project_id: projectId, year_month: prevYearMonth },
+    if (!savedRecord) {
+      // 未保存月 → 直近の過去月固定費を継承する
+      const recentFixed = await FixedExpense.findOne({
+        where: { project_id: projectId, year_month: { [Op.lt]: yearMonth } },
+        order: [['year_month', 'DESC']],
       });
-      variableExpenses = await VariableExpense.findAll({
-        where: { project_id: projectId, year_month: prevYearMonth },
-      });
-      isInherited = true;
+      if (recentFixed) {
+        fixedExpenses = await FixedExpense.findAll({
+          where: { project_id: projectId, year_month: recentFixed.year_month },
+        });
+        isInherited = true;
+      }
     }
   }
+
+  // 変動費取得（継承なし）
+  const variableExpenses = await VariableExpense.findAll({
+    where: { project_id: projectId, year_month: yearMonth },
+  });
 
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
