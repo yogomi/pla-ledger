@@ -138,6 +138,7 @@ const en = {
     yearly_total: 'Annual Total',
     inherited_badge: '(Inherited)',
     month_label_short: '{{month}}',
+    priority: 'Priority',
   },
 };
 
@@ -278,6 +279,7 @@ const ja = {
     yearly_total: '年間合計',
     inherited_badge: '(継承)',
     month_label_short: '{{month}}月',
+    priority: '優先度',
   },
 };
 

@@ -75,10 +75,21 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   }
 
   const { categoryName, categoryOrder } = parsed.data;
+  let resolvedOrder: number;
+  if (categoryOrder !== undefined) {
+    resolvedOrder = categoryOrder;
+  } else {
+    const maxCategory = await SalesSimulationCategory.findOne({
+      where: { project_id: projectId },
+      order: [['category_order', 'DESC']],
+      attributes: ['category_order'],
+    });
+    resolvedOrder = maxCategory ? maxCategory.category_order + 1 : 0;
+  }
   const category = await SalesSimulationCategory.create({
     project_id: projectId,
     category_name: categoryName,
-    category_order: categoryOrder ?? 0,
+    category_order: resolvedOrder,
   });
 
   res.status(201).json({

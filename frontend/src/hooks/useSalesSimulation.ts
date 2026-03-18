@@ -7,6 +7,7 @@ import {
   updateFixedExpenses,
   updateVariableExpenses,
   createSalesCategory,
+  updateSalesCategory,
   deleteSalesCategory,
   createSalesItem,
   deleteSalesItem,
@@ -122,6 +123,28 @@ export function useDeleteSalesCategory(projectId: string) {
   return useMutation({
     mutationFn: ({ categoryId }: { categoryId: string }) =>
       deleteSalesCategory(projectId, categoryId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['salesSimulation', projectId] });
+    },
+  });
+}
+
+/**
+ * 売上シミュレーションカテゴリを更新するミューテーションフック。
+ * 成功後に該当プロジェクトの売上シミュレーションキャッシュを無効化する。
+ */
+export function useUpdateSalesCategory(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      categoryId,
+      categoryName,
+      categoryOrder,
+    }: {
+      categoryId: string;
+      categoryName?: string;
+      categoryOrder?: number;
+    }) => updateSalesCategory(projectId, categoryId, { categoryName, categoryOrder }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['salesSimulation', projectId] });
     },
