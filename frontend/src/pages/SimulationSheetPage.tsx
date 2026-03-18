@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { Box, Button, Typography } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import { useTranslation } from 'react-i18next';
 import SimulationSheetContainer from '../components/SimulationSheetContainer';
 
 /**
@@ -11,18 +12,19 @@ import SimulationSheetContainer from '../components/SimulationSheetContainer';
  */
 export default function SimulationSheetPage() {
   const { id } = useParams<{ id: string }>();
-  if (!id) return <Typography>プロジェクトが見つかりません</Typography>;
+  const { t } = useTranslation();
+  if (!id) return <Typography>{t('project_not_found')}</Typography>;
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5">シミュレーション入力</Typography>
+        <Typography variant="h5">{t('simulation_edit')}</Typography>
         <Button
           variant="outlined"
           startIcon={<VisibilityIcon />}
           component={RouterLink}
           to={`/projects/${id}/simulation`}
         >
-          表示・閲覧
+          {t('view_display')}
         </Button>
       </Box>
       <SimulationSheetContainer projectId={id} />

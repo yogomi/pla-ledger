@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Tab, Tabs } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import SalesSimulationPagination from './SalesSimulationPagination';
 import SalesSimulationMonthlyEditor from './SalesSimulationMonthlyEditor';
 import ExpenseMonthlyEditor from './ExpenseMonthlyEditor';
@@ -22,6 +23,7 @@ function getCurrentYearMonth(): string {
  * ページネーションで表示月を切り替えられる。月次表示のみ。
  */
 export default function SimulationSheetContainer({ projectId }: SimulationSheetContainerProps) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
 
@@ -31,9 +33,9 @@ export default function SimulationSheetContainer({ projectId }: SimulationSheetC
     <Box>
       <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" mb={2}>
         <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
-          <Tab label="売上シミュレーション" />
-          <Tab label="経費管理" />
-          <Tab label="損益計算表" />
+          <Tab label={t('sales_simulation_tab')} />
+          <Tab label={t('expense_management_tab')} />
+          <Tab label={t('profit_loss_tab')} />
         </Tabs>
         <SalesSimulationPagination
           yearMonth={yearMonth}

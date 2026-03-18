@@ -18,6 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { useTranslation } from 'react-i18next';
 import { useSalesSimulationMonthly, useExpenseSimulationMonthly } from '../hooks/useSalesSimulation';
 import ProfitLossYearlyTable from './ProfitLossYearlyTable';
 import SalesSimulationPagination from './SalesSimulationPagination';
@@ -42,6 +43,7 @@ function SalesSimulationMonthlyView({
   projectId: string;
   yearMonth: string;
 }) {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useSalesSimulationMonthly(projectId, yearMonth);
 
   if (isLoading) {
@@ -60,7 +62,7 @@ function SalesSimulationMonthlyView({
     <Box>
       {data.isInherited && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          このデータは前月から継承されています。
+          {t('inherited_info_sales')}
         </Alert>
       )}
 
@@ -131,6 +133,7 @@ function ExpenseMonthlyView({
   projectId: string;
   yearMonth: string;
 }) {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useExpenseSimulationMonthly(projectId, yearMonth);
 
   if (isLoading) {
@@ -147,6 +150,12 @@ function ExpenseMonthlyView({
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
+      {data.isInherited && (
+        <Alert severity="info">
+          {t('inherited_info_expense')}
+        </Alert>
+      )}
+
       {/* 固定費 */}
       <Paper variant="outlined">
         <Box p={2} borderBottom={1} borderColor="divider">
@@ -261,6 +270,7 @@ function ExpenseMonthlyView({
  * 月次・年次を切り替えてデータを閲覧できる。
  */
 export default function SimulationViewContainer({ projectId }: SimulationViewContainerProps) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
   const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
@@ -272,12 +282,12 @@ export default function SimulationViewContainer({ projectId }: SimulationViewCon
       <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" mb={2}>
         {viewMode === 'monthly' && (
           <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
-            <Tab label="売上シミュレーション" />
-            <Tab label="経費管理" />
+            <Tab label={t('sales_simulation_tab')} />
+            <Tab label={t('expense_management_tab')} />
           </Tabs>
         )}
         {viewMode === 'yearly' && (
-          <Typography variant="h6">損益計算表（年次）</Typography>
+          <Typography variant="h6">{t('profit_loss_yearly_label')}</Typography>
         )}
         <SalesSimulationPagination
           yearMonth={yearMonth}

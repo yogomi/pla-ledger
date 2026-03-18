@@ -24,6 +24,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   useSalesSimulationMonthly,
   useUpdateSalesSimulation,
@@ -51,6 +52,7 @@ export default function SalesSimulationMonthlyEditor({
   projectId,
   yearMonth,
 }: SalesSimulationMonthlyEditorProps) {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useSalesSimulationMonthly(projectId, yearMonth);
   const mutation = useUpdateSalesSimulation(projectId);
   const createCategoryMutation = useCreateSalesCategory(projectId);
@@ -156,7 +158,7 @@ export default function SalesSimulationMonthlyEditor({
     <Box component="form" onSubmit={handleSubmit(onSubmit)}>
       {data.isInherited && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          このデータは前月から継承されています。
+          {t('inherited_info_sales')}
         </Alert>
       )}
 

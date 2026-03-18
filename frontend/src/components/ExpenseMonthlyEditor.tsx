@@ -19,6 +19,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   useExpenseSimulationMonthly,
   useUpdateFixedExpenses,
@@ -306,6 +307,7 @@ export default function ExpenseMonthlyEditor({
   projectId,
   yearMonth,
 }: ExpenseMonthlyEditorProps) {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useExpenseSimulationMonthly(projectId, yearMonth);
 
   if (isLoading) {
@@ -334,6 +336,12 @@ export default function ExpenseMonthlyEditor({
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
+      {data.isInherited && (
+        <Alert severity="info">
+          {t('inherited_info_expense')}
+        </Alert>
+      )}
+
       {/* 固定費セクション */}
       <Paper variant="outlined">
         <Box p={2} borderBottom={1} borderColor="divider">

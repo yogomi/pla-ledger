@@ -80,6 +80,15 @@ const en = {
     no_items: 'No items',
     simulation: 'Simulation',
     simulation_edit: 'Simulation Input',
+    sales_simulation_tab: 'Sales Simulation',
+    expense_management_tab: 'Expense Management',
+    profit_loss_tab: 'Profit & Loss',
+    profit_loss_yearly_label: 'Profit & Loss (Yearly)',
+    inherited_info_sales: 'This data is inherited from the previous month.',
+    inherited_info_expense: 'This data is inherited from the previous month.',
+    edit_input: 'Edit',
+    view_display: 'View',
+    project_not_found: 'Project not found.',
   },
 };
 
@@ -162,6 +171,15 @@ const ja = {
     no_items: '項目がありません',
     simulation: 'シミュレーション',
     simulation_edit: 'シミュレーション入力',
+    sales_simulation_tab: '売上シミュレーション',
+    expense_management_tab: '経費管理',
+    profit_loss_tab: '損益計算表',
+    profit_loss_yearly_label: '損益計算表（年次）',
+    inherited_info_sales: 'このデータは前月から継承されています。',
+    inherited_info_expense: 'このデータは前月から継承されています。',
+    edit_input: '入力・編集',
+    view_display: '表示・閲覧',
+    project_not_found: 'プロジェクトが見つかりません',
   },
 };
 
