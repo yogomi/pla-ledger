@@ -71,9 +71,9 @@ export default function SalesSimulationMonthlyEditor({
       const flat: ItemInputData[] = data.categories.flatMap(cat =>
         cat.items.map(item => ({
           itemId: item.itemId,
-          categoryId: item.categoryId,
-          categoryName: item.categoryName,
-          categoryOrder: item.categoryOrder,
+          categoryId: cat.categoryId,
+          categoryName: cat.categoryName,
+          categoryOrder: cat.categoryOrder,
           itemName: item.itemName,
           itemOrder: item.itemOrder,
           unitPrice: item.unitPrice,

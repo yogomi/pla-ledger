@@ -1,11 +1,8 @@
 /** 売上シミュレーション関連の型定義 */
 
-/** 売上シミュレーションの品目スナップショット */
+/** 売上シミュレーションの品目スナップショット（APIレスポンス用） */
 export interface ItemSnapshotData {
   itemId: string;
-  categoryId: string;
-  categoryName: string;
-  categoryOrder: number;
   itemName: string;
   itemOrder: number;
   unitPrice: number;
