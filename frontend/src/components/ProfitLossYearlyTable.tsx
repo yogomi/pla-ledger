@@ -17,13 +17,15 @@ import { useProfitLossYearly } from '../hooks/useSalesSimulation';
 interface ProfitLossYearlyTableProps {
   projectId: string;
   year: string;
+  /** 通貨コード (例: JPY, USD)。列ヘッダーに表示する。 */
+  currency: string;
 }
 
 /**
  * 指定年の損益計算書を月次一覧で表示するコンポーネント。
  * 最終行に年次合計を表示する。
  */
-export default function ProfitLossYearlyTable({ projectId, year }: ProfitLossYearlyTableProps) {
+export default function ProfitLossYearlyTable({ projectId, year, currency }: ProfitLossYearlyTableProps) {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useProfitLossYearly(projectId, year);
 
@@ -47,12 +49,12 @@ export default function ProfitLossYearlyTable({ projectId, year }: ProfitLossYea
         <TableHead>
           <TableRow sx={{ backgroundColor: 'grey.100' }}>
             <TableCell>{t('month_col')}</TableCell>
-            <TableCell align="right">{t('sales_row')}</TableCell>
-            <TableCell align="right">{t('cost_row')}</TableCell>
-            <TableCell align="right">{t('fixed_expenses_section')}</TableCell>
-            <TableCell align="right">{t('variable_expenses_section')}</TableCell>
-            <TableCell align="right">{t('expense_total_row')}</TableCell>
-            <TableCell align="right">{t('operating_profit')}</TableCell>
+            <TableCell align="right">{t('sales_row')} ({currency})</TableCell>
+            <TableCell align="right">{t('cost_row')} ({currency})</TableCell>
+            <TableCell align="right">{t('fixed_expenses_section')} ({currency})</TableCell>
+            <TableCell align="right">{t('variable_expenses_section')} ({currency})</TableCell>
+            <TableCell align="right">{t('expense_total_row')} ({currency})</TableCell>
+            <TableCell align="right">{t('operating_profit')} ({currency})</TableCell>
             <TableCell align="right">{t('profit_rate')}</TableCell>
           </TableRow>
         </TableHead>

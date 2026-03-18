@@ -76,6 +76,14 @@ export default function ProjectViewPage() {
   const [commentBody, setCommentBody] = useState('');
   const [innerTabValue, setInnerTabValue] = useState(0);
 
+  /** Simulation / Simulation Input タブ間で共有する年月 (YYYY-MM) */
+  const [simulationYearMonth, setSimulationYearMonth] = useState(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  });
+
   // 編集フォーム
   const [editError, setEditError] = useState('');
   const [editCurrency, setEditCurrency] = useState('JPY');
@@ -451,12 +459,22 @@ export default function ProjectViewPage() {
 
       {/* ===== Simulation タブ ===== */}
       {activeTab === 'simulation' && role && (
-        <SimulationViewContainer projectId={id!} />
+        <SimulationViewContainer
+          projectId={id!}
+          yearMonth={simulationYearMonth}
+          onYearMonthChange={setSimulationYearMonth}
+          currency={project.currency}
+        />
       )}
 
       {/* ===== Simulation Input タブ ===== */}
       {activeTab === 'simulation-input' && canEdit && (
-        <SimulationSheetContainer projectId={id!} />
+        <SimulationSheetContainer
+          projectId={id!}
+          yearMonth={simulationYearMonth}
+          onYearMonthChange={setSimulationYearMonth}
+          currency={project.currency}
+        />
       )}
 
       {/* ===== Edit タブ ===== */}

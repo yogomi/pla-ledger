@@ -25,14 +25,12 @@ import SalesSimulationPagination from './SalesSimulationPagination';
 
 interface SimulationViewContainerProps {
   projectId: string;
-}
-
-/** 現在の年月を YYYY-MM 形式で返す */
-function getCurrentYearMonth(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  return `${y}-${m}`;
+  /** 表示する年月 (YYYY-MM)。親コンポーネントで管理する。 */
+  yearMonth: string;
+  /** 年月変更時のコールバック。親コンポーネントに伝播する。 */
+  onYearMonthChange: (ym: string) => void;
+  /** 通貨コード (例: JPY, USD)。金額表示に使用する。 */
+  currency: string;
 }
 
 /** 月次売上データの読み取り専用表示 */
@@ -129,9 +127,11 @@ function SalesSimulationMonthlyView({
 function ExpenseMonthlyView({
   projectId,
   yearMonth,
+  currency,
 }: {
   projectId: string;
   yearMonth: string;
+  currency: string;
 }) {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useExpenseSimulationMonthly(projectId, yearMonth);
@@ -228,23 +228,23 @@ function ExpenseMonthlyView({
             <TableBody>
               <TableRow>
                 <TableCell>{t('sales_row')}</TableCell>
-                <TableCell align="right">{data.monthlySales.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{data.monthlySales.toLocaleString()} {currency}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('cost_row')}</TableCell>
-                <TableCell align="right">{data.monthlyCost.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{data.monthlyCost.toLocaleString()} {currency}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('fixed_total_row')}</TableCell>
-                <TableCell align="right">{data.fixedTotal.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{data.fixedTotal.toLocaleString()} {currency}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('variable_total_row')}</TableCell>
-                <TableCell align="right">{data.variableTotal.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{data.variableTotal.toLocaleString()} {currency}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('expense_total_row')}</TableCell>
-                <TableCell align="right">{data.totalExpense.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{data.totalExpense.toLocaleString()} {currency}</TableCell>
               </TableRow>
               <TableRow sx={{ backgroundColor: 'grey.50' }}>
                 <TableCell><Typography fontWeight="bold">{t('operating_profit')}</Typography></TableCell>
@@ -253,7 +253,7 @@ function ExpenseMonthlyView({
                     fontWeight="bold"
                     color={data.operatingProfit >= 0 ? 'success.main' : 'error.main'}
                   >
-                    {data.operatingProfit.toLocaleString()} 円
+                    {data.operatingProfit.toLocaleString()} {currency}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -268,11 +268,16 @@ function ExpenseMonthlyView({
 /**
  * シミュレーション表示コンテナ（読み取り専用）。
  * 月次・年次を切り替えてデータを閲覧できる。
+ * yearMonth / onYearMonthChange は親から受け取りタブ間で年月を共有する。
  */
-export default function SimulationViewContainer({ projectId }: SimulationViewContainerProps) {
+export default function SimulationViewContainer({
+  projectId,
+  yearMonth,
+  onYearMonthChange,
+  currency,
+}: SimulationViewContainerProps) {
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
-  const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
   const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
 
   const year = yearMonth.split('-')[0];
@@ -291,7 +296,7 @@ export default function SimulationViewContainer({ projectId }: SimulationViewCon
         )}
         <SalesSimulationPagination
           yearMonth={yearMonth}
-          onYearMonthChange={setYearMonth}
+          onYearMonthChange={onYearMonthChange}
           viewMode={viewMode}
           onViewModeChange={mode => {
             setViewMode(mode);
@@ -307,10 +312,10 @@ export default function SimulationViewContainer({ projectId }: SimulationViewCon
         <SalesSimulationMonthlyView projectId={projectId} yearMonth={yearMonth} />
       )}
       {viewMode === 'monthly' && tab === 1 && (
-        <ExpenseMonthlyView projectId={projectId} yearMonth={yearMonth} />
+        <ExpenseMonthlyView projectId={projectId} yearMonth={yearMonth} currency={currency} />
       )}
       {viewMode === 'yearly' && (
-        <ProfitLossYearlyTable projectId={projectId} year={year} />
+        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
       )}
     </Box>
   );

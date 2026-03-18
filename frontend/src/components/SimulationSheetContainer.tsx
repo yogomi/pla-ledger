@@ -8,24 +8,27 @@ import ProfitLossYearlyTable from './ProfitLossYearlyTable';
 
 interface SimulationSheetContainerProps {
   projectId: string;
-}
-
-/** 現在の年月を YYYY-MM 形式で返す */
-function getCurrentYearMonth(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  return `${y}-${m}`;
+  /** 表示する年月 (YYYY-MM)。親コンポーネントで管理する。 */
+  yearMonth: string;
+  /** 年月変更時のコールバック。親コンポーネントに伝播する。 */
+  onYearMonthChange: (ym: string) => void;
+  /** 通貨コード (例: JPY, USD)。損益計算表の金額表示に使用する。 */
+  currency: string;
 }
 
 /**
  * 売上シミュレーション・経費管理・損益計算表の3タブコンテナ（入力ページ用）。
  * ページネーションで表示月を切り替えられる。月次表示のみ。
+ * yearMonth / onYearMonthChange は親から受け取りタブ間で年月を共有する。
  */
-export default function SimulationSheetContainer({ projectId }: SimulationSheetContainerProps) {
+export default function SimulationSheetContainer({
+  projectId,
+  yearMonth,
+  onYearMonthChange,
+  currency,
+}: SimulationSheetContainerProps) {
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
-  const [yearMonth, setYearMonth] = useState(getCurrentYearMonth);
 
   const year = yearMonth.split('-')[0];
 
@@ -39,7 +42,7 @@ export default function SimulationSheetContainer({ projectId }: SimulationSheetC
         </Tabs>
         <SalesSimulationPagination
           yearMonth={yearMonth}
-          onYearMonthChange={setYearMonth}
+          onYearMonthChange={onYearMonthChange}
           viewMode="monthly"
           onViewModeChange={() => undefined}
           showViewMode={false}
@@ -53,7 +56,7 @@ export default function SimulationSheetContainer({ projectId }: SimulationSheetC
         <ExpenseMonthlyEditor projectId={projectId} yearMonth={yearMonth} />
       )}
       {tab === 2 && (
-        <ProfitLossYearlyTable projectId={projectId} year={year} />
+        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
       )}
     </Box>
   );
