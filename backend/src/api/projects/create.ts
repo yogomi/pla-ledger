@@ -17,8 +17,8 @@ import { ProjectCreateSchema } from '../../schemas';
  *   Header:
  *   - Authorization: Bearer <token> (required)
  *   Body (JSON):
- *   - title: Record<string, string> (required) - 多言語プロジェクト名 例: { en: "My Project", ja: "マイプロジェクト" }
- *   - summary: Record<string, string> (optional) - 多言語概要
+ *   - title: string (required) - プロジェクト名
+ *   - summary: string (optional) - 概要
  *   - visibility: 'public' | 'private' | 'unlisted' (required) - 公開設定
  *   - currency: string (required, 3-10文字) - 通貨コード 例: 'JPY'
  *   - stage: string (optional) - ステージ 例: 'idea', 'launch'
@@ -93,7 +93,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   await ProjectVersion.create({
     project_id: project.id,
     snapshot: { title, summary, visibility, currency, sections },
-    summary: { en: 'Initial version', ja: '初期バージョン' },
+    summary: 'Initial version',
     created_by: req.user!.id,
   });
   await ActivityLog.create({
