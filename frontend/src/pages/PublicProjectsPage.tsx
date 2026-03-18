@@ -9,8 +9,8 @@ import api from '../utils/api';
 
 interface Project {
   id: string;
-  title: Record<string, string>;
-  summary: Record<string, string> | null;
+  title: string;
+  summary: string | null;
   visibility: string;
   currency: string;
   stage: string | null;
@@ -18,7 +18,7 @@ interface Project {
 }
 
 export default function PublicProjectsPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -36,14 +36,6 @@ export default function PublicProjectsPage() {
   };
 
   useEffect(() => { load(); }, []);
-
-  const getTitle = (title: Record<string, string>) =>
-    title[i18n.language] || title['en'] || title['ja'] || Object.values(title)[0] || '';
-
-  const getSummary = (summary: Record<string, string> | null) => {
-    if (!summary) return '';
-    return summary[i18n.language] || summary['en'] || summary['ja'] || '';
-  };
 
   return (
     <Box>
@@ -91,15 +83,15 @@ export default function PublicProjectsPage() {
               <Grid item xs={12} sm={6} md={4} key={p.id}>
                 <Card>
                   <CardContent>
-                    <Typography variant="h6" noWrap>{getTitle(p.title)}</Typography>
-                    {getSummary(p.summary) && (
+                    <Typography variant="h6" noWrap>{p.title}</Typography>
+                    {p.summary && (
                       <Typography
                         variant="body2"
                         color="text.secondary"
                         sx={{ mt: 0.5, mb: 1 }}
                         noWrap
                       >
-                        {getSummary(p.summary)}
+                        {p.summary}
                       </Typography>
                     )}
                     <Box display="flex" gap={0.5} flexWrap="wrap">

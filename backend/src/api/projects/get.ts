@@ -28,7 +28,7 @@ import { getProjectRole } from './utils';
  *     "code": "",
  *     "message": "",
  *     "data": {
- *       "project": { "id": "uuid", "title": { "en": "My Project" }, ... },
+ *       "project": { "id": "uuid", "title": "My Project", ... },
  *       "owner": { "id": "uuid", "name": "Alice", "email": "alice@example.com" },
  *       "role": "owner"
  *     }

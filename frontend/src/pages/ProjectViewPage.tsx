@@ -17,19 +17,19 @@ interface Comment { id: string; author_id: string; body: string; created_at: str
 interface Version {
   id: string;
   created_by: string;
-  summary: Record<string, string> | null;
+  summary: string | null;
   created_at: string;
 }
 interface Attachment { id: string; filename: string; url: string; mime_type: string; size: number; }
 interface Section { id: string; type: string; content: Record<string, unknown>; version: number; }
 interface Project {
-  id: string; title: Record<string, string>; summary: Record<string, string> | null;
+  id: string; title: string; summary: string | null;
   visibility: string; currency: string; stage: string | null; tags: string[];
   owner_id: string; sections: Section[]; attachments: Attachment[];
 }
 
 export default function ProjectViewPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -42,9 +42,6 @@ export default function ProjectViewPage() {
   const [error, setError] = useState('');
   const [commentBody, setCommentBody] = useState('');
   const [tabValue, setTabValue] = useState(0);
-
-  const getTitle = (title: Record<string, string>) =>
-    title[i18n.language] || title['en'] || title['ja'] || Object.values(title)[0] || '';
 
   useEffect(() => {
     Promise.all([
@@ -109,7 +106,7 @@ export default function ProjectViewPage() {
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
         <Box>
-          <Typography variant="h4">{getTitle(project.title)}</Typography>
+          <Typography variant="h4">{project.title}</Typography>
           <Box mt={1} display="flex" gap={1} flexWrap="wrap">
             <Chip
               label={t(project.visibility)}
@@ -150,7 +147,7 @@ export default function ProjectViewPage() {
 
       {project.summary && (
         <Typography variant="body1" color="text.secondary" mb={2}>
-          {project.summary[i18n.language] || project.summary['en'] || project.summary['ja'] || ''}
+          {project.summary}
         </Typography>
       )}
 
@@ -289,11 +286,7 @@ export default function ProjectViewPage() {
           {versions.map(v => (
             <ListItem key={v.id} divider>
               <ListItemText
-                primary={
-                  v.summary
-                    ? (v.summary[i18n.language] || v.summary['en'] || '')
-                    : 'Version'
-                }
+                primary={v.summary ?? 'Version'}
                 secondary={new Date(v.created_at).toLocaleString()}
               />
             </ListItem>

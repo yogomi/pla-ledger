@@ -9,7 +9,7 @@ import api from '../utils/api';
 
 interface Project {
   id: string;
-  title: Record<string, string>;
+  title: string;
   visibility: string;
   currency: string;
   stage: string | null;
@@ -17,7 +17,7 @@ interface Project {
 }
 
 export default function SearchPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [q, setQ] = useState('');
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,9 +37,6 @@ export default function SearchPage() {
       setLoading(false);
     }
   };
-
-  const getTitle = (title: Record<string, string>) =>
-    title[i18n.language] || title['en'] || title['ja'] || Object.values(title)[0] || '';
 
   return (
     <Box>
@@ -65,7 +62,7 @@ export default function SearchPage() {
               <Grid item xs={12} sm={6} md={4} key={p.id}>
                 <Card>
                   <CardContent>
-                    <Typography variant="h6" noWrap>{getTitle(p.title)}</Typography>
+                    <Typography variant="h6" noWrap>{p.title}</Typography>
                     <Box mt={1} display="flex" gap={0.5} flexWrap="wrap">
                       <Chip label={p.currency} size="small" variant="outlined" />
                       {p.stage && <Chip label={p.stage} size="small" variant="outlined" />}

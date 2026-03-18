@@ -41,8 +41,8 @@ User.init({
 interface ProjectAttributes {
   id: string;
   owner_id: string;
-  title: Record<string, string>;
-  summary: Record<string, string> | null;
+  title: string;
+  summary: string | null;
   visibility: 'public' | 'private' | 'unlisted';
   currency: string;
   stage: string | null;
@@ -61,8 +61,8 @@ export class Project
   implements ProjectAttributes {
   declare id: string;
   declare owner_id: string;
-  declare title: Record<string, string>;
-  declare summary: Record<string, string> | null;
+  declare title: string;
+  declare summary: string | null;
   declare visibility: 'public' | 'private' | 'unlisted';
   declare currency: string;
   declare stage: string | null;
@@ -73,8 +73,8 @@ export class Project
 Project.init({
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   owner_id: { type: DataTypes.UUID, allowNull: false },
-  title: { type: DataTypes.JSON, allowNull: false },
-  summary: { type: DataTypes.JSON, defaultValue: null },
+  title: { type: DataTypes.TEXT, allowNull: false },
+  summary: { type: DataTypes.TEXT, defaultValue: null },
   visibility: {
     type: DataTypes.ENUM('public', 'private', 'unlisted'),
     allowNull: false,
@@ -193,7 +193,7 @@ interface ProjectVersionAttributes {
   id: string;
   project_id: string;
   snapshot: Record<string, unknown>;
-  summary: Record<string, string> | null;
+  summary: string | null;
   created_by: string;
   created_at?: Date;
 }
@@ -205,7 +205,7 @@ export class ProjectVersion
   declare id: string;
   declare project_id: string;
   declare snapshot: Record<string, unknown>;
-  declare summary: Record<string, string> | null;
+  declare summary: string | null;
   declare created_by: string;
 }
 
@@ -213,7 +213,7 @@ ProjectVersion.init({
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   project_id: { type: DataTypes.UUID, allowNull: false },
   snapshot: { type: DataTypes.JSON, allowNull: false },
-  summary: { type: DataTypes.JSON, defaultValue: null },
+  summary: { type: DataTypes.TEXT, defaultValue: null },
   created_by: { type: DataTypes.UUID, allowNull: false },
 }, { sequelize, tableName: 'project_versions', underscored: true, updatedAt: false });
 

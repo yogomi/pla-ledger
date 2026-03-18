@@ -28,7 +28,7 @@ import { authenticate, AuthRequest } from '../../middleware/auth';
  *       "projects": [
  *         {
  *           "id": "uuid",
- *           "title": { "en": "My Project" },
+ *           "title": "My Project",
  *           "visibility": "private",
  *           "currency": "JPY",
  *           "stage": "idea",

@@ -12,21 +12,14 @@ export const LoginSchema = z.object({
   password: z.string().min(1),
 });
 
-export const LocalizedStringSchema = z.record(z.string(), z.string());
-
-export const SectionSchema = z.object({
-  type: z.string(),
-  content: z.any(),
-});
-
 export const ProjectCreateSchema = z.object({
-  title: LocalizedStringSchema,
-  summary: LocalizedStringSchema.optional(),
+  title: z.string().min(1),
+  summary: z.string().optional(),
   visibility: z.enum(['public', 'private', 'unlisted']),
   currency: z.string().min(3).max(10),
   stage: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  sections: z.array(SectionSchema).optional(),
+  sections: z.array(z.object({ type: z.string(), content: z.any() })).optional(),
 });
 
 export const ProjectUpdateSchema = ProjectCreateSchema.partial();

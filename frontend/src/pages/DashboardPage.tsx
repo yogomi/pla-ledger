@@ -11,7 +11,7 @@ import api from '../utils/api';
 
 interface Project {
   id: string;
-  title: Record<string, string>;
+  title: string;
   visibility: string;
   currency: string;
   stage: string | null;
@@ -20,7 +20,7 @@ interface Project {
 }
 
 export default function DashboardPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,9 +33,6 @@ export default function DashboardPage() {
       setError('Failed to load projects');
     }).finally(() => setLoading(false));
   }, []);
-
-  const getTitle = (title: Record<string, string>) =>
-    title[i18n.language] || title['en'] || title['ja'] || Object.values(title)[0] || '';
 
   return (
     <Box>
@@ -68,7 +65,7 @@ export default function DashboardPage() {
                 <Grid item xs={12} sm={6} md={4} key={p.id}>
                   <Card>
                     <CardContent>
-                      <Typography variant="h6" noWrap>{getTitle(p.title)}</Typography>
+                      <Typography variant="h6" noWrap>{p.title}</Typography>
                       <Box mt={1} display="flex" gap={0.5} flexWrap="wrap">
                         <Chip
                           label={t(p.visibility)}

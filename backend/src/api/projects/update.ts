@@ -18,8 +18,8 @@ import { getProjectRole } from './utils';
  *   Path:
  *   - id: string (required) - プロジェクトID
  *   Body (JSON): ProjectCreateSchemaの各フィールド（すべてoptional）
- *   - title: Record<string, string> (optional) - 多言語プロジェクト名
- *   - summary: Record<string, string> (optional) - 多言語概要
+ *   - title: string (optional) - プロジェクト名
+ *   - summary: string (optional) - 概要
  *   - visibility: 'public' | 'private' | 'unlisted' (optional) - 公開設定
  *   - currency: string (optional) - 通貨コード
  *   - stage: string (optional) - ステージ
