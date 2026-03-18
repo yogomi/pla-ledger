@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { Project, Comment } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from './utils';
+import { formatZodError } from '../../utils/zodError';
 
 const CommentBodySchema = z.object({
   body: z.string().min(1, 'body is required'),
@@ -88,7 +89,7 @@ router.post('/:id/comments', authenticate, async (req: AuthRequest, res: Respons
     res.status(400).json({
       success: false,
       code: 'invalid_query',
-      message: parsed.error.errors.map(e => e.message).join(', '),
+      message: formatZodError(parsed.error),
       data: null,
     });
     return;

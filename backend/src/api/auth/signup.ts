@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { User, ActivityLog } from '../../models';
 import { generateToken } from '../../middleware/auth';
 import { SignupSchema } from '../../schemas';
+import { formatZodError } from '../../utils/zodError';
 
 /**
  * @api {POST} /api/auth/signup サインアップ
@@ -55,7 +56,7 @@ router.post('/', async (req, res: Response) => {
     res.status(400).json({
       success: false,
       code: 'invalid_query',
-      message: parsed.error.errors.map(e => e.message).join(', '),
+      message: formatZodError(parsed.error),
       data: null,
     });
     return;

@@ -3,6 +3,7 @@ import { Project, ProjectSection, ProjectVersion, ActivityLog } from '../../mode
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { ProjectUpdateSchema } from '../../schemas';
 import { getProjectRole } from './utils';
+import { formatZodError } from '../../utils/zodError';
 
 /**
  * @api {PUT} /api/projects/:id プロジェクト更新
@@ -83,7 +84,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     res.status(400).json({
       success: false,
       code: 'invalid_query',
-      message: parsed.error.errors.map(e => e.message).join(', '),
+      message: formatZodError(parsed.error),
       data: null,
     });
     return;

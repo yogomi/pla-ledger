@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { Project, Permission, ActivityLog } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { GrantPermissionSchema } from '../../schemas';
+import { formatZodError } from '../../utils/zodError';
 
 /**
  * @api {POST} /api/projects/:id/grant 権限付与（Owner用）
@@ -56,7 +57,7 @@ router.post('/:id/grant', authenticate, async (req: AuthRequest, res: Response) 
     res.status(400).json({
       success: false,
       code: 'invalid_query',
-      message: parsed.error.errors.map(e => e.message).join(', '),
+      message: formatZodError(parsed.error),
       data: null,
     });
     return;

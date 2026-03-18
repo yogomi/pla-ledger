@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { Project, AccessRequest, Permission } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { ProcessAccessRequestSchema } from '../../schemas';
+import { formatZodError } from '../../utils/zodError';
 
 /**
  * @api {POST} /api/projects/:id/access-requests/:reqId アクセス申請処理（Owner用）
@@ -60,7 +61,7 @@ router.post(
       res.status(400).json({
         success: false,
         code: 'invalid_query',
-        message: parsed.error.errors.map(e => e.message).join(', '),
+        message: formatZodError(parsed.error),
         data: null,
       });
       return;

@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import { Project } from '../../models';
 import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { SearchQuerySchema } from '../../schemas';
+import { formatZodError } from '../../utils/zodError';
 
 /**
  * @api {GET} /api/search プロジェクト検索
@@ -57,7 +58,7 @@ router.get('/', optionalAuthenticate, async (req: AuthRequest, res: Response) =>
     res.status(400).json({
       success: false,
       code: 'invalid_query',
-      message: parsed.error.errors.map(e => e.message).join(', '),
+      message: formatZodError(parsed.error),
       data: null,
     });
     return;
