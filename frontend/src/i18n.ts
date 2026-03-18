@@ -69,6 +69,15 @@ const en = {
     profit_loss: 'Profit & Loss',
     startup_costs: 'Startup Costs',
     annual_forecast: 'Annual Forecast',
+    description: 'Description',
+    quantity: 'Quantity',
+    unit_price: 'Unit Price',
+    subtotal: 'Subtotal',
+    action: 'Action',
+    add_row: 'Add Row',
+    total: 'Total',
+    startup_costs_section: 'Startup Costs',
+    no_items: 'No items',
   },
 };
 
@@ -140,6 +149,15 @@ const ja = {
     profit_loss: '損益計算',
     startup_costs: 'スタートアップコスト',
     annual_forecast: '年次試算',
+    description: '項目名',
+    quantity: '数量',
+    unit_price: '単価',
+    subtotal: '小計',
+    action: '操作',
+    add_row: '行を追加',
+    total: '合計',
+    startup_costs_section: 'スタートアップコスト',
+    no_items: '項目がありません',
   },
 };
 

@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
+import StartupCostTable, { StartupCostItem } from '../components/StartupCostTable';
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -29,11 +30,20 @@ export default function ProjectEditPage() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState('JPY');
+  const [startupCostItems, setStartupCostItems] = useState<StartupCostItem[]>([]);
 
-  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: { visibility: 'private', currency: 'JPY' },
-  });
+  const { control, handleSubmit, reset, watch, formState: { errors, isSubmitting } } =
+    useForm<FormData>({
+      resolver: zodResolver(schema),
+      defaultValues: { visibility: 'private', currency: 'JPY' },
+    });
+
+  const watchedCurrency = watch('currency', 'JPY');
+
+  useEffect(() => {
+    setCurrency(watchedCurrency);
+  }, [watchedCurrency]);
 
   useEffect(() => {
     api.get(`/projects/${id}`).then(r => {
@@ -46,12 +56,28 @@ export default function ProjectEditPage() {
         stage: p.stage || '',
         tags: Array.isArray(p.tags) ? p.tags.join(', ') : '',
       });
+      setCurrency(p.currency || 'JPY');
+      const financeSection = (p.sections ?? []).find(
+        (s: { type: string; content: Record<string, unknown> }) => s.type === 'finances',
+      );
+      if (financeSection?.content?.startup_costs) {
+        const sc = financeSection.content.startup_costs as { items?: StartupCostItem[] };
+        setStartupCostItems(sc.items ?? []);
+      }
     }).catch(() => setError('Failed to load project')).finally(() => setLoading(false));
   }, [id, reset]);
 
   const onSubmit = async (data: FormData) => {
     try {
-      const tags = data.tags ? data.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
+      const sections = [
+        {
+          type: 'finances',
+          content: {
+            startup_costs: { items: startupCostItems },
+          },
+        },
+      ];
       await api.put(`/projects/${id}`, {
         title: data.title,
         summary: data.summary || undefined,
@@ -59,6 +85,7 @@ export default function ProjectEditPage() {
         currency: data.currency,
         stage: data.stage || null,
         tags,
+        sections,
       });
       navigate(`/projects/${id}`);
     } catch (err: unknown) {
@@ -145,6 +172,15 @@ export default function ProjectEditPage() {
             />
           )} />
 
+          <Divider sx={{ my: 3 }} />
+
+          <Typography variant="h6" mb={2}>{t('startup_costs_section')}</Typography>
+          <StartupCostTable
+            items={startupCostItems}
+            currency={currency}
+            onItemsChange={setStartupCostItems}
+          />
+
           <Box mt={3} display="flex" gap={2}>
             <Button type="submit" variant="contained" disabled={isSubmitting}>
               {isSubmitting ? t('loading') : t('save')}
@@ -158,3 +194,4 @@ export default function ProjectEditPage() {
     </Box>
   );
 }
+

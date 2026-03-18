@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import { Project } from '../../models';
 import { PublicProjectsQuerySchema } from '../../schemas';
+import { formatZodError } from '../../utils/zodError';
 
 /**
  * @api {GET} /api/projects/public 公開プロジェクト一覧
@@ -57,7 +58,7 @@ router.get('/', async (req, res: Response) => {
     res.status(400).json({
       success: false,
       code: 'invalid_query',
-      message: parsed.error.errors.map(e => e.message).join(', '),
+      message: formatZodError(parsed.error),
       data: null,
     });
     return;
