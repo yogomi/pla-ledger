@@ -47,7 +47,7 @@ export default function App() {
         <Route path="settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
         <Route
           path="projects/:id/simulation"
-          element={<SimulationViewPage />}
+          element={<PrivateRoute><SimulationViewPage /></PrivateRoute>}
         />
         <Route
           path="projects/:id/simulation/edit"
