@@ -123,6 +123,11 @@ export default function LoanListContainer({
                     {t('loan_date')}: {loan.loanDate}　
                     {t('repayment_months')}: {loan.repaymentMonths}{t('months_unit')}
                   </Typography>
+                  {loan.repaymentStartDate !== null && (
+                    <Typography variant="body2" color="text.secondary">
+                      {t('repayment_start_date')}: {loan.repaymentStartDate}
+                    </Typography>
+                  )}
                   <Typography variant="body2" color="text.secondary">
                     {t('repayment_method')}: {repaymentMethodLabel(loan.repaymentMethod)}
                   </Typography>

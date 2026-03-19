@@ -88,6 +88,9 @@ router.put('/:loanId', authenticate, async (req: AuthRequest, res: Response) => 
   const principalAmount = updates.principalAmount ?? Number(loan.principal_amount);
   const interestRate = updates.interestRate ?? Number(loan.interest_rate);
   const loanDate = updates.loanDate ?? loan.loan_date;
+  const repaymentStartDate = 'repaymentStartDate' in updates
+    ? (updates.repaymentStartDate ?? null)
+    : loan.repayment_start_date;
   const repaymentMonths = updates.repaymentMonths ?? loan.repayment_months;
   const repaymentMethod = updates.repaymentMethod ?? loan.repayment_method;
   const description = 'description' in updates ? (updates.description ?? null) : loan.description;
@@ -95,13 +98,17 @@ router.put('/:loanId', authenticate, async (req: AuthRequest, res: Response) => 
   // 返済スケジュール再計算
   let schedule;
   if (repaymentMethod === 'equal_payment') {
-    schedule = generateEqualPaymentSchedule(principalAmount, interestRate, repaymentMonths, loanDate);
+    schedule = generateEqualPaymentSchedule(
+      principalAmount, interestRate, repaymentMonths, loanDate, repaymentStartDate,
+    );
   } else if (repaymentMethod === 'equal_principal') {
     schedule = generateEqualPrincipalSchedule(
-      principalAmount, interestRate, repaymentMonths, loanDate,
+      principalAmount, interestRate, repaymentMonths, loanDate, repaymentStartDate,
     );
   } else {
-    schedule = generateBulletSchedule(principalAmount, interestRate, repaymentMonths, loanDate);
+    schedule = generateBulletSchedule(
+      principalAmount, interestRate, repaymentMonths, loanDate, repaymentStartDate,
+    );
   }
 
   const transaction = await sequelize.transaction();
@@ -111,6 +118,7 @@ router.put('/:loanId', authenticate, async (req: AuthRequest, res: Response) => 
       principal_amount: principalAmount,
       interest_rate: interestRate,
       loan_date: loanDate,
+      repayment_start_date: repaymentStartDate,
       repayment_months: repaymentMonths,
       repayment_method: repaymentMethod,
       description,
@@ -144,6 +152,7 @@ router.put('/:loanId', authenticate, async (req: AuthRequest, res: Response) => 
           principalAmount: Number(loan.principal_amount),
           interestRate: Number(loan.interest_rate),
           loanDate: loan.loan_date,
+          repaymentStartDate: loan.repayment_start_date,
           repaymentMonths: loan.repayment_months,
           repaymentMethod: loan.repayment_method,
           description: loan.description,

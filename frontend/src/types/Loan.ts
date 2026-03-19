@@ -6,6 +6,7 @@ export interface Loan {
   principalAmount: number;
   interestRate: number;
   loanDate: string;
+  repaymentStartDate: string | null;
   repaymentMonths: number;
   repaymentMethod: 'equal_payment' | 'equal_principal' | 'bullet';
   remainingBalance: number;
@@ -28,6 +29,7 @@ export interface LoanInputData {
   principalAmount: number;
   interestRate: number;
   loanDate: string;
+  repaymentStartDate: string | null;
   repaymentMonths: number;
   repaymentMethod: 'equal_payment' | 'equal_principal' | 'bullet';
   description: string | null;

@@ -554,13 +554,14 @@ interface LoanAttributes {
   principal_amount: number;
   interest_rate: number;
   loan_date: string;
+  repayment_start_date: string | null;
   repayment_months: number;
   repayment_method: 'equal_payment' | 'equal_principal' | 'bullet';
   description: string | null;
   created_at?: Date;
   updated_at?: Date;
 }
-type LoanCreation = Optional<LoanAttributes, 'id' | 'description'>;
+type LoanCreation = Optional<LoanAttributes, 'id' | 'repayment_start_date' | 'description'>;
 
 export class Loan
   extends Model<LoanAttributes, LoanCreation>
@@ -571,6 +572,7 @@ export class Loan
   declare principal_amount: number;
   declare interest_rate: number;
   declare loan_date: string;
+  declare repayment_start_date: string | null;
   declare repayment_months: number;
   declare repayment_method: 'equal_payment' | 'equal_principal' | 'bullet';
   declare description: string | null;
@@ -585,6 +587,7 @@ Loan.init({
   principal_amount: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
   interest_rate: { type: DataTypes.DECIMAL(5, 2), allowNull: false },
   loan_date: { type: DataTypes.STRING(10), allowNull: false },
+  repayment_start_date: { type: DataTypes.STRING(10), defaultValue: null },
   repayment_months: { type: DataTypes.INTEGER, allowNull: false },
   repayment_method: {
     type: DataTypes.ENUM('equal_payment', 'equal_principal', 'bullet'),

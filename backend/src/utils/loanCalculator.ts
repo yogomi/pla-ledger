@@ -15,10 +15,29 @@ export interface RepaymentEntry {
  */
 function getFirstRepaymentYearMonth(loanDate: string): string {
   const [year, month] = loanDate.split('-').map(Number);
-  const d = new Date(year, month - 1 + 1, 1);
+  // month は 1 始まり。new Date(year, month, 1) は JS の 0 始まり月で翌月初日になる。
+  const d = new Date(year, month, 1);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   return `${y}-${m}`;
+}
+
+/**
+ * 返済開始年月を解決する。
+ * repaymentStartDate が指定されている場合はその年月を使用し、
+ * 未指定（null/undefined）の場合は借入日の翌月にフォールバックする。
+ * @param loanDate - 借入日 (YYYY-MM-DD)
+ * @param repaymentStartDate - 返済開始日 (YYYY-MM-DD)、省略可
+ */
+function resolveFirstRepaymentYearMonth(
+  loanDate: string,
+  repaymentStartDate?: string | null,
+): string {
+  if (repaymentStartDate) {
+    const [y, m] = repaymentStartDate.split('-');
+    return `${y}-${m}`;
+  }
+  return getFirstRepaymentYearMonth(loanDate);
 }
 
 /**
@@ -60,6 +79,7 @@ export function calculateEqualPayment(
  * @param annualRate - 年利（%）
  * @param months - 返済月数
  * @param loanDate - 借入日 (YYYY-MM-DD)
+ * @param repaymentStartDate - 返済開始日 (YYYY-MM-DD)。省略時は借入日翌月。
  * @returns 月次返済スケジュール
  */
 export function generateEqualPaymentSchedule(
@@ -67,11 +87,12 @@ export function generateEqualPaymentSchedule(
   annualRate: number,
   months: number,
   loanDate: string,
+  repaymentStartDate?: string | null,
 ): RepaymentEntry[] {
   const schedule: RepaymentEntry[] = [];
   const monthlyRate = annualRate / 100 / 12;
   const payment = calculateEqualPayment(principal, annualRate, months);
-  const firstYearMonth = getFirstRepaymentYearMonth(loanDate);
+  const firstYearMonth = resolveFirstRepaymentYearMonth(loanDate, repaymentStartDate);
   let balance = principal;
 
   for (let i = 0; i < months; i++) {
@@ -103,6 +124,7 @@ export function generateEqualPaymentSchedule(
  * @param annualRate - 年利（%）
  * @param months - 返済月数
  * @param loanDate - 借入日 (YYYY-MM-DD)
+ * @param repaymentStartDate - 返済開始日 (YYYY-MM-DD)。省略時は借入日翌月。
  * @returns 月次返済スケジュール
  */
 export function generateEqualPrincipalSchedule(
@@ -110,11 +132,12 @@ export function generateEqualPrincipalSchedule(
   annualRate: number,
   months: number,
   loanDate: string,
+  repaymentStartDate?: string | null,
 ): RepaymentEntry[] {
   const schedule: RepaymentEntry[] = [];
   const monthlyRate = annualRate / 100 / 12;
   const basePrincipalPayment = Math.round((principal / months) * 100) / 100;
-  const firstYearMonth = getFirstRepaymentYearMonth(loanDate);
+  const firstYearMonth = resolveFirstRepaymentYearMonth(loanDate, repaymentStartDate);
   let balance = principal;
 
   for (let i = 0; i < months; i++) {
@@ -147,6 +170,7 @@ export function generateEqualPrincipalSchedule(
  * @param annualRate - 年利（%）
  * @param months - 返済月数
  * @param loanDate - 借入日 (YYYY-MM-DD)
+ * @param repaymentStartDate - 返済開始日 (YYYY-MM-DD)。省略時は借入日翌月。
  * @returns 月次返済スケジュール
  */
 export function generateBulletSchedule(
@@ -154,10 +178,11 @@ export function generateBulletSchedule(
   annualRate: number,
   months: number,
   loanDate: string,
+  repaymentStartDate?: string | null,
 ): RepaymentEntry[] {
   const schedule: RepaymentEntry[] = [];
   const monthlyRate = annualRate / 100 / 12;
-  const firstYearMonth = getFirstRepaymentYearMonth(loanDate);
+  const firstYearMonth = resolveFirstRepaymentYearMonth(loanDate, repaymentStartDate);
 
   for (let i = 0; i < months; i++) {
     const interestPayment = Math.round(principal * monthlyRate * 100) / 100;

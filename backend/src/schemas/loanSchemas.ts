@@ -6,6 +6,10 @@ export const createLoanSchema = z.object({
   principalAmount: z.number().positive(),
   interestRate: z.number().min(0).max(100),
   loanDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'loanDate must be YYYY-MM-DD'),
+  repaymentStartDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'repaymentStartDate must be YYYY-MM-DD')
+    .nullish(),
   repaymentMonths: z.number().int().positive(),
   repaymentMethod: z.enum(['equal_payment', 'equal_principal', 'bullet']),
   description: z.string().nullable().optional(),

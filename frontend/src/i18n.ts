@@ -166,6 +166,8 @@ const en = {
     interest_expense: 'Interest Expense',
     net_profit: 'Net Profit',
     months_unit: ' months',
+    repayment_start_date: 'Repayment Start Date',
+    repayment_start_date_hint: 'If not specified, repayment starts the month after the loan date.',
   },
 };
 
@@ -334,6 +336,8 @@ const ja = {
     interest_expense: '利息支払額',
     net_profit: '経常利益',
     months_unit: 'ヶ月',
+    repayment_start_date: '返済開始日',
+    repayment_start_date_hint: '未指定の場合は借入日の翌月から返済が開始されます。',
   },
 };
 

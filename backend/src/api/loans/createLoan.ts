@@ -77,6 +77,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     principalAmount,
     interestRate,
     loanDate,
+    repaymentStartDate,
     repaymentMonths,
     repaymentMethod,
     description,
@@ -85,13 +86,17 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   // 返済スケジュール計算
   let schedule;
   if (repaymentMethod === 'equal_payment') {
-    schedule = generateEqualPaymentSchedule(principalAmount, interestRate, repaymentMonths, loanDate);
+    schedule = generateEqualPaymentSchedule(
+      principalAmount, interestRate, repaymentMonths, loanDate, repaymentStartDate,
+    );
   } else if (repaymentMethod === 'equal_principal') {
     schedule = generateEqualPrincipalSchedule(
-      principalAmount, interestRate, repaymentMonths, loanDate,
+      principalAmount, interestRate, repaymentMonths, loanDate, repaymentStartDate,
     );
   } else {
-    schedule = generateBulletSchedule(principalAmount, interestRate, repaymentMonths, loanDate);
+    schedule = generateBulletSchedule(
+      principalAmount, interestRate, repaymentMonths, loanDate, repaymentStartDate,
+    );
   }
 
   const transaction = await sequelize.transaction();
@@ -102,6 +107,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       principal_amount: principalAmount,
       interest_rate: interestRate,
       loan_date: loanDate,
+      repayment_start_date: repaymentStartDate ?? null,
       repayment_months: repaymentMonths,
       repayment_method: repaymentMethod,
       description: description ?? null,
@@ -133,6 +139,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
           principalAmount: Number(loan.principal_amount),
           interestRate: Number(loan.interest_rate),
           loanDate: loan.loan_date,
+          repaymentStartDate: loan.repayment_start_date,
           repaymentMonths: loan.repayment_months,
           repaymentMethod: loan.repayment_method,
           description: loan.description,

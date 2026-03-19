@@ -32,6 +32,10 @@ const loanFormSchema = z.object({
     z.number().min(0).max(100),
   ),
   loanDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD'),
+  repaymentStartDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD')
+    .nullish(),
   repaymentMonths: z.preprocess(
     v => (v === '' ? undefined : Number(v)),
     z.number().int().positive(),
@@ -73,6 +77,7 @@ export default function LoanEditorDialog({
       principalAmount: 0,
       interestRate: 0,
       loanDate: '',
+      repaymentStartDate: null,
       repaymentMonths: 12,
       repaymentMethod: 'equal_payment',
       description: null,
@@ -88,6 +93,7 @@ export default function LoanEditorDialog({
             principalAmount: loan.principalAmount,
             interestRate: loan.interestRate,
             loanDate: loan.loanDate,
+            repaymentStartDate: loan.repaymentStartDate,
             repaymentMonths: loan.repaymentMonths,
             repaymentMethod: loan.repaymentMethod,
             description: loan.description,
@@ -97,6 +103,7 @@ export default function LoanEditorDialog({
             principalAmount: 0,
             interestRate: 0,
             loanDate: '',
+            repaymentStartDate: null,
             repaymentMonths: 12,
             repaymentMethod: 'equal_payment',
             description: null,
@@ -111,6 +118,7 @@ export default function LoanEditorDialog({
       principalAmount: Number(data.principalAmount),
       interestRate: Number(data.interestRate),
       loanDate: data.loanDate,
+      repaymentStartDate: data.repaymentStartDate ?? null,
       repaymentMonths: Number(data.repaymentMonths),
       repaymentMethod: data.repaymentMethod,
       description: data.description ?? null,
@@ -195,6 +203,27 @@ export default function LoanEditorDialog({
                 helperText={errors.loanDate?.message}
                 fullWidth
                 required
+              />
+            )}
+          />
+
+          {/* 返済開始日（省略可） */}
+          <Controller
+            name="repaymentStartDate"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                value={field.value ?? ''}
+                onChange={e => field.onChange(e.target.value || null)}
+                label={t('repayment_start_date')}
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                error={Boolean(errors.repaymentStartDate)}
+                helperText={
+                  errors.repaymentStartDate?.message ?? t('repayment_start_date_hint')
+                }
+                fullWidth
               />
             )}
           />

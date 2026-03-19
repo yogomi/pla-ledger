@@ -29,9 +29,14 @@ interface MonthData {
  * 指定年月の月次損益データを計算する
  * @param projectId - プロジェクトID
  * @param yearMonth - 対象年月 (YYYY-MM)
+ * @param interestExpenseMap - 年月→利息支払額のマップ（一括取得済み）
  * @returns 月次損益データ
  */
-async function buildMonthData(projectId: string, yearMonth: string): Promise<MonthData> {
+async function buildMonthData(
+  projectId: string,
+  yearMonth: string,
+  interestExpenseMap: Map<string, number>,
+): Promise<MonthData> {
   let snapshot: SalesSimulationSnapshot | null = await SalesSimulationSnapshot.findOne({
     where: { project_id: projectId, year_month: yearMonth },
   });
@@ -86,11 +91,8 @@ async function buildMonthData(projectId: string, yearMonth: string): Promise<Mon
   const totalExpense = monthlyCost + fixedTotal + variableTotal;
   const operatingProfit = monthlySales - totalExpense;
 
-  // 利息支払額：該当年月の返済スケジュールから集計する
-  const interestSum = await LoanRepayment.sum('interest_payment', {
-    where: { project_id: projectId, year_month: yearMonth },
-  });
-  const interestExpense = interestSum ? Number(interestSum) : 0;
+  // 利息支払額：一括取得済みのマップから参照する（N+1クエリ回避）
+  const interestExpense = interestExpenseMap.get(yearMonth) ?? 0;
   const netProfit = operatingProfit - interestExpense;
 
   const profitRate = monthlySales > 0
@@ -213,11 +215,26 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
 
   const { year } = parsed.data;
 
+  // 年間の利息支払額を一括取得してマップに持つ（N+1クエリ回避）
+  const yearlyRepayments = await LoanRepayment.findAll({
+    attributes: ['year_month', 'interest_payment'],
+    where: {
+      project_id: projectId,
+      year_month: { [Op.like]: `${year}-%` },
+    },
+  });
+
+  const interestExpenseMap = new Map<string, number>();
+  for (const r of yearlyRepayments) {
+    const prev = interestExpenseMap.get(r.year_month) ?? 0;
+    interestExpenseMap.set(r.year_month, prev + Number(r.interest_payment));
+  }
+
   // 1月〜12月の月次データを順次計算
   const months: MonthData[] = [];
   for (let m = 1; m <= 12; m++) {
     const yearMonth = `${year}-${String(m).padStart(2, '0')}`;
-    const monthData = await buildMonthData(projectId, yearMonth);
+    const monthData = await buildMonthData(projectId, yearMonth, interestExpenseMap);
     months.push(monthData);
   }
 
