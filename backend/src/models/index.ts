@@ -546,6 +546,99 @@ FixedExpenseMonth.init({
   indexes: [{ unique: true, fields: ['project_id', 'year_month'] }],
 });
 
+// ========== Loan ==========
+interface LoanAttributes {
+  id: string;
+  project_id: string;
+  lender_name: string;
+  principal_amount: number;
+  interest_rate: number;
+  loan_date: string;
+  repayment_months: number;
+  repayment_method: 'equal_payment' | 'equal_principal' | 'bullet';
+  description: string | null;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type LoanCreation = Optional<LoanAttributes, 'id' | 'description'>;
+
+export class Loan
+  extends Model<LoanAttributes, LoanCreation>
+  implements LoanAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare lender_name: string;
+  declare principal_amount: number;
+  declare interest_rate: number;
+  declare loan_date: string;
+  declare repayment_months: number;
+  declare repayment_method: 'equal_payment' | 'equal_principal' | 'bullet';
+  declare description: string | null;
+  declare created_at?: Date;
+  declare updated_at?: Date;
+}
+
+Loan.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  lender_name: { type: DataTypes.STRING, allowNull: false },
+  principal_amount: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
+  interest_rate: { type: DataTypes.DECIMAL(5, 2), allowNull: false },
+  loan_date: { type: DataTypes.STRING(10), allowNull: false },
+  repayment_months: { type: DataTypes.INTEGER, allowNull: false },
+  repayment_method: {
+    type: DataTypes.ENUM('equal_payment', 'equal_principal', 'bullet'),
+    allowNull: false,
+  },
+  description: { type: DataTypes.TEXT, defaultValue: null },
+}, {
+  sequelize,
+  tableName: 'loans',
+  underscored: true,
+  indexes: [{ fields: ['project_id'] }],
+});
+
+// ========== LoanRepayment ==========
+interface LoanRepaymentAttributes {
+  id: string;
+  loan_id: string;
+  project_id: string;
+  year_month: string;
+  principal_payment: number;
+  interest_payment: number;
+  remaining_balance: number;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type LoanRepaymentCreation = Optional<LoanRepaymentAttributes, 'id'>;
+
+export class LoanRepayment
+  extends Model<LoanRepaymentAttributes, LoanRepaymentCreation>
+  implements LoanRepaymentAttributes {
+  declare id: string;
+  declare loan_id: string;
+  declare project_id: string;
+  declare year_month: string;
+  declare principal_payment: number;
+  declare interest_payment: number;
+  declare remaining_balance: number;
+}
+
+LoanRepayment.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  loan_id: { type: DataTypes.UUID, allowNull: false },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  year_month: { type: DataTypes.STRING(7), allowNull: false },
+  principal_payment: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
+  interest_payment: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
+  remaining_balance: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
+}, {
+  sequelize,
+  tableName: 'loan_repayments',
+  underscored: true,
+  indexes: [{ unique: true, fields: ['loan_id', 'year_month'] }],
+});
+
 // Associations
 Project.hasMany(ProjectSection, { foreignKey: 'project_id', as: 'sections' });
 ProjectSection.belongsTo(Project, { foreignKey: 'project_id' });
@@ -576,5 +669,14 @@ FixedExpense.belongsTo(Project, { foreignKey: 'project_id' });
 
 Project.hasMany(VariableExpense, { foreignKey: 'project_id', as: 'variableExpenses' });
 VariableExpense.belongsTo(Project, { foreignKey: 'project_id' });
+
+Project.hasMany(Loan, { foreignKey: 'project_id', as: 'loans' });
+Loan.belongsTo(Project, { foreignKey: 'project_id' });
+
+Loan.hasMany(LoanRepayment, { foreignKey: 'loan_id', as: 'repayments' });
+LoanRepayment.belongsTo(Loan, { foreignKey: 'loan_id' });
+
+Project.hasMany(LoanRepayment, { foreignKey: 'project_id', as: 'loanRepayments' });
+LoanRepayment.belongsTo(Project, { foreignKey: 'project_id' });
 
 export default sequelize;

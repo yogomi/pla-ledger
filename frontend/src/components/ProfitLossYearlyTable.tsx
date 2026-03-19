@@ -55,6 +55,8 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
             <TableCell align="right">{t('variable_expenses_section')} ({currency})</TableCell>
             <TableCell align="right">{t('expense_total_row')} ({currency})</TableCell>
             <TableCell align="right">{t('operating_profit')} ({currency})</TableCell>
+            <TableCell align="right">{t('interest_expense')} ({currency})</TableCell>
+            <TableCell align="right">{t('net_profit')} ({currency})</TableCell>
             <TableCell align="right">{t('profit_rate')}</TableCell>
           </TableRow>
         </TableHead>
@@ -83,6 +85,13 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
                   sx={{ color: row.operatingProfit >= 0 ? 'success.main' : 'error.main' }}
                 >
                   {row.operatingProfit.toLocaleString()}
+                </TableCell>
+                <TableCell align="right">{row.interestExpense.toLocaleString()}</TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ color: row.netProfit >= 0 ? 'success.main' : 'error.main' }}
+                >
+                  {row.netProfit.toLocaleString()}
                 </TableCell>
                 <TableCell align="right">
                   {`${row.profitRate.toFixed(1)}%`}
@@ -114,6 +123,19 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
             >
               <Typography fontWeight="bold">
                 {yearly.totalOperatingProfit.toLocaleString()}
+              </Typography>
+            </TableCell>
+            <TableCell align="right">
+              <Typography fontWeight="bold">
+                {yearly.totalInterestExpense.toLocaleString()}
+              </Typography>
+            </TableCell>
+            <TableCell
+              align="right"
+              sx={{ color: yearly.totalNetProfit >= 0 ? 'success.main' : 'error.main' }}
+            >
+              <Typography fontWeight="bold">
+                {yearly.totalNetProfit.toLocaleString()}
               </Typography>
             </TableCell>
             <TableCell align="right">

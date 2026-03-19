@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
   Project, FixedExpense, VariableExpense, SalesSimulationSnapshot, FixedExpenseMonth,
+  LoanRepayment,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
@@ -18,6 +19,8 @@ interface MonthData {
   variableTotal: number;
   totalExpense: number;
   operatingProfit: number;
+  interestExpense: number;
+  netProfit: number;
   profitRate: number;
   isInherited: boolean;
 }
@@ -82,6 +85,14 @@ async function buildMonthData(projectId: string, yearMonth: string): Promise<Mon
   const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const totalExpense = monthlyCost + fixedTotal + variableTotal;
   const operatingProfit = monthlySales - totalExpense;
+
+  // 利息支払額：該当年月の返済スケジュールから集計する
+  const interestSum = await LoanRepayment.sum('interest_payment', {
+    where: { project_id: projectId, year_month: yearMonth },
+  });
+  const interestExpense = interestSum ? Number(interestSum) : 0;
+  const netProfit = operatingProfit - interestExpense;
+
   const profitRate = monthlySales > 0
     ? Math.round((operatingProfit / monthlySales) * 10000) / 100
     : 0;
@@ -94,6 +105,8 @@ async function buildMonthData(projectId: string, yearMonth: string): Promise<Mon
     variableTotal,
     totalExpense,
     operatingProfit,
+    interestExpense,
+    netProfit,
     profitRate,
     isInherited: isInherited || isFixedInherited,
   };
@@ -215,6 +228,8 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
   const totalVariable = months.reduce((sum, m) => sum + m.variableTotal, 0);
   const totalExpense = months.reduce((sum, m) => sum + m.totalExpense, 0);
   const totalOperatingProfit = months.reduce((sum, m) => sum + m.operatingProfit, 0);
+  const totalInterestExpense = months.reduce((sum, m) => sum + m.interestExpense, 0);
+  const totalNetProfit = months.reduce((sum, m) => sum + m.netProfit, 0);
   const averageProfitRate = totalSales > 0
     ? Math.round((totalOperatingProfit / totalSales) * 10000) / 100
     : 0;
@@ -233,6 +248,8 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
         totalVariable,
         totalExpense,
         totalOperatingProfit,
+        totalInterestExpense,
+        totalNetProfit,
         averageProfitRate,
       },
     },
