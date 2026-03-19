@@ -98,6 +98,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     interestRate: Number(loan.interest_rate),
     loanDate: loan.loan_date,
     repaymentStartDate: loan.repayment_start_date,
+    deferredInterestPolicy: loan.deferred_interest_policy,
     repaymentMonths: loan.repayment_months,
     repaymentMethod: loan.repayment_method,
     remainingBalance: balanceMap.get(loan.id) ?? Number(loan.principal_amount),

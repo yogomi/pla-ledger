@@ -7,6 +7,7 @@ export interface Loan {
   interestRate: number;
   loanDate: string;
   repaymentStartDate: string | null;
+  deferredInterestPolicy: 'charge' | 'waive';
   repaymentMonths: number;
   repaymentMethod: 'equal_payment' | 'equal_principal' | 'bullet';
   remainingBalance: number;
@@ -30,6 +31,7 @@ export interface LoanInputData {
   interestRate: number;
   loanDate: string;
   repaymentStartDate: string | null;
+  deferredInterestPolicy: 'charge' | 'waive';
   repaymentMonths: number;
   repaymentMethod: 'equal_payment' | 'equal_principal' | 'bullet';
   description: string | null;

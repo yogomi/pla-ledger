@@ -78,6 +78,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     interestRate,
     loanDate,
     repaymentStartDate,
+    deferredInterestPolicy,
     repaymentMonths,
     repaymentMethod,
     description,
@@ -87,15 +88,18 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   let schedule;
   if (repaymentMethod === 'equal_payment') {
     schedule = generateEqualPaymentSchedule(
-      principalAmount, interestRate, repaymentMonths, loanDate, repaymentStartDate,
+      principalAmount, interestRate, repaymentMonths, loanDate,
+      repaymentStartDate, deferredInterestPolicy,
     );
   } else if (repaymentMethod === 'equal_principal') {
     schedule = generateEqualPrincipalSchedule(
-      principalAmount, interestRate, repaymentMonths, loanDate, repaymentStartDate,
+      principalAmount, interestRate, repaymentMonths, loanDate,
+      repaymentStartDate, deferredInterestPolicy,
     );
   } else {
     schedule = generateBulletSchedule(
-      principalAmount, interestRate, repaymentMonths, loanDate, repaymentStartDate,
+      principalAmount, interestRate, repaymentMonths, loanDate,
+      repaymentStartDate, deferredInterestPolicy,
     );
   }
 
@@ -108,6 +112,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       interest_rate: interestRate,
       loan_date: loanDate,
       repayment_start_date: repaymentStartDate ?? null,
+      deferred_interest_policy: deferredInterestPolicy,
       repayment_months: repaymentMonths,
       repayment_method: repaymentMethod,
       description: description ?? null,
@@ -140,6 +145,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
           interestRate: Number(loan.interest_rate),
           loanDate: loan.loan_date,
           repaymentStartDate: loan.repayment_start_date,
+          deferredInterestPolicy: loan.deferred_interest_policy,
           repaymentMonths: loan.repayment_months,
           repaymentMethod: loan.repayment_method,
           description: loan.description,

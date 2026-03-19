@@ -168,6 +168,9 @@ const en = {
     months_unit: ' months',
     repayment_start_date: 'Repayment Start Date',
     repayment_start_date_hint: 'If not specified, repayment starts the month after the loan date.',
+    deferred_interest_policy: 'Interest During Deferral Period',
+    deferred_interest_policy_charge: 'Charge interest (pay interest monthly during deferral)',
+    deferred_interest_policy_waive: 'Waive interest (no interest during deferral)',
   },
 };
 
@@ -338,6 +341,9 @@ const ja = {
     months_unit: 'ヶ月',
     repayment_start_date: '返済開始日',
     repayment_start_date_hint: '未指定の場合は借入日の翌月から返済が開始されます。',
+    deferred_interest_policy: '据え置き期間中の利息',
+    deferred_interest_policy_charge: '利息を課す（据え置き期間中は毎月利息のみ支払い）',
+    deferred_interest_policy_waive: '利息を免除する（据え置き期間中は利息なし）',
   },
 };
 

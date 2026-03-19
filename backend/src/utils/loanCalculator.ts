@@ -52,6 +52,51 @@ function addMonths(startYearMonth: string, offsetMonths: number): string {
 }
 
 /**
+ * 2つの年月文字列の差（月数）を返す。
+ * toYearMonth - fromYearMonth の月数差。
+ * @param fromYearMonth - 開始年月 (YYYY-MM)
+ * @param toYearMonth - 終了年月 (YYYY-MM)
+ */
+function monthDiff(fromYearMonth: string, toYearMonth: string): number {
+  const [fy, fm] = fromYearMonth.split('-').map(Number);
+  const [ty, tm] = toYearMonth.split('-').map(Number);
+  return (ty - fy) * 12 + (tm - fm);
+}
+
+/**
+ * 据え置き期間の利息のみ支払い行を生成する。
+ * borrowing_date の翌月から repaymentStartYearMonth の前月まで、
+ * 元本は変わらず毎月利息のみ支払う。
+ * @param principal - 借入元本
+ * @param annualRate - 年利（%）
+ * @param loanDate - 借入日 (YYYY-MM-DD)
+ * @param repaymentStartYearMonth - 実際の返済開始年月 (YYYY-MM)
+ * @returns 据え置き期間の月次エントリ
+ */
+function buildDeferralRows(
+  principal: number,
+  annualRate: number,
+  loanDate: string,
+  repaymentStartYearMonth: string,
+): RepaymentEntry[] {
+  const monthlyRate = annualRate / 100 / 12;
+  const defaultStart = getFirstRepaymentYearMonth(loanDate);
+  const deferralMonths = monthDiff(defaultStart, repaymentStartYearMonth);
+
+  const rows: RepaymentEntry[] = [];
+  for (let i = 0; i < deferralMonths; i++) {
+    const interestPayment = Math.round(principal * monthlyRate * 100) / 100;
+    rows.push({
+      yearMonth: addMonths(defaultStart, i),
+      principalPayment: 0,
+      interestPayment,
+      remainingBalance: principal,
+    });
+  }
+  return rows;
+}
+
+/**
  * 元利均等返済の月次返済額を計算する。
  * @param principal - 元本
  * @param annualRate - 年利（%）
@@ -75,11 +120,16 @@ export function calculateEqualPayment(
 
 /**
  * 元利均等返済のスケジュールを生成する。
+ * repaymentStartDate と deferredInterestPolicy が両方指定された場合、
+ * 据え置き期間の扱いが変わる。
+ * - 'charge': 据え置き期間は毎月利息のみ支払い
+ * - 'waive': 据え置き期間は利息なし（スケジュールに含めない）
  * @param principal - 借入元本
  * @param annualRate - 年利（%）
  * @param months - 返済月数
  * @param loanDate - 借入日 (YYYY-MM-DD)
  * @param repaymentStartDate - 返済開始日 (YYYY-MM-DD)。省略時は借入日翌月。
+ * @param deferredInterestPolicy - 据え置き期間の利息方針。'charge' | 'waive'
  * @returns 月次返済スケジュール
  */
 export function generateEqualPaymentSchedule(
@@ -88,11 +138,17 @@ export function generateEqualPaymentSchedule(
   months: number,
   loanDate: string,
   repaymentStartDate?: string | null,
+  deferredInterestPolicy: 'charge' | 'waive' = 'charge',
 ): RepaymentEntry[] {
-  const schedule: RepaymentEntry[] = [];
+  const firstYearMonth = resolveFirstRepaymentYearMonth(loanDate, repaymentStartDate);
+
+  const deferralRows = (repaymentStartDate && deferredInterestPolicy === 'charge')
+    ? buildDeferralRows(principal, annualRate, loanDate, firstYearMonth)
+    : [];
+
+  const repaymentRows: RepaymentEntry[] = [];
   const monthlyRate = annualRate / 100 / 12;
   const payment = calculateEqualPayment(principal, annualRate, months);
-  const firstYearMonth = resolveFirstRepaymentYearMonth(loanDate, repaymentStartDate);
   let balance = principal;
 
   for (let i = 0; i < months; i++) {
@@ -107,7 +163,7 @@ export function generateEqualPaymentSchedule(
     balance = Math.round((balance - principalPayment) * 100) / 100;
     if (balance < 0) balance = 0;
 
-    schedule.push({
+    repaymentRows.push({
       yearMonth: addMonths(firstYearMonth, i),
       principalPayment,
       interestPayment,
@@ -115,7 +171,7 @@ export function generateEqualPaymentSchedule(
     });
   }
 
-  return schedule;
+  return [...deferralRows, ...repaymentRows];
 }
 
 /**
@@ -125,6 +181,7 @@ export function generateEqualPaymentSchedule(
  * @param months - 返済月数
  * @param loanDate - 借入日 (YYYY-MM-DD)
  * @param repaymentStartDate - 返済開始日 (YYYY-MM-DD)。省略時は借入日翌月。
+ * @param deferredInterestPolicy - 据え置き期間の利息方針。'charge' | 'waive'
  * @returns 月次返済スケジュール
  */
 export function generateEqualPrincipalSchedule(
@@ -133,11 +190,17 @@ export function generateEqualPrincipalSchedule(
   months: number,
   loanDate: string,
   repaymentStartDate?: string | null,
+  deferredInterestPolicy: 'charge' | 'waive' = 'charge',
 ): RepaymentEntry[] {
-  const schedule: RepaymentEntry[] = [];
+  const firstYearMonth = resolveFirstRepaymentYearMonth(loanDate, repaymentStartDate);
+
+  const deferralRows = (repaymentStartDate && deferredInterestPolicy === 'charge')
+    ? buildDeferralRows(principal, annualRate, loanDate, firstYearMonth)
+    : [];
+
+  const repaymentRows: RepaymentEntry[] = [];
   const monthlyRate = annualRate / 100 / 12;
   const basePrincipalPayment = Math.round((principal / months) * 100) / 100;
-  const firstYearMonth = resolveFirstRepaymentYearMonth(loanDate, repaymentStartDate);
   let balance = principal;
 
   for (let i = 0; i < months; i++) {
@@ -152,7 +215,7 @@ export function generateEqualPrincipalSchedule(
     balance = Math.round((balance - principalPayment) * 100) / 100;
     if (balance < 0) balance = 0;
 
-    schedule.push({
+    repaymentRows.push({
       yearMonth: addMonths(firstYearMonth, i),
       principalPayment,
       interestPayment,
@@ -160,7 +223,7 @@ export function generateEqualPrincipalSchedule(
     });
   }
 
-  return schedule;
+  return [...deferralRows, ...repaymentRows];
 }
 
 /**
@@ -171,6 +234,7 @@ export function generateEqualPrincipalSchedule(
  * @param months - 返済月数
  * @param loanDate - 借入日 (YYYY-MM-DD)
  * @param repaymentStartDate - 返済開始日 (YYYY-MM-DD)。省略時は借入日翌月。
+ * @param deferredInterestPolicy - 据え置き期間の利息方針。'charge' | 'waive'
  * @returns 月次返済スケジュール
  */
 export function generateBulletSchedule(
@@ -179,10 +243,16 @@ export function generateBulletSchedule(
   months: number,
   loanDate: string,
   repaymentStartDate?: string | null,
+  deferredInterestPolicy: 'charge' | 'waive' = 'charge',
 ): RepaymentEntry[] {
-  const schedule: RepaymentEntry[] = [];
-  const monthlyRate = annualRate / 100 / 12;
   const firstYearMonth = resolveFirstRepaymentYearMonth(loanDate, repaymentStartDate);
+
+  const deferralRows = (repaymentStartDate && deferredInterestPolicy === 'charge')
+    ? buildDeferralRows(principal, annualRate, loanDate, firstYearMonth)
+    : [];
+
+  const repaymentRows: RepaymentEntry[] = [];
+  const monthlyRate = annualRate / 100 / 12;
 
   for (let i = 0; i < months; i++) {
     const interestPayment = Math.round(principal * monthlyRate * 100) / 100;
@@ -190,7 +260,7 @@ export function generateBulletSchedule(
     const principalPayment = isLastMonth ? principal : 0;
     const remainingBalance = isLastMonth ? 0 : principal;
 
-    schedule.push({
+    repaymentRows.push({
       yearMonth: addMonths(firstYearMonth, i),
       principalPayment,
       interestPayment,
@@ -198,5 +268,5 @@ export function generateBulletSchedule(
     });
   }
 
-  return schedule;
+  return [...deferralRows, ...repaymentRows];
 }

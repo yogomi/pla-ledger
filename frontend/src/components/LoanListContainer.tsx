@@ -73,6 +73,11 @@ export default function LoanListContainer({
     return t('bullet');
   };
 
+  const deferredInterestPolicyLabel = (policy: Loan['deferredInterestPolicy']) => {
+    if (policy === 'waive') return t('deferred_interest_policy_waive');
+    return t('deferred_interest_policy_charge');
+  };
+
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" mt={4}>
@@ -125,7 +130,8 @@ export default function LoanListContainer({
                   </Typography>
                   {loan.repaymentStartDate !== null && (
                     <Typography variant="body2" color="text.secondary">
-                      {t('repayment_start_date')}: {loan.repaymentStartDate}
+                      {t('repayment_start_date')}: {loan.repaymentStartDate}　
+                      {t('deferred_interest_policy')}: {deferredInterestPolicyLabel(loan.deferredInterestPolicy)}
                     </Typography>
                   )}
                   <Typography variant="body2" color="text.secondary">

@@ -36,6 +36,7 @@ const loanFormSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD')
     .nullish(),
+  deferredInterestPolicy: z.enum(['charge', 'waive']),
   repaymentMonths: z.preprocess(
     v => (v === '' ? undefined : Number(v)),
     z.number().int().positive(),
@@ -70,7 +71,13 @@ export default function LoanEditorDialog({
 
   const isEdit = Boolean(loan);
 
-  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<LoanFormData>({
+  const {
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<LoanFormData>({
     resolver: zodResolver(loanFormSchema),
     defaultValues: {
       lenderName: '',
@@ -78,11 +85,16 @@ export default function LoanEditorDialog({
       interestRate: 0,
       loanDate: '',
       repaymentStartDate: null,
+      deferredInterestPolicy: 'charge',
       repaymentMonths: 12,
       repaymentMethod: 'equal_payment',
       description: null,
     },
   });
+
+  // 返済開始日の値を監視して、利息ポリシー選択の表示を切り替える
+  const repaymentStartDate = watch('repaymentStartDate');
+  const hasDeferral = Boolean(repaymentStartDate);
 
   // ダイアログが開くたびにフォームを初期化する
   useEffect(() => {
@@ -94,6 +106,7 @@ export default function LoanEditorDialog({
             interestRate: loan.interestRate,
             loanDate: loan.loanDate,
             repaymentStartDate: loan.repaymentStartDate,
+            deferredInterestPolicy: loan.deferredInterestPolicy,
             repaymentMonths: loan.repaymentMonths,
             repaymentMethod: loan.repaymentMethod,
             description: loan.description,
@@ -104,6 +117,7 @@ export default function LoanEditorDialog({
             interestRate: 0,
             loanDate: '',
             repaymentStartDate: null,
+            deferredInterestPolicy: 'charge',
             repaymentMonths: 12,
             repaymentMethod: 'equal_payment',
             description: null,
@@ -119,6 +133,7 @@ export default function LoanEditorDialog({
       interestRate: Number(data.interestRate),
       loanDate: data.loanDate,
       repaymentStartDate: data.repaymentStartDate ?? null,
+      deferredInterestPolicy: data.deferredInterestPolicy,
       repaymentMonths: Number(data.repaymentMonths),
       repaymentMethod: data.repaymentMethod,
       description: data.description ?? null,
@@ -227,6 +242,34 @@ export default function LoanEditorDialog({
               />
             )}
           />
+
+          {/* 据え置き期間中の利息（返済開始日が指定されている場合のみ表示） */}
+          {hasDeferral && (
+            <Controller
+              name="deferredInterestPolicy"
+              control={control}
+              render={({ field }) => (
+                <FormControl error={Boolean(errors.deferredInterestPolicy)}>
+                  <FormLabel>{t('deferred_interest_policy')}</FormLabel>
+                  <RadioGroup {...field} row>
+                    <FormControlLabel
+                      value="charge"
+                      control={<Radio />}
+                      label={t('deferred_interest_policy_charge')}
+                    />
+                    <FormControlLabel
+                      value="waive"
+                      control={<Radio />}
+                      label={t('deferred_interest_policy_waive')}
+                    />
+                  </RadioGroup>
+                  {errors.deferredInterestPolicy && (
+                    <FormHelperText>{errors.deferredInterestPolicy.message}</FormHelperText>
+                  )}
+                </FormControl>
+              )}
+            />
+          )}
 
           {/* 返済期間（月） */}
           <Controller

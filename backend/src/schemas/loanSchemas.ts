@@ -10,6 +10,7 @@ export const createLoanSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'repaymentStartDate must be YYYY-MM-DD')
     .nullish(),
+  deferredInterestPolicy: z.enum(['charge', 'waive']).optional().default('charge'),
   repaymentMonths: z.number().int().positive(),
   repaymentMethod: z.enum(['equal_payment', 'equal_principal', 'bullet']),
   description: z.string().nullable().optional(),

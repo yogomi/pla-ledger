@@ -78,6 +78,7 @@ router.get('/:loanId/schedule', authenticate, async (req: AuthRequest, res: Resp
       lenderName: loan.lender_name,
       principalAmount: Number(loan.principal_amount),
       repaymentStartDate: loan.repayment_start_date,
+      deferredInterestPolicy: loan.deferred_interest_policy,
       schedule: repayments.map(r => ({
         yearMonth: r.year_month,
         principalPayment: Number(r.principal_payment),

@@ -555,13 +555,17 @@ interface LoanAttributes {
   interest_rate: number;
   loan_date: string;
   repayment_start_date: string | null;
+  deferred_interest_policy: 'charge' | 'waive';
   repayment_months: number;
   repayment_method: 'equal_payment' | 'equal_principal' | 'bullet';
   description: string | null;
   created_at?: Date;
   updated_at?: Date;
 }
-type LoanCreation = Optional<LoanAttributes, 'id' | 'repayment_start_date' | 'description'>;
+type LoanCreation = Optional<
+  LoanAttributes,
+  'id' | 'repayment_start_date' | 'deferred_interest_policy' | 'description'
+>;
 
 export class Loan
   extends Model<LoanAttributes, LoanCreation>
@@ -573,6 +577,7 @@ export class Loan
   declare interest_rate: number;
   declare loan_date: string;
   declare repayment_start_date: string | null;
+  declare deferred_interest_policy: 'charge' | 'waive';
   declare repayment_months: number;
   declare repayment_method: 'equal_payment' | 'equal_principal' | 'bullet';
   declare description: string | null;
@@ -588,6 +593,11 @@ Loan.init({
   interest_rate: { type: DataTypes.DECIMAL(5, 2), allowNull: false },
   loan_date: { type: DataTypes.STRING(10), allowNull: false },
   repayment_start_date: { type: DataTypes.STRING(10), defaultValue: null },
+  deferred_interest_policy: {
+    type: DataTypes.ENUM('charge', 'waive'),
+    allowNull: false,
+    defaultValue: 'charge',
+  },
   repayment_months: { type: DataTypes.INTEGER, allowNull: false },
   repayment_method: {
     type: DataTypes.ENUM('equal_payment', 'equal_principal', 'bullet'),
