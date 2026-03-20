@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { useSalesSimulationMonthly, useExpenseSimulationMonthly } from '../hooks/useSalesSimulation';
 import ProfitLossYearlyTable from './ProfitLossYearlyTable';
 import SalesSimulationPagination from './SalesSimulationPagination';
+import LoanListContainer from './LoanListContainer';
 
 interface SimulationViewContainerProps {
   projectId: string;
@@ -31,6 +32,8 @@ interface SimulationViewContainerProps {
   onYearMonthChange: (ym: string) => void;
   /** 通貨コード (例: JPY, USD)。金額表示に使用する。 */
   currency: string;
+  /** 編集権限の有無。借入管理タブで利用する。 */
+  canEdit?: boolean;
 }
 
 /** 月次売上データの読み取り専用表示 */
@@ -275,6 +278,7 @@ export default function SimulationViewContainer({
   yearMonth,
   onYearMonthChange,
   currency,
+  canEdit = false,
 }: SimulationViewContainerProps) {
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
@@ -289,6 +293,7 @@ export default function SimulationViewContainer({
           <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
             <Tab label={t('sales_simulation_tab')} />
             <Tab label={t('expense_management_tab')} />
+            <Tab label={t('loan_management_tab')} />
           </Tabs>
         )}
         {viewMode === 'yearly' && (
@@ -313,6 +318,9 @@ export default function SimulationViewContainer({
       )}
       {viewMode === 'monthly' && tab === 1 && (
         <ExpenseMonthlyView projectId={projectId} yearMonth={yearMonth} currency={currency} />
+      )}
+      {viewMode === 'monthly' && tab === 2 && (
+        <LoanListContainer projectId={projectId} currency={currency} canEdit={canEdit} />
       )}
       {viewMode === 'yearly' && (
         <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />

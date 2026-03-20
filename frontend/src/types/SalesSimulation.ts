@@ -63,6 +63,8 @@ export interface MonthlyProfitLoss {
   variableTotal: number;
   totalExpense: number;
   operatingProfit: number;
+  interestExpense: number;
+  netProfit: number;
   profitRate: number;
   isInherited: boolean;
 }
@@ -78,6 +80,8 @@ export interface ProfitLossYearlyData {
     totalVariable: number;
     totalExpense: number;
     totalOperatingProfit: number;
+    totalInterestExpense: number;
+    totalNetProfit: number;
     averageProfitRate: number;
   };
 }
