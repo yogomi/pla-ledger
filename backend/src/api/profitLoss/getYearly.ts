@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
   Project, FixedExpense, VariableExpense, SalesSimulationSnapshot, FixedExpenseMonth,
-  LoanRepayment,
+  LoanRepayment, LaborCost, LaborCostMonth,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
@@ -17,6 +17,7 @@ interface MonthData {
   monthlyCost: number;
   fixedTotal: number;
   variableTotal: number;
+  laborTotal: number;
   totalExpense: number;
   operatingProfit: number;
   interestExpense: number;
@@ -86,9 +87,34 @@ async function buildMonthData(
     where: { project_id: projectId, year_month: yearMonth },
   });
 
+  // 人件費取得
+  let laborCosts = await LaborCost.findAll({
+    where: { project_id: projectId, year_month: yearMonth },
+  });
+
+  // 人件費の継承ロジック（固定費と同一）:
+  // LaborCostMonth レコードが存在しない（未保存）場合のみ直近の過去月を継承する
+  if (laborCosts.length === 0) {
+    const savedLaborRecord = await LaborCostMonth.findOne({
+      where: { project_id: projectId, year_month: yearMonth },
+    });
+    if (!savedLaborRecord) {
+      const recentLabor = await LaborCost.findOne({
+        where: { project_id: projectId, year_month: { [Op.lt]: yearMonth } },
+        order: [['year_month', 'DESC']],
+      });
+      if (recentLabor) {
+        laborCosts = await LaborCost.findAll({
+          where: { project_id: projectId, year_month: recentLabor.year_month },
+        });
+      }
+    }
+  }
+
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const totalExpense = monthlyCost + fixedTotal + variableTotal;
+  const laborTotal = laborCosts.reduce((sum, lc) => sum + Number(lc.monthly_total), 0);
+  const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal;
   const operatingProfit = monthlySales - totalExpense;
 
   // 利息支払額：一括取得済みのマップから参照する（N+1クエリ回避）
@@ -105,6 +131,7 @@ async function buildMonthData(
     monthlyCost,
     fixedTotal,
     variableTotal,
+    laborTotal,
     totalExpense,
     operatingProfit,
     interestExpense,
@@ -243,6 +270,7 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
   const totalCost = months.reduce((sum, m) => sum + m.monthlyCost, 0);
   const totalFixed = months.reduce((sum, m) => sum + m.fixedTotal, 0);
   const totalVariable = months.reduce((sum, m) => sum + m.variableTotal, 0);
+  const totalLabor = months.reduce((sum, m) => sum + m.laborTotal, 0);
   const totalExpense = months.reduce((sum, m) => sum + m.totalExpense, 0);
   const totalOperatingProfit = months.reduce((sum, m) => sum + m.operatingProfit, 0);
   const totalInterestExpense = months.reduce((sum, m) => sum + m.interestExpense, 0);
@@ -263,6 +291,7 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
         totalCost,
         totalFixed,
         totalVariable,
+        totalLabor,
         totalExpense,
         totalOperatingProfit,
         totalInterestExpense,

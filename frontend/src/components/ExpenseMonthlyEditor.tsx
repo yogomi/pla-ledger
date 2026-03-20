@@ -26,6 +26,7 @@ import {
   useUpdateVariableExpenses,
 } from '../hooks/useSalesSimulation';
 import { ExpenseInputItem } from '../types/SalesSimulation';
+import LaborCostMonthlyEditor from './LaborCostMonthlyEditor';
 
 interface ExpenseMonthlyEditorProps {
   projectId: string;
@@ -366,6 +367,16 @@ export default function ExpenseMonthlyEditor({
           yearMonth={yearMonth}
           defaultExpenses={variableExpenses}
         />
+      </Paper>
+
+      {/* 人件費セクション */}
+      <Paper variant="outlined">
+        <Box p={2} borderBottom={1} borderColor="divider">
+          <Typography variant="h6">{t('labor_cost_section')}</Typography>
+        </Box>
+        <Box p={1}>
+          <LaborCostMonthlyEditor projectId={projectId} yearMonth={yearMonth} />
+        </Box>
       </Paper>
 
       {/* 損益サマリー */}

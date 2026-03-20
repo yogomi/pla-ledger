@@ -20,6 +20,7 @@ export const ProjectCreateSchema = z.object({
   stage: z.string().optional(),
   tags: z.array(z.string()).optional(),
   sections: z.array(z.object({ type: z.string(), content: z.any() })).optional(),
+  social_insurance_rate: z.number().min(0).max(100).optional(),
 });
 
 export const ProjectUpdateSchema = ProjectCreateSchema.partial();

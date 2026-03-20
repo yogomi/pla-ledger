@@ -53,6 +53,7 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
             <TableCell align="right">{t('cost_row')} ({currency})</TableCell>
             <TableCell align="right">{t('fixed_expenses_section')} ({currency})</TableCell>
             <TableCell align="right">{t('variable_expenses_section')} ({currency})</TableCell>
+            <TableCell align="right">{t('labor_cost_section')} ({currency})</TableCell>
             <TableCell align="right">{t('expense_total_row')} ({currency})</TableCell>
             <TableCell align="right">{t('operating_profit')} ({currency})</TableCell>
             <TableCell align="right">{t('interest_expense')} ({currency})</TableCell>
@@ -79,6 +80,7 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
                 <TableCell align="right">{row.monthlyCost.toLocaleString()}</TableCell>
                 <TableCell align="right">{row.fixedTotal.toLocaleString()}</TableCell>
                 <TableCell align="right">{row.variableTotal.toLocaleString()}</TableCell>
+                <TableCell align="right">{(row.laborTotal ?? 0).toLocaleString()}</TableCell>
                 <TableCell align="right">{row.totalExpense.toLocaleString()}</TableCell>
                 <TableCell
                   align="right"
@@ -113,6 +115,11 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
             </TableCell>
             <TableCell align="right">
               <Typography fontWeight="bold">{yearly.totalVariable.toLocaleString()}</Typography>
+            </TableCell>
+            <TableCell align="right">
+              <Typography fontWeight="bold">
+                {(yearly.totalLabor ?? 0).toLocaleString()}
+              </Typography>
             </TableCell>
             <TableCell align="right">
               <Typography fontWeight="bold">{yearly.totalExpense.toLocaleString()}</Typography>
