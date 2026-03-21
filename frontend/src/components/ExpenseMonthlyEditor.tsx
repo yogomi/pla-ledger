@@ -24,6 +24,7 @@ import {
   useExpenseSimulationMonthly,
   useUpdateFixedExpenses,
   useUpdateVariableExpenses,
+  useDeleteFixedExpenses,
 } from '../hooks/useSalesSimulation';
 import { ExpenseInputItem } from '../types/SalesSimulation';
 import LaborCostMonthlyEditor from './LaborCostMonthlyEditor';
@@ -49,13 +50,16 @@ function FixedExpenseForm({
   projectId,
   yearMonth,
   defaultExpenses,
+  isInherited,
 }: {
   projectId: string;
   yearMonth: string;
   defaultExpenses: ExpenseInputItem[];
+  isInherited: boolean;
 }) {
   const { t } = useTranslation();
   const mutation = useUpdateFixedExpenses(projectId);
+  const deleteMutation = useDeleteFixedExpenses(projectId);
   const { control, handleSubmit, reset } = useForm<FixedFormValues>({
     defaultValues: { expenses: defaultExpenses },
   });
@@ -67,6 +71,12 @@ function FixedExpenseForm({
 
   const onSubmit = (values: FixedFormValues) => {
     mutation.mutate({ yearMonth, expenses: values.expenses });
+  };
+
+  /** この月の固定費登録を削除する */
+  const handleDeleteMonthly = () => {
+    if (!window.confirm(t('confirm_delete_monthly_data'))) return;
+    deleteMutation.mutate({ yearMonth });
   };
 
   return (
@@ -156,18 +166,33 @@ function FixedExpenseForm({
         >
           {t('add_row')}
         </Button>
-        <Button
-          type="submit"
-          variant="contained"
-          size="small"
-          startIcon={<SaveIcon />}
-          disabled={mutation.isPending}
-        >
-          {mutation.isPending ? t('saving') : t('save')}
-        </Button>
+        <Box display="flex" gap={1}>
+          {!isInherited && (
+            <Button
+              size="small"
+              variant="outlined"
+              color="error"
+              onClick={handleDeleteMonthly}
+              disabled={deleteMutation.isPending}
+            >
+              {t('delete_monthly_data')}
+            </Button>
+          )}
+          <Button
+            type="submit"
+            variant="contained"
+            size="small"
+            startIcon={<SaveIcon />}
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? t('saving') : t('save')}
+          </Button>
+        </Box>
       </Box>
       {mutation.isError && <Alert severity="error">{t('fixed_save_error')}</Alert>}
       {mutation.isSuccess && <Alert severity="success">{t('fixed_save_success')}</Alert>}
+      {deleteMutation.isError && <Alert severity="error">{t('delete_error')}</Alert>}
+      {deleteMutation.isSuccess && <Alert severity="success">{t('delete_success')}</Alert>}
     </Box>
   );
 }
@@ -354,6 +379,7 @@ export default function ExpenseMonthlyEditor({
           projectId={projectId}
           yearMonth={yearMonth}
           defaultExpenses={fixedExpenses}
+          isInherited={data.isInherited}
         />
       </Paper>
 

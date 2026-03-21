@@ -33,6 +33,7 @@ import {
   useDeleteSalesCategory,
   useCreateSalesItem,
   useDeleteSalesItem,
+  useDeleteSalesSimulationMonthly,
 } from '../hooks/useSalesSimulation';
 import { ItemInputData } from '../types/SalesSimulation';
 
@@ -56,6 +57,7 @@ export default function SalesSimulationMonthlyEditor({
   const { t } = useTranslation();
   const { data, isLoading, isError } = useSalesSimulationMonthly(projectId, yearMonth);
   const mutation = useUpdateSalesSimulation(projectId);
+  const deleteMutation = useDeleteSalesSimulationMonthly(projectId);
   const createCategoryMutation = useCreateSalesCategory(projectId);
   const updateCategoryMutation = useUpdateSalesCategory(projectId);
   const deleteCategoryMutation = useDeleteSalesCategory(projectId);
@@ -96,6 +98,12 @@ export default function SalesSimulationMonthlyEditor({
 
   const onSubmit = (values: FormValues) => {
     mutation.mutate({ yearMonth, items: values.items });
+  };
+
+  /** この月の登録を削除する */
+  const handleDeleteMonthly = () => {
+    if (!window.confirm(t('confirm_delete_monthly_data'))) return;
+    deleteMutation.mutate({ yearMonth });
   };
 
   /** カテゴリを追加する */
@@ -478,20 +486,38 @@ export default function SalesSimulationMonthlyEditor({
               {t('monthly_cost_total', { amount: data.monthlyCost.toLocaleString() })}
             </Typography>
           </Box>
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={<SaveIcon />}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? t('saving') : t('save')}
-          </Button>
+          <Box display="flex" gap={1}>
+            {!data.isInherited && (
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={handleDeleteMonthly}
+                disabled={deleteMutation.isPending}
+              >
+                {t('delete_monthly_data')}
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<SaveIcon />}
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </Box>
         </Box>
         {mutation.isError && (
           <Alert severity="error" sx={{ mt: 1 }}>{t('save_error')}</Alert>
         )}
         {mutation.isSuccess && (
           <Alert severity="success" sx={{ mt: 1 }}>{t('save_success')}</Alert>
+        )}
+        {deleteMutation.isError && (
+          <Alert severity="error" sx={{ mt: 1 }}>{t('delete_error')}</Alert>
+        )}
+        {deleteMutation.isSuccess && (
+          <Alert severity="success" sx={{ mt: 1 }}>{t('delete_success')}</Alert>
         )}
       </Paper>
     </Box>

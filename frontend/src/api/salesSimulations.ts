@@ -207,3 +207,39 @@ export async function updateLaborCosts(
 ): Promise<void> {
   await api.put(`/projects/${projectId}/labor-costs/${yearMonth}`, { laborCosts });
 }
+
+/**
+ * 指定月の売上シミュレーションスナップショットを削除する。
+ * @param projectId プロジェクトID
+ * @param yearMonth 年月 (YYYY-MM)
+ */
+export async function deleteSalesSimulationMonthly(
+  projectId: string,
+  yearMonth: string,
+): Promise<void> {
+  await api.delete(`/projects/${projectId}/sales-simulations/${yearMonth}`);
+}
+
+/**
+ * 指定月の固定費を削除する。
+ * @param projectId プロジェクトID
+ * @param yearMonth 年月 (YYYY-MM)
+ */
+export async function deleteFixedExpenses(
+  projectId: string,
+  yearMonth: string,
+): Promise<void> {
+  await api.delete(`/projects/${projectId}/fixed-expenses/${yearMonth}`);
+}
+
+/**
+ * 指定月の人件費を削除する。
+ * @param projectId プロジェクトID
+ * @param yearMonth 年月 (YYYY-MM)
+ */
+export async function deleteLaborCosts(
+  projectId: string,
+  yearMonth: string,
+): Promise<void> {
+  await api.delete(`/projects/${projectId}/labor-costs/${yearMonth}`);
+}
