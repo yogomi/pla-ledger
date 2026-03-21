@@ -31,6 +31,7 @@ interface Project {
   id: string; title: string; summary: string | null;
   visibility: string; currency: string; stage: string | null; tags: string[];
   owner_id: string; sections: Section[]; attachments: Attachment[];
+  social_insurance_rate: number | null;
 }
 interface AccessRequest {
   id: string; requester_id: string; request_type: string; message: string | null;
@@ -49,6 +50,7 @@ const editSchema = z.object({
   currency: z.string().min(3).max(10),
   stage: z.string().optional(),
   tags: z.string().optional(),
+  social_insurance_rate: z.number().min(0).max(100).optional(),
 });
 type EditFormData = z.infer<typeof editSchema>;
 
@@ -96,7 +98,7 @@ export default function ProjectViewPage() {
     formState: { errors: editErrors, isSubmitting: editSubmitting },
   } = useForm<EditFormData>({
     resolver: zodResolver(editSchema),
-    defaultValues: { visibility: 'private', currency: 'JPY' },
+    defaultValues: { visibility: 'private', currency: 'JPY', social_insurance_rate: 15 },
   });
   const watchedCurrency = watchEdit('currency', 'JPY');
   useEffect(() => { setEditCurrency(watchedCurrency); }, [watchedCurrency]);
@@ -131,6 +133,7 @@ export default function ProjectViewPage() {
         currency: p.currency,
         stage: p.stage || '',
         tags: Array.isArray(p.tags) ? p.tags.join(', ') : '',
+        social_insurance_rate: p.social_insurance_rate != null ? Number(p.social_insurance_rate) : 15,
       });
       setEditCurrency(p.currency || 'JPY');
       const financeSection = (p.sections ?? []).find(
@@ -217,6 +220,7 @@ export default function ProjectViewPage() {
         stage: data.stage || null,
         tags,
         sections,
+        social_insurance_rate: data.social_insurance_rate,
       });
       // 保存後はプロジェクトタブに戻る
       setSearchParams({ tab: 'project' }, { replace: true });
@@ -551,6 +555,27 @@ export default function ProjectViewPage() {
                   margin="normal"
                 />
               )} />
+
+              <Divider sx={{ my: 3 }} />
+
+              <Typography variant="h6" mb={2}>{t('social_insurance_rate')}</Typography>
+              <Controller
+                name="social_insurance_rate"
+                control={editControl}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label={t('social_insurance_rate')}
+                    type="number"
+                    margin="normal"
+                    inputProps={{ min: 0, max: 100, step: 0.1 }}
+                    sx={{ width: 200 }}
+                    helperText={t('social_insurance_rate_hint')}
+                    InputProps={{ endAdornment: '%' }}
+                    onChange={e => field.onChange(Number(e.target.value))}
+                  />
+                )}
+              />
 
               <Divider sx={{ my: 3 }} />
 
