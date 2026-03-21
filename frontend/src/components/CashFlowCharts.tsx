@@ -78,7 +78,12 @@ export default function CashFlowCharts({
   const runningAfterOperating = cfCashBeginning + cfOperating;
   const runningAfterInvesting = runningAfterOperating + cfInvesting;
 
-  /** ウォーターフォール棒の透明ベースバー開始位置を返す */
+  /**
+   * ウォーターフォール棒の透明ベースバー開始位置を返す。
+   * @param cfValue - このCF項目の値（正 or 負）
+   * @param prevSum  - このCF適用前の累積合計（棒が上に伸びるときの開始点）
+   * @param afterSum - このCF適用後の累積合計（棒が下に伸びるときの開始点）
+   */
   const waterfallBase = (cfValue: number, prevSum: number, afterSum: number) =>
     cfValue >= 0 ? prevSum : afterSum;
 

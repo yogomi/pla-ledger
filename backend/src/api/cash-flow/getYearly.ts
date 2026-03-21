@@ -6,6 +6,7 @@ import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearSchema } from '../../schemas/salesSimulation';
+import { fetchProfitAndInterest, fetchBorrowingData, fetchPrevCashEnding } from './getMonthly';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -101,19 +102,64 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
   // year_month をキーにマップ化
   const recordMap = new Map(records.map(r => [r.year_month, r]));
 
-  // 12ヶ月分のデータを生成（存在しない月は0として扱う）
+  // 12ヶ月分のデータを生成
+  // 保存済み月はDBの値を使用し、未保存月は損益・借入データから自動計算する
   const months = [];
+  let previousMonthCashEnding: number | null = null;
+  let periodCashBeginning = 0;
+
   for (let m = 1; m <= 12; m++) {
     const yearMonth = `${year}-${String(m).padStart(2, '0')}`;
     const r = recordMap.get(yearMonth);
-    months.push({
-      yearMonth,
-      operatingCF: r ? Number(r.operating_cf_subtotal) : 0,
-      investingCF: r ? Number(r.investing_cf_subtotal) : 0,
-      financingCF: r ? Number(r.financing_cf_subtotal) : 0,
-      netCashChange: r ? Number(r.net_cash_change) : 0,
-      cashEnding: r ? Number(r.cash_ending) : 0,
-    });
+
+    if (r) {
+      // 保存済み月：DBの値をそのまま使用する
+      const operatingCF = Number(r.operating_cf_subtotal);
+      const investingCF = Number(r.investing_cf_subtotal);
+      const financingCF = Number(r.financing_cf_subtotal);
+      const netCashChange = Number(r.net_cash_change);
+      const cashEnding = Number(r.cash_ending);
+
+      if (previousMonthCashEnding === null) {
+        // 最初に出現した保存済み月の期首残高を期首として記録
+        periodCashBeginning = Number(r.cash_beginning);
+      }
+      previousMonthCashEnding = cashEnding;
+
+      months.push({ yearMonth, operatingCF, investingCF, financingCF, netCashChange, cashEnding });
+    } else {
+      // 未保存月：損益計算書・借入管理データから自動計算する
+      let cashBeginning: number;
+      if (previousMonthCashEnding !== null) {
+        cashBeginning = previousMonthCashEnding;
+      } else {
+        // この月より前に保存済み月がない場合は前期末残高を期首とする
+        cashBeginning = await fetchPrevCashEnding(projectId, yearMonth);
+        periodCashBeginning = cashBeginning;
+      }
+
+      const { profitBeforeTax, interestExpense } =
+        await fetchProfitAndInterest(projectId, yearMonth);
+      const { borrowingProceeds, loanRepaymentAmount } =
+        await fetchBorrowingData(projectId, yearMonth);
+
+      // 未保存月は手動調整項目がないため、自動連携分のみで計算する
+      const operatingCF = profitBeforeTax - interestExpense;
+      const financingCF = borrowingProceeds + loanRepaymentAmount;
+      const netCashChange = operatingCF + financingCF; // investingCF = 0
+      const cashEnding = cashBeginning + netCashChange;
+
+      previousMonthCashEnding = cashEnding;
+
+      months.push({
+        yearMonth,
+        operatingCF,
+        investingCF: 0,
+        financingCF,
+        netCashChange,
+        cashEnding,
+      });
+    }
   }
 
   // 年間合計
@@ -122,19 +168,9 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
   const totalFinancingCF = months.reduce((sum, m) => sum + m.financingCF, 0);
   const netCashChange = months.reduce((sum, m) => sum + m.netCashChange, 0);
 
-  // 期首残高：1月レコードのcash_beginning（なければ0）
-  const jan = recordMap.get(`${year}-01`);
-  const cashBeginning = jan ? Number(jan.cash_beginning) : 0;
-  // 期末残高：最後に記録がある月のcash_ending（なければ期首+累積増減）
-  let cashEnding = cashBeginning + netCashChange;
-  for (let m = 12; m >= 1; m--) {
-    const ym = `${year}-${String(m).padStart(2, '0')}`;
-    const r = recordMap.get(ym);
-    if (r) {
-      cashEnding = Number(r.cash_ending);
-      break;
-    }
-  }
+  // 期首残高・期末残高
+  const cashBeginning = periodCashBeginning;
+  const cashEnding = months.length > 0 ? months[months.length - 1].cashEnding : cashBeginning;
 
   res.json({
     success: true,
