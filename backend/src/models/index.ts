@@ -75,7 +75,7 @@ export class Project
 Project.init({
   id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
   owner_id: { type: DataTypes.UUID, allowNull: false },
-  title: { type: DataTypes.TEXT, allowNull: false },
+  title: { type: DataTypes.TEXT, allowNull: false, unique: true },
   summary: { type: DataTypes.TEXT, defaultValue: null },
   visibility: {
     type: DataTypes.ENUM('public', 'private', 'unlisted'),
