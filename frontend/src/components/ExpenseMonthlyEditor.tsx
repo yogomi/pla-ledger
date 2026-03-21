@@ -428,6 +428,10 @@ export default function ExpenseMonthlyEditor({
                 <TableCell align="right">{data.variableTotal.toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
+                <TableCell>{t('labor_cost_section')}</TableCell>
+                <TableCell align="right">{data.laborTotal.toLocaleString()} 円</TableCell>
+              </TableRow>
+              <TableRow>
                 <TableCell>{t('expense_total_row')}</TableCell>
                 <TableCell align="right">{data.totalExpense.toLocaleString()} 円</TableCell>
               </TableRow>

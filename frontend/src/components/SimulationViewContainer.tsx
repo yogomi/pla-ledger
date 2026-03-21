@@ -249,6 +249,10 @@ function ExpenseMonthlyView({
                 <TableCell align="right">{data.variableTotal.toLocaleString()} {currency}</TableCell>
               </TableRow>
               <TableRow>
+                <TableCell>{t('labor_cost_section')}</TableCell>
+                <TableCell align="right">{data.laborTotal.toLocaleString()} {currency}</TableCell>
+              </TableRow>
+              <TableRow>
                 <TableCell>{t('expense_total_row')}</TableCell>
                 <TableCell align="right">{data.totalExpense.toLocaleString()} {currency}</TableCell>
               </TableRow>
