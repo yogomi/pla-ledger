@@ -50,6 +50,7 @@ export interface ExpenseSimulationData {
   fixedTotal: number;
   variableExpenses: ExpenseItem[];
   variableTotal: number;
+  laborTotal: number;
   totalExpense: number;
   operatingProfit: number;
 }

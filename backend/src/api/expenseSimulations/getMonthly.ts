@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
   Project, FixedExpense, VariableExpense, SalesSimulationSnapshot, FixedExpenseMonth,
+  LaborCost, LaborCostMonth,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
@@ -14,8 +15,8 @@ import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesS
  * @description
  *   - 指定年月の経費シミュレーションデータを取得する
  *   - 売上原価はスナップショット（継承を含む）から取得する
- *   - 固定費・変動費は当月のデータを使用する
- *   - 固定費は未保存月のみ直近の過去月データを継承する（空保存後は継承しない）
+ *   - 固定費・変動費・人件費は当月のデータを使用する
+ *   - 固定費・人件費は未保存月のみ直近の過去月データを継承する（空保存後は継承しない）
  *   - 変動費は継承しない（当月データのみ返す）
  *   - viewer 以上の権限が必要
  *
@@ -30,7 +31,7 @@ import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesS
  *   { success: false, code: 'invalid_query', message: エラー内容, data: null }
  *
  * @response
- *   成功時: { success: true, code: '', message: 'OK', data: { yearMonth, isInherited, monthlySales, monthlyCost, fixedExpenses, fixedTotal, variableExpenses, variableTotal, totalExpense, operatingProfit } }
+ *   成功時: { success: true, code: '', message: 'OK', data: { yearMonth, isInherited, monthlySales, monthlyCost, fixedExpenses, fixedTotal, variableExpenses, variableTotal, laborTotal, totalExpense, operatingProfit } }
  *   失敗時:
  *     - 400: { success: false, code: 'invalid_query', message: エラー内容, data: null }
  *     - 401: { success: false, code: 'unauthorized', message: 'No token provided', data: null }
@@ -149,9 +150,34 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
     where: { project_id: projectId, year_month: yearMonth },
   });
 
+  // 人件費取得
+  let laborCosts = await LaborCost.findAll({
+    where: { project_id: projectId, year_month: yearMonth },
+  });
+
+  // 人件費の継承ロジック（固定費と同一）:
+  // LaborCostMonth レコードが存在しない（未保存）場合のみ直近の過去月を継承する
+  if (laborCosts.length === 0) {
+    const savedLaborRecord = await LaborCostMonth.findOne({
+      where: { project_id: projectId, year_month: yearMonth },
+    });
+    if (!savedLaborRecord) {
+      const recentLabor = await LaborCost.findOne({
+        where: { project_id: projectId, year_month: { [Op.lt]: yearMonth } },
+        order: [['year_month', 'DESC']],
+      });
+      if (recentLabor) {
+        laborCosts = await LaborCost.findAll({
+          where: { project_id: projectId, year_month: recentLabor.year_month },
+        });
+      }
+    }
+  }
+
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const totalExpense = monthlyCost + fixedTotal + variableTotal;
+  const laborTotal = laborCosts.reduce((sum, lc) => sum + Number(lc.monthly_total), 0);
+  const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal;
   const operatingProfit = monthlySales - totalExpense;
 
   res.json({
@@ -177,6 +203,7 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
         description: e.description,
       })),
       variableTotal,
+      laborTotal,
       totalExpense,
       operatingProfit,
     },
