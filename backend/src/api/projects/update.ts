@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { UniqueConstraintError, Op } from 'sequelize';
 import { Project, ProjectSection, ProjectVersion, ActivityLog } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { ProjectUpdateSchema } from '../../schemas';
@@ -36,6 +37,7 @@ import { formatZodError } from '../../utils/zodError';
  *     - 401: { success: false, code: 'unauthorized', message: 'No token provided', data: null }
  *     - 403: { success: false, code: 'forbidden', message: 'Edit permission required', data: null }
  *     - 404: { success: false, code: 'not_found', message: 'Project not found', data: null }
+ *     - 409: { success: false, code: 'duplicate_project_name', message: 'Project name already exists', data: null }
  *
  * @responseExample 成功例
  *   {
@@ -90,10 +92,37 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     return;
   }
   const { sections, ...projectUpdates } = parsed.data;
+  if (projectUpdates.title && projectUpdates.title !== project.title) {
+    const duplicate = await Project.findOne({
+      where: { title: projectUpdates.title, id: { [Op.ne]: project.id } },
+    });
+    if (duplicate) {
+      res.status(409).json({
+        success: false,
+        code: 'duplicate_project_name',
+        message: 'Project name already exists',
+        data: null,
+      });
+      return;
+    }
+  }
   if (projectUpdates.visibility === 'public' && !project.published_at) {
     (projectUpdates as Record<string, unknown>)['published_at'] = new Date();
   }
-  await project.update(projectUpdates);
+  try {
+    await project.update(projectUpdates);
+  } catch (err) {
+    if (err instanceof UniqueConstraintError) {
+      res.status(409).json({
+        success: false,
+        code: 'duplicate_project_name',
+        message: 'Project name already exists',
+        data: null,
+      });
+      return;
+    }
+    throw err;
+  }
   if (sections && sections.length > 0) {
     // 同一typeの競合を避けるため、逐次処理する
     for (const s of sections) {
