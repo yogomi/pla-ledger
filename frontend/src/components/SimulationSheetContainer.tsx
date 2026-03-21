@@ -6,6 +6,7 @@ import SalesSimulationMonthlyEditor from './SalesSimulationMonthlyEditor';
 import ExpenseMonthlyEditor from './ExpenseMonthlyEditor';
 import ProfitLossYearlyTable from './ProfitLossYearlyTable';
 import LoanListContainer from './LoanListContainer';
+import CashFlowMonthlyEditor from './CashFlowMonthlyEditor';
 
 interface SimulationSheetContainerProps {
   projectId: string;
@@ -18,7 +19,7 @@ interface SimulationSheetContainerProps {
 }
 
 /**
- * 売上シミュレーション・経費管理・損益計算表・借入管理の4タブコンテナ（入力ページ用）。
+ * 売上シミュレーション・経費管理・損益計算表・キャッシュフロー・借入管理の5タブコンテナ（入力ページ用）。
  * ページネーションで表示月を切り替えられる。月次表示のみ。
  * yearMonth / onYearMonthChange は親から受け取りタブ間で年月を共有する。
  */
@@ -40,6 +41,7 @@ export default function SimulationSheetContainer({
           <Tab label={t('sales_simulation_tab')} />
           <Tab label={t('expense_management_tab')} />
           <Tab label={t('profit_loss_tab')} />
+          <Tab label={t('cash_flow_tab')} />
           <Tab label={t('loan_management_tab')} />
         </Tabs>
         <SalesSimulationPagination
@@ -61,6 +63,9 @@ export default function SimulationSheetContainer({
         <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
       )}
       {tab === 3 && (
+        <CashFlowMonthlyEditor projectId={projectId} yearMonth={yearMonth} />
+      )}
+      {tab === 4 && (
         <LoanListContainer projectId={projectId} currency={currency} canEdit={true} />
       )}
     </Box>
