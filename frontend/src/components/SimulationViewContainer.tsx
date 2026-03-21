@@ -298,8 +298,8 @@ export default function SimulationViewContainer({
         <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
           <Tab label={t('sales_simulation_tab')} />
           <Tab label={t('expense_management_tab')} />
-          <Tab label={t('cash_flow_tab')} />
           <Tab label={t('loan_management_tab')} />
+          <Tab label={t('cash_flow_tab')} />
         </Tabs>
         <SalesSimulationPagination
           yearMonth={yearMonth}
@@ -319,12 +319,12 @@ export default function SimulationViewContainer({
         <ExpenseMonthlyView projectId={projectId} yearMonth={yearMonth} currency={currency} />
       )}
       {viewMode === 'monthly' && tab === 2 && (
-        <CashFlowMonthlyView projectId={projectId} yearMonth={yearMonth} />
-      )}
-      {viewMode === 'monthly' && tab === 3 && (
         <LoanListContainer projectId={projectId} currency={currency} canEdit={canEdit} />
       )}
-      {viewMode === 'yearly' && tab === 2 && (
+      {viewMode === 'monthly' && tab === 3 && (
+        <CashFlowMonthlyView projectId={projectId} yearMonth={yearMonth} />
+      )}
+      {viewMode === 'yearly' && tab === 3 && (
         <>
           <CashFlowCharts projectId={projectId} year={year} />
           <Box mt={3}>
@@ -332,7 +332,7 @@ export default function SimulationViewContainer({
           </Box>
         </>
       )}
-      {viewMode === 'yearly' && tab !== 2 && (
+      {viewMode === 'yearly' && tab !== 3 && (
         <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
       )}
     </Box>

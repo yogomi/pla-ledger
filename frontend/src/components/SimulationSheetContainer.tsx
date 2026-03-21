@@ -40,9 +40,9 @@ export default function SimulationSheetContainer({
         <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
           <Tab label={t('sales_simulation_tab')} />
           <Tab label={t('expense_management_tab')} />
-          <Tab label={t('profit_loss_tab')} />
-          <Tab label={t('cash_flow_tab')} />
           <Tab label={t('loan_management_tab')} />
+          <Tab label={t('cash_flow_tab')} />
+          <Tab label={t('profit_loss_tab')} />
         </Tabs>
         <SalesSimulationPagination
           yearMonth={yearMonth}
@@ -60,13 +60,13 @@ export default function SimulationSheetContainer({
         <ExpenseMonthlyEditor projectId={projectId} yearMonth={yearMonth} />
       )}
       {tab === 2 && (
-        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
+        <LoanListContainer projectId={projectId} currency={currency} canEdit={true} />
       )}
       {tab === 3 && (
         <CashFlowMonthlyEditor projectId={projectId} yearMonth={yearMonth} />
       )}
       {tab === 4 && (
-        <LoanListContainer projectId={projectId} currency={currency} canEdit={true} />
+        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
       )}
     </Box>
   );
