@@ -7,9 +7,7 @@ import {
   Box,
   CircularProgress,
   Divider,
-  MenuItem,
   Paper,
-  Select,
   Tab,
   Table,
   TableBody,
@@ -277,6 +275,9 @@ function ExpenseMonthlyView({
  * シミュレーション表示コンテナ（読み取り専用）。
  * 月次・年次を切り替えてデータを閲覧できる。
  * yearMonth / onYearMonthChange は親から受け取りタブ間で年月を共有する。
+ * 年次モードではアクティブなタブに応じて表示内容を切り替える：
+ *   - キャッシュフロータブ → キャッシュフローグラフ＋年次テーブル
+ *   - その他タブ → 損益計算表（年次）
  */
 export default function SimulationViewContainer({
   projectId,
@@ -288,39 +289,23 @@ export default function SimulationViewContainer({
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
-  const [yearlyView, setYearlyView] = useState<'profit-loss' | 'cash-flow'>('profit-loss');
 
   const year = yearMonth.split('-')[0];
 
   return (
     <Box>
       <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" mb={2}>
-        {viewMode === 'monthly' && (
-          <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
-            <Tab label={t('sales_simulation_tab')} />
-            <Tab label={t('expense_management_tab')} />
-            <Tab label={t('cash_flow_tab')} />
-            <Tab label={t('loan_management_tab')} />
-          </Tabs>
-        )}
-        {viewMode === 'yearly' && (
-          <Select
-            value={yearlyView}
-            onChange={e => setYearlyView(e.target.value as 'profit-loss' | 'cash-flow')}
-            size="small"
-          >
-            <MenuItem value="profit-loss">{t('profit_loss_yearly_label')}</MenuItem>
-            <MenuItem value="cash-flow">{t('cash_flow_yearly_label')}</MenuItem>
-          </Select>
-        )}
+        <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
+          <Tab label={t('sales_simulation_tab')} />
+          <Tab label={t('expense_management_tab')} />
+          <Tab label={t('cash_flow_tab')} />
+          <Tab label={t('loan_management_tab')} />
+        </Tabs>
         <SalesSimulationPagination
           yearMonth={yearMonth}
           onYearMonthChange={onYearMonthChange}
           viewMode={viewMode}
-          onViewModeChange={mode => {
-            setViewMode(mode);
-            setTab(0);
-          }}
+          onViewModeChange={mode => setViewMode(mode)}
           showViewMode
         />
       </Box>
@@ -339,16 +324,16 @@ export default function SimulationViewContainer({
       {viewMode === 'monthly' && tab === 3 && (
         <LoanListContainer projectId={projectId} currency={currency} canEdit={canEdit} />
       )}
-      {viewMode === 'yearly' && yearlyView === 'profit-loss' && (
-        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
-      )}
-      {viewMode === 'yearly' && yearlyView === 'cash-flow' && (
+      {viewMode === 'yearly' && tab === 2 && (
         <>
           <CashFlowCharts projectId={projectId} year={year} />
           <Box mt={3}>
             <CashFlowYearlyTable projectId={projectId} year={year} currency={currency} />
           </Box>
         </>
+      )}
+      {viewMode === 'yearly' && tab !== 2 && (
+        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
       )}
     </Box>
   );
