@@ -821,4 +821,143 @@ LaborCost.belongsTo(Project, { foreignKey: 'project_id' });
 Project.hasMany(LaborCostMonth, { foreignKey: 'project_id', as: 'laborCostMonths' });
 LaborCostMonth.belongsTo(Project, { foreignKey: 'project_id' });
 
+// ========== CashFlowMonthly ==========
+interface CashFlowMonthlyAttributes {
+  id: string;
+  project_id: string;
+  year_month: string;
+  // 営業活動CF
+  profit_before_tax: number;
+  depreciation: number;
+  interest_expense: number;
+  accounts_receivable_change: number;
+  inventory_change: number;
+  accounts_payable_change: number;
+  other_operating: number;
+  operating_cf_subtotal: number;
+  // 投資活動CF
+  capex_acquisition: number;
+  asset_sale: number;
+  intangible_acquisition: number;
+  other_investing: number;
+  investing_cf_subtotal: number;
+  // 財務活動CF
+  borrowing_proceeds: number;
+  loan_repayment: number;
+  capital_increase: number;
+  dividend_payment: number;
+  other_financing: number;
+  financing_cf_subtotal: number;
+  // 概要
+  net_cash_change: number;
+  cash_beginning: number;
+  cash_ending: number;
+  is_inherited: boolean;
+  note_ja: string | null;
+  note_en: string | null;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type CashFlowMonthlyCreation = Optional<
+  CashFlowMonthlyAttributes,
+  | 'id'
+  | 'profit_before_tax'
+  | 'depreciation'
+  | 'interest_expense'
+  | 'accounts_receivable_change'
+  | 'inventory_change'
+  | 'accounts_payable_change'
+  | 'other_operating'
+  | 'operating_cf_subtotal'
+  | 'capex_acquisition'
+  | 'asset_sale'
+  | 'intangible_acquisition'
+  | 'other_investing'
+  | 'investing_cf_subtotal'
+  | 'borrowing_proceeds'
+  | 'loan_repayment'
+  | 'capital_increase'
+  | 'dividend_payment'
+  | 'other_financing'
+  | 'financing_cf_subtotal'
+  | 'net_cash_change'
+  | 'cash_beginning'
+  | 'cash_ending'
+  | 'is_inherited'
+  | 'note_ja'
+  | 'note_en'
+>;
+
+export class CashFlowMonthly
+  extends Model<CashFlowMonthlyAttributes, CashFlowMonthlyCreation>
+  implements CashFlowMonthlyAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare year_month: string;
+  declare profit_before_tax: number;
+  declare depreciation: number;
+  declare interest_expense: number;
+  declare accounts_receivable_change: number;
+  declare inventory_change: number;
+  declare accounts_payable_change: number;
+  declare other_operating: number;
+  declare operating_cf_subtotal: number;
+  declare capex_acquisition: number;
+  declare asset_sale: number;
+  declare intangible_acquisition: number;
+  declare other_investing: number;
+  declare investing_cf_subtotal: number;
+  declare borrowing_proceeds: number;
+  declare loan_repayment: number;
+  declare capital_increase: number;
+  declare dividend_payment: number;
+  declare other_financing: number;
+  declare financing_cf_subtotal: number;
+  declare net_cash_change: number;
+  declare cash_beginning: number;
+  declare cash_ending: number;
+  declare is_inherited: boolean;
+  declare note_ja: string | null;
+  declare note_en: string | null;
+}
+
+CashFlowMonthly.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  year_month: { type: DataTypes.STRING(7), allowNull: false },
+  profit_before_tax: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  depreciation: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  interest_expense: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  accounts_receivable_change: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  inventory_change: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  accounts_payable_change: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  other_operating: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  operating_cf_subtotal: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  capex_acquisition: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  asset_sale: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  intangible_acquisition: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  other_investing: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  investing_cf_subtotal: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  borrowing_proceeds: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  loan_repayment: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  capital_increase: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  dividend_payment: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  other_financing: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  financing_cf_subtotal: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  net_cash_change: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  cash_beginning: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  cash_ending: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  is_inherited: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+  note_ja: { type: DataTypes.TEXT, defaultValue: null },
+  note_en: { type: DataTypes.TEXT, defaultValue: null },
+}, {
+  sequelize,
+  tableName: 'cash_flow_monthly',
+  underscored: true,
+  indexes: [{ unique: true, fields: ['project_id', 'year_month'] }],
+});
+
+Project.hasMany(CashFlowMonthly, { foreignKey: 'project_id', as: 'cashFlows' });
+CashFlowMonthly.belongsTo(Project, { foreignKey: 'project_id' });
+
 export default sequelize;

@@ -22,6 +22,7 @@ import variableExpensesRouter from './variableExpenses';
 import loansRouter from './loans';
 
 import laborCostsRouter from './laborCosts';
+import cashFlowRouter from './cashFlow';
 
 const router = Router();
 
@@ -48,5 +49,6 @@ router.use('/:projectId/fixed-expenses', fixedExpensesRouter);
 router.use('/:projectId/variable-expenses', variableExpensesRouter);
 router.use('/:projectId/loans', loansRouter);
 router.use('/:projectId/labor-costs', laborCostsRouter);
+router.use('/:projectId/cash-flow', cashFlowRouter);
 
 export default router;

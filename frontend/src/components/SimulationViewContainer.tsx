@@ -7,7 +7,9 @@ import {
   Box,
   CircularProgress,
   Divider,
+  MenuItem,
   Paper,
+  Select,
   Tab,
   Table,
   TableBody,
@@ -23,6 +25,9 @@ import { useSalesSimulationMonthly, useExpenseSimulationMonthly } from '../hooks
 import ProfitLossYearlyTable from './ProfitLossYearlyTable';
 import SalesSimulationPagination from './SalesSimulationPagination';
 import LoanListContainer from './LoanListContainer';
+import CashFlowMonthlyView from './CashFlowMonthlyView';
+import CashFlowCharts from './CashFlowCharts';
+import CashFlowYearlyTable from './CashFlowYearlyTable';
 
 interface SimulationViewContainerProps {
   projectId: string;
@@ -283,6 +288,7 @@ export default function SimulationViewContainer({
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
+  const [yearlyView, setYearlyView] = useState<'profit-loss' | 'cash-flow'>('profit-loss');
 
   const year = yearMonth.split('-')[0];
 
@@ -293,11 +299,19 @@ export default function SimulationViewContainer({
           <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
             <Tab label={t('sales_simulation_tab')} />
             <Tab label={t('expense_management_tab')} />
+            <Tab label={t('cash_flow_tab')} />
             <Tab label={t('loan_management_tab')} />
           </Tabs>
         )}
         {viewMode === 'yearly' && (
-          <Typography variant="h6">{t('profit_loss_yearly_label')}</Typography>
+          <Select
+            value={yearlyView}
+            onChange={e => setYearlyView(e.target.value as 'profit-loss' | 'cash-flow')}
+            size="small"
+          >
+            <MenuItem value="profit-loss">{t('profit_loss_yearly_label')}</MenuItem>
+            <MenuItem value="cash-flow">{t('cash_flow_yearly_label')}</MenuItem>
+          </Select>
         )}
         <SalesSimulationPagination
           yearMonth={yearMonth}
@@ -320,10 +334,21 @@ export default function SimulationViewContainer({
         <ExpenseMonthlyView projectId={projectId} yearMonth={yearMonth} currency={currency} />
       )}
       {viewMode === 'monthly' && tab === 2 && (
+        <CashFlowMonthlyView projectId={projectId} yearMonth={yearMonth} />
+      )}
+      {viewMode === 'monthly' && tab === 3 && (
         <LoanListContainer projectId={projectId} currency={currency} canEdit={canEdit} />
       )}
-      {viewMode === 'yearly' && (
+      {viewMode === 'yearly' && yearlyView === 'profit-loss' && (
         <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
+      )}
+      {viewMode === 'yearly' && yearlyView === 'cash-flow' && (
+        <>
+          <CashFlowCharts projectId={projectId} year={year} />
+          <Box mt={3}>
+            <CashFlowYearlyTable projectId={projectId} year={year} currency={currency} />
+          </Box>
+        </>
       )}
     </Box>
   );
