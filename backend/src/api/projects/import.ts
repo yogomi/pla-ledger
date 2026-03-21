@@ -113,6 +113,12 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       categoryIdMap[c.id] = uuidv4();
     });
 
+    // 売上シミュレーション品目IDのマッピング（旧ID → 新ID）
+    const itemIdMap: Record<string, string> = {};
+    exportData.salesItems.forEach(item => {
+      itemIdMap[item.id] = uuidv4();
+    });
+
     // 借入IDのマッピング（旧ID → 新ID）
     const loanIdMap: Record<string, string> = {};
     exportData.loans.forEach(l => {
@@ -162,9 +168,10 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       }, { transaction })));
     }
 
-    // 売上シミュレーション品目作成（category_idを新IDに置換）
+    // 売上シミュレーション品目作成（category_idを新IDに置換、品目IDも明示的に指定）
     if (exportData.salesItems.length > 0) {
       await Promise.all(exportData.salesItems.map(item => SalesSimulationItem.create({
+        id: itemIdMap[item.id],
         category_id: categoryIdMap[item.category_id],
         project_id: newProjectId,
         item_name: item.item_name,
@@ -177,15 +184,25 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       }, { transaction })));
     }
 
-    // 売上スナップショット作成
+    // 売上スナップショット作成（items_snapshot内のitemId・categoryIdを新IDに置換）
     if (exportData.salesSnapshots.length > 0) {
-      await Promise.all(exportData.salesSnapshots.map(s => SalesSimulationSnapshot.create({
-        project_id: newProjectId,
-        year_month: s.year_month,
-        items_snapshot: s.items_snapshot as unknown as import('../../models').SalesSimulationSnapshot['items_snapshot'],
-        monthly_total: s.monthly_total,
-        monthly_cost: s.monthly_cost,
-      }, { transaction })));
+      await Promise.all(exportData.salesSnapshots.map(s => {
+        const remappedSnapshot = s.items_snapshot.map(entry => ({
+          ...entry,
+          itemId: itemIdMap[(entry as Record<string, unknown>)['itemId'] as string]
+            ?? (entry as Record<string, unknown>)['itemId'],
+          categoryId: categoryIdMap[(entry as Record<string, unknown>)['categoryId'] as string]
+            ?? (entry as Record<string, unknown>)['categoryId'],
+        }));
+        return SalesSimulationSnapshot.create({
+          project_id: newProjectId,
+          year_month: s.year_month,
+          items_snapshot: remappedSnapshot as unknown as
+            import('../../models').SalesSimulationSnapshot['items_snapshot'],
+          monthly_total: s.monthly_total,
+          monthly_cost: s.monthly_cost,
+        }, { transaction });
+      }));
     }
 
     // 固定費作成
