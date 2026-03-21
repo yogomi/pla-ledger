@@ -14,8 +14,10 @@ import {
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useTranslation } from 'react-i18next';
 import { useCashFlowMonthly, useUpdateCashFlow } from '../hooks/useCashFlow';
+import { getCashFlowMonthly } from '../api/cashFlow';
 import { CashFlowInputData } from '../types/CashFlow';
 
 const DEFAULT_FORM: CashFlowInputData = {
@@ -54,6 +56,7 @@ export default function CashFlowMonthlyEditor({
   const [noteTab, setNoteTab] = useState(0);
   const [snackOpen, setSnackOpen] = useState(false);
   const [snackError, setSnackError] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
 
   // データ取得後にフォームへ反映
   useEffect(() => {
@@ -138,6 +141,40 @@ export default function CashFlowMonthlyEditor({
     );
   };
 
+  /** 前月の手入力値をフォームにコピーする */
+  const handleCopyFromPreviousMonth = async () => {
+    const [year, month] = yearMonth.split('-').map(Number);
+    const prevDate = new Date(year, month - 2, 1);
+    const prevYearMonth =
+      `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+    setIsCopying(true);
+    try {
+      const prev = await getCashFlowMonthly(projectId, prevYearMonth);
+      setFormData(current => ({
+        ...current,
+        depreciation: prev.operating.depreciation,
+        accountsReceivableChange: prev.operating.accountsReceivableChange,
+        inventoryChange: prev.operating.inventoryChange,
+        accountsPayableChange: prev.operating.accountsPayableChange,
+        otherOperating: prev.operating.otherOperating,
+        capexAcquisition: prev.investing.capexAcquisition,
+        assetSale: prev.investing.assetSale,
+        intangibleAcquisition: prev.investing.intangibleAcquisition,
+        otherInvesting: prev.investing.otherInvesting,
+        capitalIncrease: prev.financing.capitalIncrease,
+        dividendPayment: prev.financing.dividendPayment,
+        otherFinancing: prev.financing.otherFinancing,
+        noteJa: prev.notes.ja ?? '',
+        noteEn: prev.notes.en ?? '',
+      }));
+    } catch {
+      setSnackError(true);
+      setSnackOpen(true);
+    } finally {
+      setIsCopying(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" mt={4}>
@@ -152,11 +189,17 @@ export default function CashFlowMonthlyEditor({
 
   return (
     <Box>
-      {data?.isInherited && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          {t('inherited_info_cash_flow')}
-        </Alert>
-      )}
+      <Box display="flex" justifyContent="flex-end" mb={2}>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<ContentCopyIcon />}
+          onClick={() => void handleCopyFromPreviousMonth()}
+          disabled={isCopying}
+        >
+          {t('copy_from_previous_month')}
+        </Button>
+      </Box>
 
       {/* 営業活動CF */}
       <Accordion defaultExpanded>

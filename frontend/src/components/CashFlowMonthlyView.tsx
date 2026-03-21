@@ -59,11 +59,6 @@ export default function CashFlowMonthlyView({
 
   return (
     <Box>
-      {data.isInherited && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          {t('inherited_info_cash_flow')}
-        </Alert>
-      )}
 
       {/* 営業活動CF */}
       <Accordion defaultExpanded>

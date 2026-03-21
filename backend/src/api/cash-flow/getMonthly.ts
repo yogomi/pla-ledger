@@ -155,7 +155,7 @@ async function fetchPrevCashEnding(projectId: string, yearMonth: string): Promis
  * @api {GET} /api/projects/:projectId/cash-flow/monthly/:yearMonth 月次キャッシュフロー取得
  * @description
  *   - 指定月のキャッシュフローデータを取得
- *   - データが存在しない場合は前月データを継承（is_inherited: true）
+ *   - データが存在しない場合は全項目ゼロで返す（自動継承なし）
  *   - 損益計算表・借入金管理からの自動連携データを含める
  *
  * @request
@@ -231,31 +231,12 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     where: { project_id: projectId, year_month: yearMonth },
   });
 
-  let isInherited = false;
   if (!record) {
-    // 前月データを継承
-    const [year, month] = yearMonth.split('-').map(Number);
-    const prevDate = new Date(year, month - 2, 1);
-    const prevYearMonth =
-      `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-    const prevRecord = await CashFlowMonthly.findOne({
-      where: { project_id: projectId, year_month: prevYearMonth },
-    });
-
-    const cashBeginning = prevRecord ? Number(prevRecord.cash_ending) : 0;
-
-    // 自動計算
-    const operatingCfSubtotal =
-      profitBeforeTax
-      + 0          // depreciation（デフォルト0）
-      - interestExpense
-      + 0          // accounts_receivable_change
-      + 0          // inventory_change
-      + 0          // accounts_payable_change
-      + 0;         // other_operating
-    const investingCfSubtotal = 0;
-    const financingCfSubtotal = borrowingProceeds + loanRepaymentAmount + 0 + 0 + 0;
-    const netCashChange = operatingCfSubtotal + investingCfSubtotal + financingCfSubtotal;
+    // 未保存月はゼロ初期値で返す（自動継承なし）
+    const cashBeginning = await fetchPrevCashEnding(projectId, yearMonth);
+    const operatingCfSubtotal = profitBeforeTax - interestExpense;
+    const financingCfSubtotal = borrowingProceeds + loanRepaymentAmount;
+    const netCashChange = operatingCfSubtotal + financingCfSubtotal;
     const cashEnding = cashBeginning + netCashChange;
 
     return res.json({
@@ -264,31 +245,30 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
       message: 'Cash flow data retrieved successfully',
       data: {
         yearMonth,
-        isInherited: !!prevRecord,
+        isInherited: false,
         operating: {
           profitBeforeTax,
-          depreciation: prevRecord ? Number(prevRecord.depreciation) : 0,
+          depreciation: 0,
           interestExpense,
-          accountsReceivableChange: prevRecord
-            ? Number(prevRecord.accounts_receivable_change) : 0,
-          inventoryChange: prevRecord ? Number(prevRecord.inventory_change) : 0,
-          accountsPayableChange: prevRecord ? Number(prevRecord.accounts_payable_change) : 0,
-          otherOperating: prevRecord ? Number(prevRecord.other_operating) : 0,
+          accountsReceivableChange: 0,
+          inventoryChange: 0,
+          accountsPayableChange: 0,
+          otherOperating: 0,
           subtotal: operatingCfSubtotal,
         },
         investing: {
-          capexAcquisition: prevRecord ? Number(prevRecord.capex_acquisition) : 0,
-          assetSale: prevRecord ? Number(prevRecord.asset_sale) : 0,
-          intangibleAcquisition: prevRecord ? Number(prevRecord.intangible_acquisition) : 0,
-          otherInvesting: prevRecord ? Number(prevRecord.other_investing) : 0,
-          subtotal: investingCfSubtotal,
+          capexAcquisition: 0,
+          assetSale: 0,
+          intangibleAcquisition: 0,
+          otherInvesting: 0,
+          subtotal: 0,
         },
         financing: {
           borrowingProceeds,
           loanRepayment: loanRepaymentAmount,
-          capitalIncrease: prevRecord ? Number(prevRecord.capital_increase) : 0,
-          dividendPayment: prevRecord ? Number(prevRecord.dividend_payment) : 0,
-          otherFinancing: prevRecord ? Number(prevRecord.other_financing) : 0,
+          capitalIncrease: 0,
+          dividendPayment: 0,
+          otherFinancing: 0,
           subtotal: financingCfSubtotal,
         },
         summary: {
@@ -297,8 +277,8 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
           cashEnding,
         },
         notes: {
-          ja: prevRecord ? prevRecord.note_ja : null,
-          en: prevRecord ? prevRecord.note_en : null,
+          ja: null,
+          en: null,
         },
       },
     });
@@ -335,7 +315,7 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     message: 'Cash flow data retrieved successfully',
     data: {
       yearMonth,
-      isInherited,
+      isInherited: false,
       operating: {
         profitBeforeTax,
         depreciation,
