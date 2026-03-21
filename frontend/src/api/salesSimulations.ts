@@ -5,6 +5,8 @@ import {
   ProfitLossYearlyData,
   ItemInputData,
   ExpenseInputItem,
+  LaborCostMonthlyData,
+  LaborCostInput,
 } from '../types/SalesSimulation';
 
 /**
@@ -174,4 +176,34 @@ export async function deleteSalesItem(
   itemId: string,
 ): Promise<void> {
   await api.delete(`/projects/${projectId}/sales-simulations/items/${itemId}`);
+}
+
+/**
+ * 指定月の人件費データを取得する。
+ * @param projectId プロジェクトID
+ * @param yearMonth 年月 (YYYY-MM)
+ */
+export async function getLaborCostMonthly(
+  projectId: string,
+  yearMonth: string,
+): Promise<LaborCostMonthlyData> {
+  const res = await api.get(
+    `/projects/${projectId}/labor-costs/monthly`,
+    { params: { yearMonth } },
+  );
+  return res.data.data as LaborCostMonthlyData;
+}
+
+/**
+ * 指定月の人件費データを一括更新する。
+ * @param projectId プロジェクトID
+ * @param yearMonth 年月 (YYYY-MM)
+ * @param laborCosts 人件費アイテム一覧
+ */
+export async function updateLaborCosts(
+  projectId: string,
+  yearMonth: string,
+  laborCosts: LaborCostInput[],
+): Promise<void> {
+  await api.put(`/projects/${projectId}/labor-costs/${yearMonth}`, { laborCosts });
 }

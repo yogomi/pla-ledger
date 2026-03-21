@@ -48,12 +48,13 @@ interface ProjectAttributes {
   stage: string | null;
   tags: string[];
   published_at: Date | null;
+  social_insurance_rate: number;
   created_at?: Date;
   updated_at?: Date;
 }
 type ProjectCreation = Optional<
   ProjectAttributes,
-  'id' | 'summary' | 'stage' | 'tags' | 'published_at'
+  'id' | 'summary' | 'stage' | 'tags' | 'published_at' | 'social_insurance_rate'
 >;
 
 export class Project
@@ -68,6 +69,7 @@ export class Project
   declare stage: string | null;
   declare tags: string[];
   declare published_at: Date | null;
+  declare social_insurance_rate: number;
 }
 
 Project.init({
@@ -84,6 +86,7 @@ Project.init({
   stage: { type: DataTypes.STRING, defaultValue: null },
   tags: { type: DataTypes.JSON, defaultValue: [] },
   published_at: { type: DataTypes.DATE, defaultValue: null },
+  social_insurance_rate: { type: DataTypes.DECIMAL(5, 2), allowNull: false, defaultValue: 15.0 },
 }, { sequelize, tableName: 'projects', underscored: true });
 
 // ========== Permission ==========
@@ -652,6 +655,126 @@ LoanRepayment.init({
   indexes: [{ unique: true, fields: ['loan_id', 'year_month'] }],
 });
 
+// ========== LaborCost ==========
+// 人件費レコードの種別
+export type LaborCostType = 'owner_salary' | 'full_time' | 'part_time';
+
+interface LaborCostAttributes {
+  id: string;
+  project_id: string;
+  year_month: string;
+  type: LaborCostType;
+  monthly_salary: number | null;
+  employee_count: number | null;
+  bonus_months: number | null;
+  hourly_wage: number | null;
+  hours_per_day: number | null;
+  days_per_month: number | null;
+  part_time_count: number | null;
+  owner_salary: number | null;
+  monthly_total: number;
+  display_order: number;
+  note_ja: string | null;
+  note_en: string | null;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type LaborCostCreation = Optional<
+  LaborCostAttributes,
+  | 'id'
+  | 'monthly_salary'
+  | 'employee_count'
+  | 'bonus_months'
+  | 'hourly_wage'
+  | 'hours_per_day'
+  | 'days_per_month'
+  | 'part_time_count'
+  | 'owner_salary'
+  | 'monthly_total'
+  | 'display_order'
+  | 'note_ja'
+  | 'note_en'
+>;
+
+export class LaborCost
+  extends Model<LaborCostAttributes, LaborCostCreation>
+  implements LaborCostAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare year_month: string;
+  declare type: LaborCostType;
+  declare monthly_salary: number | null;
+  declare employee_count: number | null;
+  declare bonus_months: number | null;
+  declare hourly_wage: number | null;
+  declare hours_per_day: number | null;
+  declare days_per_month: number | null;
+  declare part_time_count: number | null;
+  declare owner_salary: number | null;
+  declare monthly_total: number;
+  declare display_order: number;
+  declare note_ja: string | null;
+  declare note_en: string | null;
+}
+
+LaborCost.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  year_month: { type: DataTypes.STRING(7), allowNull: false },
+  type: {
+    type: DataTypes.ENUM('owner_salary', 'full_time', 'part_time'),
+    allowNull: false,
+  },
+  monthly_salary: { type: DataTypes.DECIMAL(15, 2), defaultValue: null },
+  employee_count: { type: DataTypes.INTEGER, defaultValue: null },
+  bonus_months: { type: DataTypes.DECIMAL(4, 2), defaultValue: null },
+  hourly_wage: { type: DataTypes.DECIMAL(10, 2), defaultValue: null },
+  hours_per_day: { type: DataTypes.DECIMAL(5, 2), defaultValue: null },
+  days_per_month: { type: DataTypes.INTEGER, defaultValue: null },
+  part_time_count: { type: DataTypes.DECIMAL(5, 2), defaultValue: null },
+  owner_salary: { type: DataTypes.DECIMAL(15, 2), defaultValue: null },
+  monthly_total: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  display_order: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+  note_ja: { type: DataTypes.TEXT, defaultValue: null },
+  note_en: { type: DataTypes.TEXT, defaultValue: null },
+}, {
+  sequelize,
+  tableName: 'labor_costs',
+  underscored: true,
+  indexes: [{ fields: ['project_id', 'year_month'] }],
+});
+
+// ========== LaborCostMonth ==========
+// 人件費が明示的に保存された年月を追跡するテーブル。
+// このレコードが存在する年月は前月からの継承を行わない。
+interface LaborCostMonthAttributes {
+  id: string;
+  project_id: string;
+  year_month: string;
+  created_at?: Date;
+}
+type LaborCostMonthCreation = Optional<LaborCostMonthAttributes, 'id'>;
+
+export class LaborCostMonth
+  extends Model<LaborCostMonthAttributes, LaborCostMonthCreation>
+  implements LaborCostMonthAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare year_month: string;
+}
+
+LaborCostMonth.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  year_month: { type: DataTypes.STRING(7), allowNull: false },
+}, {
+  sequelize,
+  tableName: 'labor_cost_months',
+  underscored: true,
+  updatedAt: false,
+  indexes: [{ unique: true, fields: ['project_id', 'year_month'] }],
+});
+
 // Associations
 Project.hasMany(ProjectSection, { foreignKey: 'project_id', as: 'sections' });
 ProjectSection.belongsTo(Project, { foreignKey: 'project_id' });
@@ -691,5 +814,11 @@ LoanRepayment.belongsTo(Loan, { foreignKey: 'loan_id' });
 
 Project.hasMany(LoanRepayment, { foreignKey: 'project_id', as: 'loanRepayments' });
 LoanRepayment.belongsTo(Project, { foreignKey: 'project_id' });
+
+Project.hasMany(LaborCost, { foreignKey: 'project_id', as: 'laborCosts' });
+LaborCost.belongsTo(Project, { foreignKey: 'project_id' });
+
+Project.hasMany(LaborCostMonth, { foreignKey: 'project_id', as: 'laborCostMonths' });
+LaborCostMonth.belongsTo(Project, { foreignKey: 'project_id' });
 
 export default sequelize;
