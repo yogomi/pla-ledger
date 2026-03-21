@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { UniqueConstraintError } from 'sequelize';
 import {
   Project, Permission, ProjectSection, ProjectVersion, ActivityLog,
 } from '../../models';
@@ -33,6 +34,7 @@ import { formatZodError } from '../../utils/zodError';
  *   失敗時:
  *     - 400: { success: false, code: 'invalid_query', message: エラー内容, data: null }
  *     - 401: { success: false, code: 'unauthorized', message: 'No token provided', data: null }
+ *     - 409: { success: false, code: 'duplicate_project_name', message: 'Project name already exists', data: null }
  *
  * @responseExample 成功例
  *   {
@@ -67,6 +69,16 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     return;
   }
   const { title, summary, visibility, currency, stage, tags, sections } = parsed.data;
+  const existingProject = await Project.findOne({ where: { title } });
+  if (existingProject) {
+    res.status(409).json({
+      success: false,
+      code: 'duplicate_project_name',
+      message: 'Project name already exists',
+      data: null,
+    });
+    return;
+  }
   const project = await Project.create({
     owner_id: req.user!.id,
     title,
@@ -76,7 +88,21 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     stage: stage ?? null,
     tags: tags ?? [],
     published_at: visibility === 'public' ? new Date() : null,
+  }).catch((err: unknown) => {
+    if (err instanceof UniqueConstraintError) {
+      res.status(409).json({
+        success: false,
+        code: 'duplicate_project_name',
+        message: 'Project name already exists',
+        data: null,
+      });
+      return null;
+    }
+    throw err;
   });
+  if (!project) {
+    return;
+  }
   await Permission.create({
     project_id: project.id,
     user_id: req.user!.id,
