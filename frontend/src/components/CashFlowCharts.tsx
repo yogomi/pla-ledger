@@ -30,7 +30,11 @@ const COLORS = {
   cashBalance: '#ff9800',
 };
 
-/** Tooltip formatter: 数値は toLocaleString、それ以外は文字列変換 */
+/**
+ * Recharts の Tooltip formatter。
+ * @param v - Tooltip が受け取る値（number | string | その他）
+ * @returns 数値の場合は toLocaleString で整形した文字列、それ以外は String() 変換した文字列
+ */
 const tooltipFormatter = (v: unknown) =>
   typeof v === 'number' ? v.toLocaleString() : String(v);
 

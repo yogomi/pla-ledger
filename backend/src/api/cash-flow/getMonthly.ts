@@ -18,8 +18,10 @@ const ParamsSchema = z.object({
 
 /**
  * 指定月のtaxBefore利益と利息支払額を損益計算表ロジックで計算する。
+ * 売上スナップショット・固定費・変動費・人件費の継承ロジックを含む。
  * @param projectId - プロジェクトID
  * @param yearMonth - 対象年月 (YYYY-MM)
+ * @returns 税引前利益（profitBeforeTax）と利息支払額（interestExpense）
  */
 async function fetchProfitAndInterest(
   projectId: string,
@@ -108,6 +110,7 @@ async function fetchProfitAndInterest(
  * 当月の借入実行額と返済額を借入管理から集計する。
  * @param projectId - プロジェクトID
  * @param yearMonth - 対象年月 (YYYY-MM)
+ * @returns 借入実行額（borrowingProceeds, 正値）と元金返済額（loanRepaymentAmount, 負値）
  */
 async function fetchBorrowingData(
   projectId: string,
@@ -137,6 +140,7 @@ async function fetchBorrowingData(
  * 前月のcash_endingを今月のcash_beginningとして取得する。
  * @param projectId - プロジェクトID
  * @param yearMonth - 対象年月 (YYYY-MM)
+ * @returns 前月の期末残高。前月レコードが存在しない場合は 0
  */
 async function fetchPrevCashEnding(projectId: string, yearMonth: string): Promise<number> {
   const [year, month] = yearMonth.split('-').map(Number);

@@ -113,16 +113,41 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
     const r = recordMap.get(yearMonth);
 
     if (r) {
-      // 保存済み月：DBの値をそのまま使用する
-      const operatingCF = Number(r.operating_cf_subtotal);
-      const investingCF = Number(r.investing_cf_subtotal);
-      const financingCF = Number(r.financing_cf_subtotal);
-      const netCashChange = Number(r.net_cash_change);
-      const cashEnding = Number(r.cash_ending);
+      // 保存済み月：手動調整項目はDBから取得し、自動連携項目（損益・借入）はライブ再計算する
+      // ※ getMonthly.ts と同一ロジックで常に最新の借入管理・損益データを反映する
+      const { profitBeforeTax, interestExpense } =
+        await fetchProfitAndInterest(projectId, yearMonth);
+      const { borrowingProceeds, loanRepaymentAmount } =
+        await fetchBorrowingData(projectId, yearMonth);
+
+      const depreciation = Number(r.depreciation);
+      const accountsReceivableChange = Number(r.accounts_receivable_change);
+      const inventoryChange = Number(r.inventory_change);
+      const accountsPayableChange = Number(r.accounts_payable_change);
+      const otherOperating = Number(r.other_operating);
+      const capexAcquisition = Number(r.capex_acquisition);
+      const assetSale = Number(r.asset_sale);
+      const intangibleAcquisition = Number(r.intangible_acquisition);
+      const otherInvesting = Number(r.other_investing);
+      const capitalIncrease = Number(r.capital_increase);
+      const dividendPayment = Number(r.dividend_payment);
+      const otherFinancing = Number(r.other_financing);
+
+      const operatingCF =
+        profitBeforeTax + depreciation - interestExpense
+        + accountsReceivableChange + inventoryChange + accountsPayableChange + otherOperating;
+      const investingCF = capexAcquisition + assetSale + intangibleAcquisition + otherInvesting;
+      const financingCF =
+        borrowingProceeds + loanRepaymentAmount + capitalIncrease + dividendPayment + otherFinancing;
+      const netCashChange = operatingCF + investingCF + financingCF;
+
+      // 期首残高はDBの値（ユーザーが手動設定している可能性があるため）
+      const cashBeginning = Number(r.cash_beginning);
+      const cashEnding = cashBeginning + netCashChange;
 
       if (previousMonthCashEnding === null) {
-        // 最初に出現した保存済み月の期首残高を期首として記録
-        periodCashBeginning = Number(r.cash_beginning);
+        // 最初に出現した保存済み月の期首残高を年間期首として記録
+        periodCashBeginning = cashBeginning;
       }
       previousMonthCashEnding = cashEnding;
 

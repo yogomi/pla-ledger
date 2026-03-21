@@ -141,7 +141,11 @@ export default function CashFlowMonthlyEditor({
     );
   };
 
-  /** 前月の手入力値をフォームにコピーする */
+  /**
+   * 前月の手入力値をフォームにコピーする。
+   * 前月の CF レコードを取得し、手動調整項目（減価償却費・設備投資等）とメモを現在のフォームに反映する。
+   * 取得失敗時は何もしない（エラーをサイレントに無視）。
+   */
   const handleCopyFromPreviousMonth = async () => {
     const [year, month] = yearMonth.split('-').map(Number);
     const prevDate = new Date(year, month - 2, 1);
