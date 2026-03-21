@@ -14,6 +14,8 @@ import uploadAttachmentRouter from '../api/projects/uploadAttachment';
 import getCommentsRouter from '../api/projects/getComments';
 import addCommentRouter from '../api/projects/addComment';
 import listRouter from '../api/projects/list';
+import exportRouter from '../api/projects/export';
+import importRouter from '../api/projects/import';
 import salesSimulationsRouter from './salesSimulations';
 import expenseSimulationsRouter from './expenseSimulations';
 import profitLossRouter from './profitLoss';
@@ -28,6 +30,7 @@ const router = Router();
 
 router.use('/public', publicListRouter);
 router.use('/', createRouter);
+router.use('/', importRouter);
 router.use('/', getRouter);
 router.use('/', updateRouter);
 router.use('/', deleteRouter);
@@ -41,6 +44,7 @@ router.use('/', uploadAttachmentRouter);
 router.use('/', getCommentsRouter);
 router.use('/', addCommentRouter);
 router.use('/', listRouter);
+router.use('/', exportRouter);
 
 router.use('/:projectId/sales-simulations', salesSimulationsRouter);
 router.use('/:projectId/expense-simulations', expenseSimulationsRouter);

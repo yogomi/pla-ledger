@@ -1,0 +1,145 @@
+import { Router, Response } from 'express';
+import {
+  Project, ProjectSection,
+  SalesSimulationCategory, SalesSimulationItem, SalesSimulationSnapshot,
+  FixedExpense, FixedExpenseMonth, VariableExpense,
+  Loan, LoanRepayment, LaborCost, LaborCostMonth,
+  CashFlowMonthly, Attachment, Comment,
+} from '../../models';
+import { authenticate, AuthRequest } from '../../middleware/auth';
+import { getProjectRole } from './utils';
+
+/**
+ * @api {GET} /api/projects/:id/export プロジェクトエクスポート
+ * @description
+ *   - 指定プロジェクトの全データをJSONとしてエクスポートする
+ *   - 添付ファイルのメタデータは含むが、ファイル本体は除く
+ *   - viewer以上の権限が必要
+ *
+ * @request
+ *   Header:
+ *   - Authorization: Bearer <token> (required)
+ *   Path:
+ *   - id: string (required) - プロジェクトID
+ *
+ * @response
+ *   成功時: { success: true, code: '', message: 'Project exported successfully', data: { version, exportedAt, project, ... } }
+ *   失敗時:
+ *     - 401: { success: false, code: 'unauthorized', message: 'No token provided', data: null }
+ *     - 403: { success: false, code: 'forbidden', message: 'Viewer or above required', data: null }
+ *     - 404: { success: false, code: 'not_found', message: 'Project not found', data: null }
+ *
+ * @responseExample 成功例
+ *   {
+ *     "success": true,
+ *     "code": "",
+ *     "message": "Project exported successfully",
+ *     "data": {
+ *       "version": "1.0",
+ *       "exportedAt": "2026-03-21T...",
+ *       "project": { ... },
+ *       "sections": [ ... ],
+ *       "salesCategories": [ ... ],
+ *       "salesItems": [ ... ],
+ *       "salesSnapshots": [ ... ],
+ *       "fixedExpenses": [ ... ],
+ *       "fixedExpenseMonths": [ ... ],
+ *       "variableExpenses": [ ... ],
+ *       "loans": [ ... ],
+ *       "loanRepayments": [ ... ],
+ *       "laborCosts": [ ... ],
+ *       "laborCostMonths": [ ... ],
+ *       "cashFlows": [ ... ],
+ *       "attachments": [ ... ],
+ *       "comments": [ ... ]
+ *     }
+ *   }
+ *
+ * @author yogomi
+ * @date 2026-03-21
+ */
+const router = Router();
+
+router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+
+  const role = await getProjectRole(id, req.user!.id);
+  const project = await Project.findByPk(id);
+  if (!project) {
+    res.status(404).json({
+      success: false,
+      code: 'not_found',
+      message: 'Project not found',
+      data: null,
+    });
+    return;
+  }
+  if (!role) {
+    res.status(403).json({
+      success: false,
+      code: 'forbidden',
+      message: 'Viewer or above required',
+      data: null,
+    });
+    return;
+  }
+
+  const [
+    sections,
+    salesCategories,
+    salesItems,
+    salesSnapshots,
+    fixedExpenses,
+    fixedExpenseMonths,
+    variableExpenses,
+    loans,
+    loanRepayments,
+    laborCosts,
+    laborCostMonths,
+    cashFlows,
+    attachments,
+    comments,
+  ] = await Promise.all([
+    ProjectSection.findAll({ where: { project_id: id } }),
+    SalesSimulationCategory.findAll({ where: { project_id: id } }),
+    SalesSimulationItem.findAll({ where: { project_id: id } }),
+    SalesSimulationSnapshot.findAll({ where: { project_id: id } }),
+    FixedExpense.findAll({ where: { project_id: id } }),
+    FixedExpenseMonth.findAll({ where: { project_id: id } }),
+    VariableExpense.findAll({ where: { project_id: id } }),
+    Loan.findAll({ where: { project_id: id } }),
+    LoanRepayment.findAll({ where: { project_id: id } }),
+    LaborCost.findAll({ where: { project_id: id } }),
+    LaborCostMonth.findAll({ where: { project_id: id } }),
+    CashFlowMonthly.findAll({ where: { project_id: id } }),
+    Attachment.findAll({ where: { project_id: id } }),
+    Comment.findAll({ where: { project_id: id } }),
+  ]);
+
+  res.json({
+    success: true,
+    code: '',
+    message: 'Project exported successfully',
+    data: {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      project: project.toJSON(),
+      sections: sections.map(r => r.toJSON()),
+      salesCategories: salesCategories.map(r => r.toJSON()),
+      salesItems: salesItems.map(r => r.toJSON()),
+      salesSnapshots: salesSnapshots.map(r => r.toJSON()),
+      fixedExpenses: fixedExpenses.map(r => r.toJSON()),
+      fixedExpenseMonths: fixedExpenseMonths.map(r => r.toJSON()),
+      variableExpenses: variableExpenses.map(r => r.toJSON()),
+      loans: loans.map(r => r.toJSON()),
+      loanRepayments: loanRepayments.map(r => r.toJSON()),
+      laborCosts: laborCosts.map(r => r.toJSON()),
+      laborCostMonths: laborCostMonths.map(r => r.toJSON()),
+      cashFlows: cashFlows.map(r => r.toJSON()),
+      attachments: attachments.map(r => r.toJSON()),
+      comments: comments.map(r => r.toJSON()),
+    },
+  });
+});
+
+export default router;

@@ -8,6 +8,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -88,6 +89,7 @@ export default function ProjectViewPage() {
 
   // 編集フォーム
   const [editError, setEditError] = useState('');
+  const [exportError, setExportError] = useState('');
   const [editCurrency, setEditCurrency] = useState('JPY');
   const [startupCostItems, setStartupCostItems] = useState<StartupCostItem[]>([]);
   const {
@@ -181,6 +183,26 @@ export default function ProjectViewPage() {
     if (!window.confirm('Delete this project?')) return;
     await api.delete(`/projects/${id}`);
     navigate('/dashboard');
+  };
+
+  /** プロジェクトデータをJSONファイルとしてダウンロードする */
+  const handleExport = async () => {
+    setExportError('');
+    try {
+      const res = await api.get(`/projects/${id}/export`);
+      const exportData = res.data.data;
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const today = new Date().toISOString().slice(0, 10);
+      const safeTitle = (project?.title ?? 'project').replace(/[/\\?%*:|"<>]/g, '-');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `project-${safeTitle}-${today}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError(t('save_error'));
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -278,6 +300,7 @@ export default function ProjectViewPage() {
 
   return (
     <Box>
+      {exportError && <Alert severity="error" sx={{ mb: 2 }}>{exportError}</Alert>}
       {/* ヘッダー: タイトル・チップ・削除ボタン */}
       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
         <Box>
@@ -293,12 +316,24 @@ export default function ProjectViewPage() {
             {owner && <Chip label={`Owner: ${owner.name}`} variant="outlined" size="small" />}
           </Box>
         </Box>
-        {/* owner のみ削除ボタンを表示 */}
-        {isOwner && (
-          <IconButton color="error" onClick={handleDelete} aria-label={t('delete_project')}>
-            <DeleteIcon />
-          </IconButton>
-        )}
+        {/* owner のみ削除ボタンを表示、viewer以上にエクスポートボタンを表示 */}
+        <Box display="flex" alignItems="center" gap={1}>
+          {role && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FileDownloadIcon />}
+              onClick={handleExport}
+            >
+              {t('export_project')}
+            </Button>
+          )}
+          {isOwner && (
+            <IconButton color="error" onClick={handleDelete} aria-label={t('delete_project')}>
+              <DeleteIcon />
+            </IconButton>
+          )}
+        </Box>
       </Box>
 
       {/* トップレベルタブ（権限に応じて表示制御） */}

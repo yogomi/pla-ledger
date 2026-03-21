@@ -5,9 +5,11 @@ import {
   Chip, CircularProgress, Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../app/AuthContext';
 import api from '../utils/api';
+import ProjectImportDialog from '../components/ProjectImportDialog';
 
 interface Project {
   id: string;
@@ -26,6 +28,7 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   useEffect(() => {
     api.get('/projects').then(r => {
@@ -39,14 +42,23 @@ export default function DashboardPage() {
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">{t('dashboard')}</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          component={RouterLink}
-          to="/projects/new"
-        >
-          {t('create_project')}
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button
+            variant="outlined"
+            startIcon={<FileUploadIcon />}
+            onClick={() => setImportDialogOpen(true)}
+          >
+            {t('import_project')}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            component={RouterLink}
+            to="/projects/new"
+          >
+            {t('create_project')}
+          </Button>
+        </Box>
       </Box>
       {user && (
         <Typography variant="body1" color="text.secondary" mb={3}>
@@ -94,6 +106,10 @@ export default function DashboardPage() {
           )}
         </>
       )}
+      <ProjectImportDialog
+        open={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+      />
     </Box>
   );
 }
