@@ -3,7 +3,7 @@ import { Outlet, Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   AppBar, Toolbar, Typography, Button, Box, IconButton, Menu, MenuItem,
   Drawer, List, ListItem, ListItemButton, ListItemText, Divider, Container,
-  useTheme, useMediaQuery,
+  useTheme, useMediaQuery, FormControl, Select, SelectChangeEvent,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -29,10 +29,9 @@ export default function Layout() {
     navigate('/');
   };
 
-  const handleLangToggle = () => {
-    const next = i18n.language === 'ja' ? 'en' : 'ja';
-    i18n.changeLanguage(next);
-    localStorage.setItem('locale', next);
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem('locale', lang);
   };
 
   const navItems = [
@@ -63,9 +62,29 @@ export default function Layout() {
             </Button>
           ))}
           <Box sx={{ flexGrow: 1 }} />
-          <Button color="inherit" onClick={handleLangToggle} size="small" sx={{ mr: 1 }}>
-            {i18n.language === 'ja' ? 'EN' : '日本語'}
-          </Button>
+          {/* 言語選択ドロップダウン */}
+          <FormControl size="small" sx={{ mr: 1 }}>
+            <Select
+              value={i18n.language}
+              onChange={(e: SelectChangeEvent) => handleLanguageChange(e.target.value)}
+              inputProps={{ 'aria-label': t('select_language') }}
+              sx={{
+                color: 'inherit',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.5)',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.7)',
+                },
+                '& .MuiSvgIcon-root': {
+                  color: 'inherit',
+                },
+              }}
+            >
+              <MenuItem value="en">{t('locale_en')}</MenuItem>
+              <MenuItem value="ja">{t('locale_ja')}</MenuItem>
+            </Select>
+          </FormControl>
           {user ? (
             <>
               <Button
