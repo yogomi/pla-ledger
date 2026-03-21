@@ -70,32 +70,42 @@ export default function CashFlowCharts({
   }));
 
   // ウォーターフォールチャート用データ
+  // マイナスのCFは「前の累積合計 + CF値」を base にすることで、棒が下方向に描画される
+  const cfCashBeginning = data.yearly.cashBeginning;
+  const cfOperating = data.yearly.totalOperatingCF;
+  const cfInvesting = data.yearly.totalInvestingCF;
+  const cfFinancing = data.yearly.totalFinancingCF;
+  const runningAfterOperating = cfCashBeginning + cfOperating;
+  const runningAfterInvesting = runningAfterOperating + cfInvesting;
+
+  /** ウォーターフォール棒の透明ベースバー開始位置を返す */
+  const waterfallBase = (cfValue: number, prevSum: number, afterSum: number) =>
+    cfValue >= 0 ? prevSum : afterSum;
+
   const waterfallData = [
     {
       name: t('cash_beginning'),
-      value: data.yearly.cashBeginning,
+      value: cfCashBeginning,
       fill: '#9e9e9e',
       base: 0,
     },
     {
       name: t('operating_cf'),
-      value: Math.abs(data.yearly.totalOperatingCF),
-      fill: data.yearly.totalOperatingCF >= 0 ? COLORS.operating : COLORS.investing,
-      base: data.yearly.cashBeginning,
+      value: Math.abs(cfOperating),
+      fill: cfOperating >= 0 ? COLORS.operating : COLORS.investing,
+      base: waterfallBase(cfOperating, cfCashBeginning, runningAfterOperating),
     },
     {
       name: t('investing_cf'),
-      value: Math.abs(data.yearly.totalInvestingCF),
-      fill: data.yearly.totalInvestingCF >= 0 ? COLORS.operating : COLORS.investing,
-      base: data.yearly.cashBeginning + data.yearly.totalOperatingCF,
+      value: Math.abs(cfInvesting),
+      fill: cfInvesting >= 0 ? COLORS.operating : COLORS.investing,
+      base: waterfallBase(cfInvesting, runningAfterOperating, runningAfterInvesting),
     },
     {
       name: t('financing_cf'),
-      value: Math.abs(data.yearly.totalFinancingCF),
-      fill: data.yearly.totalFinancingCF >= 0 ? COLORS.operating : COLORS.investing,
-      base: data.yearly.cashBeginning
-        + data.yearly.totalOperatingCF
-        + data.yearly.totalInvestingCF,
+      value: Math.abs(cfFinancing),
+      fill: cfFinancing >= 0 ? COLORS.operating : COLORS.investing,
+      base: waterfallBase(cfFinancing, runningAfterInvesting, runningAfterInvesting + cfFinancing),
     },
     {
       name: t('cash_ending'),
