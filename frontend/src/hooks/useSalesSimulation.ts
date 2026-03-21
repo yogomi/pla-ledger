@@ -11,6 +11,8 @@ import {
   deleteSalesCategory,
   createSalesItem,
   deleteSalesItem,
+  deleteSalesSimulationMonthly,
+  deleteFixedExpenses,
 } from '../api/salesSimulations';
 import { ItemInputData, ExpenseInputItem } from '../types/SalesSimulation';
 
@@ -175,6 +177,40 @@ export function useDeleteSalesItem(projectId: string) {
       deleteSalesItem(projectId, itemId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['salesSimulation', projectId] });
+    },
+  });
+}
+
+/**
+ * 売上シミュレーション月次データを削除するミューテーションフック。
+ * 削除後に該当月のキャッシュを無効化する。
+ */
+export function useDeleteSalesSimulationMonthly(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ yearMonth }: { yearMonth: string }) =>
+      deleteSalesSimulationMonthly(projectId, yearMonth),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['salesSimulation', projectId, variables.yearMonth],
+      });
+    },
+  });
+}
+
+/**
+ * 固定費月次データを削除するミューテーションフック。
+ * 削除後に該当月の経費キャッシュを無効化する。
+ */
+export function useDeleteFixedExpenses(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ yearMonth }: { yearMonth: string }) =>
+      deleteFixedExpenses(projectId, yearMonth),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['expenseSimulation', projectId, variables.yearMonth],
+      });
     },
   });
 }

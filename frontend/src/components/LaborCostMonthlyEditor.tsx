@@ -24,7 +24,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useFieldArray, useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useLaborCostMonthly, useUpdateLaborCosts } from '../hooks/useLaborCost';
+import { useLaborCostMonthly, useUpdateLaborCosts, useDeleteLaborCosts } from '../hooks/useLaborCost';
 import { LaborCostInput, LaborCostType } from '../types/SalesSimulation';
 
 interface LaborCostMonthlyEditorProps {
@@ -98,6 +98,7 @@ export default function LaborCostMonthlyEditor({
   const { t } = useTranslation();
   const { data, isLoading, isError } = useLaborCostMonthly(projectId, yearMonth);
   const mutation = useUpdateLaborCosts(projectId);
+  const deleteMutation = useDeleteLaborCosts(projectId);
 
   const { control, handleSubmit, reset, watch } = useForm<LaborCostFormValues>({
     defaultValues: { rows: [] },
@@ -149,6 +150,12 @@ export default function LaborCostMonthlyEditor({
       };
     });
     mutation.mutate({ yearMonth, laborCosts });
+  };
+
+  /** この月の人件費登録を削除する */
+  const handleDeleteMonthly = () => {
+    if (!window.confirm(t('confirm_delete_monthly_data'))) return;
+    deleteMutation.mutate({ yearMonth });
   };
 
   if (isLoading) {
@@ -448,15 +455,28 @@ export default function LaborCostMonthlyEditor({
           >
             {t('add_labor_cost_row')}
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            size="small"
-            startIcon={<SaveIcon />}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? t('saving') : t('save')}
-          </Button>
+          <Box display="flex" gap={1}>
+            {!data?.isInherited && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                onClick={handleDeleteMonthly}
+                disabled={deleteMutation.isPending}
+              >
+                {t('delete_monthly_data')}
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="contained"
+              size="small"
+              startIcon={<SaveIcon />}
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? t('saving') : t('save')}
+            </Button>
+          </Box>
         </Box>
 
         {mutation.isError && (
@@ -464,6 +484,12 @@ export default function LaborCostMonthlyEditor({
         )}
         {mutation.isSuccess && (
           <Alert severity="success">{t('labor_cost_save_success')}</Alert>
+        )}
+        {deleteMutation.isError && (
+          <Alert severity="error">{t('delete_error')}</Alert>
+        )}
+        {deleteMutation.isSuccess && (
+          <Alert severity="success">{t('delete_success')}</Alert>
         )}
       </Box>
     </Box>

@@ -229,6 +229,10 @@ const en = {
     investing_cf: 'Investing CF',
     financing_cf: 'Financing CF',
     cash_balance: 'Cash Balance',
+    delete_monthly_data: 'Delete Registration',
+    confirm_delete_monthly_data: "Delete this month's data? Previous month's data will be inherited.",
+    delete_success: 'Deleted successfully',
+    delete_error: 'Failed to delete',
   },
 };
 
@@ -460,6 +464,10 @@ const ja = {
     investing_cf: '投資CF',
     financing_cf: '財務CF',
     cash_balance: '現金残高',
+    delete_monthly_data: '登録を削除',
+    confirm_delete_monthly_data: 'この月の登録を削除しますか？削除後は前月のデータが継承されます。',
+    delete_success: '削除しました',
+    delete_error: '削除に失敗しました',
   },
 };
 
