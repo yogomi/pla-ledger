@@ -1,12 +1,21 @@
 import { Sequelize, DataTypes, Model, Optional } from 'sequelize';
 import path from 'path';
+import logger from '../utils/logger';
 
 const dbPath = process.env.DB_PATH || path.join(__dirname, '..', '..', 'data', 'pla-ledger.sqlite');
 
 export const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: dbPath,
-  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  logging: process.env.NODE_ENV === 'development'
+    ? (sql: string) => logger.debug(sql)
+    : false,
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000,
+  },
 });
 
 // ========== User ==========
