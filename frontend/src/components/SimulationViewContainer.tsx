@@ -15,6 +15,7 @@ import {
   TableHead,
   TableRow,
   Tabs,
+  TextField,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -26,6 +27,14 @@ import LoanListContainer from './LoanListContainer';
 import CashFlowMonthlyView from './CashFlowMonthlyView';
 import CashFlowCharts from './CashFlowCharts';
 import CashFlowYearlyTable from './CashFlowYearlyTable';
+import SalesYearlyView from './SalesYearlyView';
+import ExpenseYearlyView from './ExpenseYearlyView';
+import LoanYearlyView from './LoanYearlyView';
+import SalesLongtermView from './SalesLongtermView';
+import ExpenseLongtermView from './ExpenseLongtermView';
+import LoanLongtermView from './LoanLongtermView';
+import CashFlowLongtermTable from './CashFlowLongtermTable';
+import ProfitLossLongtermTable from './ProfitLossLongtermTable';
 
 interface SimulationViewContainerProps {
   projectId: string;
@@ -277,11 +286,15 @@ function ExpenseMonthlyView({
 
 /**
  * シミュレーション表示コンテナ（読み取り専用）。
- * 月次・年次を切り替えてデータを閲覧できる。
+ * 月次・年次・長期展望を切り替えてデータを閲覧できる。
  * yearMonth / onYearMonthChange は親から受け取りタブ間で年月を共有する。
  * 年次モードではアクティブなタブに応じて表示内容を切り替える：
- *   - キャッシュフロータブ → キャッシュフローグラフ＋年次テーブル
- *   - その他タブ → 損益計算表（年次）
+ *   - タブ0（売上）→ SalesYearlyView（カテゴリー別集計表 + 月次グラフ）
+ *   - タブ1（経費）→ ExpenseYearlyView（経費総括表 + 月次グラフ）
+ *   - タブ2（借入）→ LoanYearlyView（借入表 + 残高グラフ）
+ *   - タブ3（キャッシュフロー）→ キャッシュフローグラフ + 年次テーブル
+ *   - タブ4（損益計算表）→ ProfitLossYearlyTable
+ * 長期展望モードでは指定年数分の年次サマリーを横並びで表示する。
  */
 export default function SimulationViewContainer({
   projectId,
@@ -292,7 +305,8 @@ export default function SimulationViewContainer({
 }: SimulationViewContainerProps) {
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
-  const [viewMode, setViewMode] = useState<'monthly' | 'yearly'>('monthly');
+  const [viewMode, setViewMode] = useState<'monthly' | 'yearly' | 'longterm'>('monthly');
+  const [longtermYears, setLongtermYears] = useState(5);
 
   const year = yearMonth.split('-')[0];
 
@@ -304,18 +318,36 @@ export default function SimulationViewContainer({
           <Tab label={t('expense_management_tab')} />
           <Tab label={t('loan_management_tab')} />
           <Tab label={t('cash_flow_tab')} />
+          <Tab label={t('profit_loss_tab')} />
         </Tabs>
-        <SalesSimulationPagination
-          yearMonth={yearMonth}
-          onYearMonthChange={onYearMonthChange}
-          viewMode={viewMode}
-          onViewModeChange={mode => setViewMode(mode)}
-          showViewMode
-        />
+        <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+          <SalesSimulationPagination
+            yearMonth={yearMonth}
+            onYearMonthChange={onYearMonthChange}
+            viewMode={viewMode}
+            onViewModeChange={mode => setViewMode(mode)}
+            showViewMode
+          />
+          {viewMode === 'longterm' && (
+            <TextField
+              label={t('forecast_years')}
+              type="number"
+              size="small"
+              value={longtermYears}
+              onChange={e => {
+                const v = Number(e.target.value);
+                if (v >= 1 && v <= 30) setLongtermYears(v);
+              }}
+              inputProps={{ min: 1, max: 30 }}
+              sx={{ width: 100 }}
+            />
+          )}
+        </Box>
       </Box>
 
       <Divider sx={{ mb: 2 }} />
 
+      {/* 月次表示 */}
       {viewMode === 'monthly' && tab === 0 && (
         <SalesSimulationMonthlyView projectId={projectId} yearMonth={yearMonth} />
       )}
@@ -328,6 +360,20 @@ export default function SimulationViewContainer({
       {viewMode === 'monthly' && tab === 3 && (
         <CashFlowMonthlyView projectId={projectId} yearMonth={yearMonth} />
       )}
+      {viewMode === 'monthly' && tab === 4 && (
+        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
+      )}
+
+      {/* 年次表示 */}
+      {viewMode === 'yearly' && tab === 0 && (
+        <SalesYearlyView projectId={projectId} year={year} currency={currency} />
+      )}
+      {viewMode === 'yearly' && tab === 1 && (
+        <ExpenseYearlyView projectId={projectId} year={year} currency={currency} />
+      )}
+      {viewMode === 'yearly' && tab === 2 && (
+        <LoanYearlyView projectId={projectId} year={year} currency={currency} />
+      )}
       {viewMode === 'yearly' && tab === 3 && (
         <>
           <CashFlowCharts projectId={projectId} year={year} />
@@ -336,8 +382,50 @@ export default function SimulationViewContainer({
           </Box>
         </>
       )}
-      {viewMode === 'yearly' && tab !== 3 && (
+      {viewMode === 'yearly' && tab === 4 && (
         <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
+      )}
+
+      {/* 長期展望表示 */}
+      {viewMode === 'longterm' && tab === 0 && (
+        <SalesLongtermView
+          projectId={projectId}
+          startYear={year}
+          yearsCount={longtermYears}
+          currency={currency}
+        />
+      )}
+      {viewMode === 'longterm' && tab === 1 && (
+        <ExpenseLongtermView
+          projectId={projectId}
+          startYear={year}
+          yearsCount={longtermYears}
+          currency={currency}
+        />
+      )}
+      {viewMode === 'longterm' && tab === 2 && (
+        <LoanLongtermView
+          projectId={projectId}
+          startYear={year}
+          yearsCount={longtermYears}
+          currency={currency}
+        />
+      )}
+      {viewMode === 'longterm' && tab === 3 && (
+        <CashFlowLongtermTable
+          projectId={projectId}
+          startYear={year}
+          yearsCount={longtermYears}
+          currency={currency}
+        />
+      )}
+      {viewMode === 'longterm' && tab === 4 && (
+        <ProfitLossLongtermTable
+          projectId={projectId}
+          startYear={year}
+          yearsCount={longtermYears}
+          currency={currency}
+        />
       )}
     </Box>
   );

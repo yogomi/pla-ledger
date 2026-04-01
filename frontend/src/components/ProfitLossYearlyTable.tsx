@@ -44,7 +44,8 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
   const { months, yearly } = data;
 
   return (
-    <Paper variant="outlined" sx={{ overflow: 'auto' }}>
+    <Box>
+      <Paper variant="outlined" sx={{ overflow: 'auto' }}>
       <Table size="small">
         <TableHead>
           <TableRow sx={{ backgroundColor: 'grey.100' }}>
@@ -154,5 +155,6 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
         </TableBody>
       </Table>
     </Paper>
+    </Box>
   );
 }

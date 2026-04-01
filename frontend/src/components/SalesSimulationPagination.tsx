@@ -7,8 +7,8 @@ import { useTranslation } from 'react-i18next';
 interface SalesSimulationPaginationProps {
   yearMonth: string;
   onYearMonthChange: (ym: string) => void;
-  viewMode: 'monthly' | 'yearly';
-  onViewModeChange: (mode: 'monthly' | 'yearly') => void;
+  viewMode: 'monthly' | 'yearly' | 'longterm';
+  onViewModeChange: (mode: 'monthly' | 'yearly' | 'longterm') => void;
   showViewMode?: boolean;
 }
 
@@ -68,12 +68,13 @@ export default function SalesSimulationPagination({
           value={viewMode}
           exclusive
           size="small"
-          onChange={(_e, val: 'monthly' | 'yearly' | null) => {
+          onChange={(_e, val: 'monthly' | 'yearly' | 'longterm' | null) => {
             if (val !== null) onViewModeChange(val);
           }}
         >
           <ToggleButton value="monthly">{t('monthly')}</ToggleButton>
           <ToggleButton value="yearly">{t('yearly')}</ToggleButton>
+          <ToggleButton value="longterm">{t('longterm')}</ToggleButton>
         </ToggleButtonGroup>
       )}
       <Box display="flex" alignItems="center">
