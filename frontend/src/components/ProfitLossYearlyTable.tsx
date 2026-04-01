@@ -15,6 +15,7 @@ import {
 import DownloadIcon from '@mui/icons-material/Download';
 import { useTranslation } from 'react-i18next';
 import { useProfitLossYearly } from '../hooks/useSalesSimulation';
+import { printElement } from '../utils/print';
 
 interface ProfitLossYearlyTableProps {
   projectId: string;
@@ -48,13 +49,7 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
 
   /** PDFダウンロード: ブラウザの印刷ダイアログを表示する */
   const handlePrint = () => {
-    if (!printRef.current) return;
-    const printContents = printRef.current.innerHTML;
-    const originalContents = document.body.innerHTML;
-    document.body.innerHTML = printContents;
-    window.print();
-    document.body.innerHTML = originalContents;
-    window.location.reload();
+    if (printRef.current) printElement(printRef.current);
   };
 
   return (
