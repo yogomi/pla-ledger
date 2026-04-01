@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import SalesSimulationPagination from './SalesSimulationPagination';
 import SalesSimulationMonthlyEditor from './SalesSimulationMonthlyEditor';
 import ExpenseMonthlyEditor from './ExpenseMonthlyEditor';
-import ProfitLossYearlyTable from './ProfitLossYearlyTable';
 import LoanListContainer from './LoanListContainer';
 import CashFlowMonthlyEditor from './CashFlowMonthlyEditor';
 
@@ -14,14 +13,15 @@ interface SimulationSheetContainerProps {
   yearMonth: string;
   /** 年月変更時のコールバック。親コンポーネントに伝播する。 */
   onYearMonthChange: (ym: string) => void;
-  /** 通貨コード (例: JPY, USD)。損益計算表の金額表示に使用する。 */
+  /** 通貨コード (例: JPY, USD)。金額表示に使用する。 */
   currency: string;
 }
 
 /**
- * 売上シミュレーション・経費管理・損益計算表・キャッシュフロー・借入管理の5タブコンテナ（入力ページ用）。
+ * 売上シミュレーション・経費管理・借入管理・キャッシュフローの4タブコンテナ（入力ページ用）。
  * ページネーションで表示月を切り替えられる。月次表示のみ。
  * yearMonth / onYearMonthChange は親から受け取りタブ間で年月を共有する。
+ * 損益計算表は事業計画閲覧（SimulationViewContainer）に移動済み。
  */
 export default function SimulationSheetContainer({
   projectId,
@@ -32,8 +32,6 @@ export default function SimulationSheetContainer({
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
 
-  const year = yearMonth.split('-')[0];
-
   return (
     <Box>
       <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" mb={2}>
@@ -42,7 +40,6 @@ export default function SimulationSheetContainer({
           <Tab label={t('expense_management_tab')} />
           <Tab label={t('loan_management_tab')} />
           <Tab label={t('cash_flow_tab')} />
-          <Tab label={t('profit_loss_tab')} />
         </Tabs>
         <SalesSimulationPagination
           yearMonth={yearMonth}
@@ -64,9 +61,6 @@ export default function SimulationSheetContainer({
       )}
       {tab === 3 && (
         <CashFlowMonthlyEditor projectId={projectId} yearMonth={yearMonth} />
-      )}
-      {tab === 4 && (
-        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
       )}
     </Box>
   );

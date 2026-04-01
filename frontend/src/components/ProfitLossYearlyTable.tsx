@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Alert,
   Box,
+  Button,
   CircularProgress,
   Paper,
   Table,
@@ -11,6 +12,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import DownloadIcon from '@mui/icons-material/Download';
 import { useTranslation } from 'react-i18next';
 import { useProfitLossYearly } from '../hooks/useSalesSimulation';
 
@@ -23,10 +25,11 @@ interface ProfitLossYearlyTableProps {
 
 /**
  * 指定年の損益計算書を月次一覧で表示するコンポーネント。
- * 最終行に年次合計を表示する。
+ * 最終行に年次合計を表示する。PDFダウンロードボタンも提供する。
  */
 export default function ProfitLossYearlyTable({ projectId, year, currency }: ProfitLossYearlyTableProps) {
   const { t } = useTranslation();
+  const printRef = useRef<HTMLDivElement>(null);
   const { data, isLoading, isError } = useProfitLossYearly(projectId, year);
 
   if (isLoading) {
@@ -43,8 +46,33 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
 
   const { months, yearly } = data;
 
+  /** PDFダウンロード: ブラウザの印刷ダイアログを表示する */
+  const handlePrint = () => {
+    if (!printRef.current) return;
+    const printContents = printRef.current.innerHTML;
+    const originalContents = document.body.innerHTML;
+    document.body.innerHTML = printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+    window.location.reload();
+  };
+
   return (
-    <Paper variant="outlined" sx={{ overflow: 'auto' }}>
+    <Box>
+      {/* PDFダウンロードボタン */}
+      <Box display="flex" justifyContent="flex-end" mb={2}>
+        <Button
+          variant="outlined"
+          startIcon={<DownloadIcon />}
+          onClick={handlePrint}
+        >
+          {t('download_pdf')}
+        </Button>
+      </Box>
+
+      {/* 印刷対象エリア */}
+      <div ref={printRef}>
+        <Paper variant="outlined" sx={{ overflow: 'auto' }}>
       <Table size="small">
         <TableHead>
           <TableRow sx={{ backgroundColor: 'grey.100' }}>
@@ -154,5 +182,7 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
         </TableBody>
       </Table>
     </Paper>
+      </div>
+    </Box>
   );
 }

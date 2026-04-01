@@ -178,3 +178,72 @@ export type LaborCostInput =
   | LaborCostInputOwnerSalary
   | LaborCostInputFullTime
   | LaborCostInputPartTime;
+
+/** 売上年次カテゴリーの月次データ */
+export interface SalesCategoryMonthly {
+  yearMonth: string;
+  monthlySales: number;
+  monthlyCost: number;
+}
+
+/** 売上年次カテゴリーデータ */
+export interface SalesCategoryYearly {
+  categoryId: string;
+  categoryName: string;
+  months: SalesCategoryMonthly[];
+  yearlyTotal: number;
+  yearlyCost: number;
+}
+
+/** 売上年次月次合計 */
+export interface SalesMonthlyTotal {
+  yearMonth: string;
+  totalSales: number;
+  totalCost: number;
+}
+
+/** 売上年次データ（APIレスポンス用） */
+export interface SalesYearlyData {
+  year: string;
+  categories: SalesCategoryYearly[];
+  monthlyTotals: SalesMonthlyTotal[];
+  yearlyTotal: number;
+  yearlyCost: number;
+}
+
+/** 経費年次カテゴリーの月次データ */
+export interface ExpenseCategoryMonthly {
+  yearMonth: string;
+  amount: number;
+}
+
+/** 経費年次カテゴリーデータ */
+export interface ExpenseCategoryYearly {
+  categoryName: string;
+  months: ExpenseCategoryMonthly[];
+  yearlyTotal: number;
+}
+
+/** 経費年次月次合計 */
+export interface ExpenseMonthlyTotal {
+  yearMonth: string;
+  fixedTotal: number;
+  variableTotal: number;
+  laborTotal: number;
+  totalExpense: number;
+}
+
+/** 経費年次データ（APIレスポンス用） */
+export interface ExpenseYearlyData {
+  year: string;
+  fixedByCategory: ExpenseCategoryYearly[];
+  variableByCategory: ExpenseCategoryYearly[];
+  laborMonths: ExpenseCategoryMonthly[];
+  monthlyTotals: ExpenseMonthlyTotal[];
+  yearlyTotals: {
+    totalFixed: number;
+    totalVariable: number;
+    totalLabor: number;
+    totalExpense: number;
+  };
+}

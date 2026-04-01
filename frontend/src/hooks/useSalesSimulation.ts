@@ -4,6 +4,8 @@ import {
   updateSalesSimulationMonthly,
   getExpenseSimulationMonthly,
   getProfitLossYearly,
+  getSalesSimulationYearly,
+  getExpenseSimulationYearly,
   updateFixedExpenses,
   updateVariableExpenses,
   createSalesCategory,
@@ -45,6 +47,28 @@ export function useProfitLossYearly(projectId: string, year: string) {
   return useQuery({
     queryKey: ['profitLoss', projectId, year],
     queryFn: () => getProfitLossYearly(projectId, year),
+    enabled: Boolean(projectId) && Boolean(year),
+  });
+}
+
+/**
+ * 指定年の売上シミュレーションデータをカテゴリ別に取得するフック。
+ */
+export function useSalesSimulationYearly(projectId: string, year: string) {
+  return useQuery({
+    queryKey: ['salesSimulationYearly', projectId, year],
+    queryFn: () => getSalesSimulationYearly(projectId, year),
+    enabled: Boolean(projectId) && Boolean(year),
+  });
+}
+
+/**
+ * 指定年の経費シミュレーションデータをカテゴリ別に取得するフック。
+ */
+export function useExpenseSimulationYearly(projectId: string, year: string) {
+  return useQuery({
+    queryKey: ['expenseSimulationYearly', projectId, year],
+    queryFn: () => getExpenseSimulationYearly(projectId, year),
     enabled: Boolean(projectId) && Boolean(year),
   });
 }

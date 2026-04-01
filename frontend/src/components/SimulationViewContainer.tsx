@@ -26,6 +26,9 @@ import LoanListContainer from './LoanListContainer';
 import CashFlowMonthlyView from './CashFlowMonthlyView';
 import CashFlowCharts from './CashFlowCharts';
 import CashFlowYearlyTable from './CashFlowYearlyTable';
+import SalesYearlyView from './SalesYearlyView';
+import ExpenseYearlyView from './ExpenseYearlyView';
+import LoanYearlyView from './LoanYearlyView';
 
 interface SimulationViewContainerProps {
   projectId: string;
@@ -280,8 +283,12 @@ function ExpenseMonthlyView({
  * 月次・年次を切り替えてデータを閲覧できる。
  * yearMonth / onYearMonthChange は親から受け取りタブ間で年月を共有する。
  * 年次モードではアクティブなタブに応じて表示内容を切り替える：
- *   - キャッシュフロータブ → キャッシュフローグラフ＋年次テーブル
- *   - その他タブ → 損益計算表（年次）
+ *   - タブ0（売上）→ SalesYearlyView（カテゴリー別集計表 + 月次グラフ）
+ *   - タブ1（経費）→ ExpenseYearlyView（経費総括表 + 月次グラフ）
+ *   - タブ2（借入）→ LoanYearlyView（借入表 + 残高グラフ）
+ *   - タブ3（キャッシュフロー）→ キャッシュフローグラフ + 年次テーブル
+ *   - タブ4（損益計算表）→ ProfitLossYearlyTable
+ * 各年次表示にはPDFダウンロードボタンが含まれる。
  */
 export default function SimulationViewContainer({
   projectId,
@@ -304,6 +311,7 @@ export default function SimulationViewContainer({
           <Tab label={t('expense_management_tab')} />
           <Tab label={t('loan_management_tab')} />
           <Tab label={t('cash_flow_tab')} />
+          <Tab label={t('profit_loss_tab')} />
         </Tabs>
         <SalesSimulationPagination
           yearMonth={yearMonth}
@@ -316,6 +324,7 @@ export default function SimulationViewContainer({
 
       <Divider sx={{ mb: 2 }} />
 
+      {/* 月次表示 */}
       {viewMode === 'monthly' && tab === 0 && (
         <SalesSimulationMonthlyView projectId={projectId} yearMonth={yearMonth} />
       )}
@@ -328,6 +337,20 @@ export default function SimulationViewContainer({
       {viewMode === 'monthly' && tab === 3 && (
         <CashFlowMonthlyView projectId={projectId} yearMonth={yearMonth} />
       )}
+      {viewMode === 'monthly' && tab === 4 && (
+        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
+      )}
+
+      {/* 年次表示 */}
+      {viewMode === 'yearly' && tab === 0 && (
+        <SalesYearlyView projectId={projectId} year={year} currency={currency} />
+      )}
+      {viewMode === 'yearly' && tab === 1 && (
+        <ExpenseYearlyView projectId={projectId} year={year} currency={currency} />
+      )}
+      {viewMode === 'yearly' && tab === 2 && (
+        <LoanYearlyView projectId={projectId} year={year} currency={currency} />
+      )}
       {viewMode === 'yearly' && tab === 3 && (
         <>
           <CashFlowCharts projectId={projectId} year={year} />
@@ -336,7 +359,7 @@ export default function SimulationViewContainer({
           </Box>
         </>
       )}
-      {viewMode === 'yearly' && tab !== 3 && (
+      {viewMode === 'yearly' && tab === 4 && (
         <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
       )}
     </Box>
