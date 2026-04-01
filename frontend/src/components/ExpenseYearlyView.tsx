@@ -1,8 +1,7 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   Divider,
   Paper,
@@ -13,7 +12,6 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
 import {
   BarChart,
   Bar,
@@ -26,7 +24,6 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { useExpenseSimulationYearly } from '../hooks/useSalesSimulation';
-import { printElement } from '../utils/print';
 
 interface ExpenseYearlyViewProps {
   projectId: string;
@@ -47,11 +44,9 @@ const tooltipFormatter = (v: unknown) =>
 /**
  * 経費管理の年次表示コンポーネント。
  * 固定費・変動費・人件費のカテゴリー別年間集計表と月次推移グラフを表示する。
- * PDFダウンロード（window.print）ボタンも提供する。
  */
 export default function ExpenseYearlyView({ projectId, year, currency }: ExpenseYearlyViewProps) {
   const { t } = useTranslation();
-  const printRef = useRef<HTMLDivElement>(null);
   const { data, isLoading, isError } = useExpenseSimulationYearly(projectId, year);
 
   if (isLoading) {
@@ -75,11 +70,6 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
     [t('variable_expenses_section')]: mt.variableTotal,
     [t('labor_cost_section')]: mt.laborTotal,
   }));
-
-  /** PDFダウンロード: ブラウザの印刷ダイアログを表示する */
-  const handlePrint = () => {
-    if (printRef.current) printElement(printRef.current);
-  };
 
   /**
    * カテゴリー別月次表を描画する共通コンポーネント。
@@ -171,185 +161,171 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
 
   return (
     <Box>
-      {/* PDFダウンロードボタン */}
-      <Box display="flex" justifyContent="flex-end" mb={2}>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handlePrint}
-        >
-          {t('download_pdf')}
-        </Button>
-      </Box>
+      <Typography variant="h6" gutterBottom>
+        {t('yearly_expense_summary')} ({t('year_label', { year })})
+      </Typography>
 
-      {/* 印刷対象エリア */}
-      <div ref={printRef}>
-        <Typography variant="h6" gutterBottom>
-          {t('yearly_expense_summary')} ({t('year_label', { year })})
-        </Typography>
+      {/* 固定費カテゴリー別表 */}
+      {renderCategoryTable(
+        t('fixed_expenses_section'),
+        data.fixedByCategory,
+        t('fixed_total_row'),
+      )}
 
-        {/* 固定費カテゴリー別表 */}
-        {renderCategoryTable(
-          t('fixed_expenses_section'),
-          data.fixedByCategory,
-          t('fixed_total_row'),
-        )}
+      {/* 変動費カテゴリー別表 */}
+      {renderCategoryTable(
+        t('variable_expenses_section'),
+        data.variableByCategory,
+        t('variable_total_row'),
+      )}
 
-        {/* 変動費カテゴリー別表 */}
-        {renderCategoryTable(
-          t('variable_expenses_section'),
-          data.variableByCategory,
-          t('variable_total_row'),
-        )}
-
-        {/* 人件費月次表 */}
-        <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
-          <Box p={2} borderBottom={1} borderColor="divider">
-            <Typography variant="h6">{t('labor_cost_section')}</Typography>
-          </Box>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                <TableCell>{t('category_name_col')}</TableCell>
-                {allMonths.map(ym => {
-                  const m = ym.split('-')[1];
-                  return (
-                    <TableCell key={ym} align="right">
-                      {t('month_label_short', { month: Number(m) })}
-                    </TableCell>
-                  );
-                })}
-                <TableCell align="right">{t('category_total')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell>{t('labor_cost_section')}</TableCell>
-                {data.laborMonths.map(lm => (
-                  <TableCell key={lm.yearMonth} align="right">
-                    {lm.amount.toLocaleString()}
+      {/* 人件費月次表 */}
+      <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
+        <Box p={2} borderBottom={1} borderColor="divider">
+          <Typography variant="h6">{t('labor_cost_section')}</Typography>
+        </Box>
+        <Table size="small">
+          <TableHead>
+            <TableRow sx={{ backgroundColor: 'grey.100' }}>
+              <TableCell>{t('category_name_col')}</TableCell>
+              {allMonths.map(ym => {
+                const m = ym.split('-')[1];
+                return (
+                  <TableCell key={ym} align="right">
+                    {t('month_label_short', { month: Number(m) })}
                   </TableCell>
-                ))}
-                <TableCell align="right">
-                  <Typography fontWeight="bold">
-                    {data.yearlyTotals.totalLabor.toLocaleString()}
-                  </Typography>
+                );
+              })}
+              <TableCell align="right">{t('category_total')}</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <TableRow>
+              <TableCell>{t('labor_cost_section')}</TableCell>
+              {data.laborMonths.map(lm => (
+                <TableCell key={lm.yearMonth} align="right">
+                  {lm.amount.toLocaleString()}
                 </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </Paper>
+              ))}
+              <TableCell align="right">
+                <Typography fontWeight="bold">
+                  {data.yearlyTotals.totalLabor.toLocaleString()}
+                </Typography>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Paper>
 
-        {/* 経費合計サマリー表 */}
-        <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
-          <Box p={2} borderBottom={1} borderColor="divider">
-            <Typography variant="h6">{t('expense_total_row')}</Typography>
-          </Box>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                <TableCell />
-                {allMonths.map(ym => {
-                  const m = ym.split('-')[1];
-                  return (
-                    <TableCell key={ym} align="right">
-                      {t('month_label_short', { month: Number(m) })}
-                    </TableCell>
-                  );
-                })}
-                <TableCell align="right">{t('yearly_total')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell>{t('fixed_total_row')}</TableCell>
-                {data.monthlyTotals.map(mt => (
-                  <TableCell key={mt.yearMonth} align="right">
-                    {mt.fixedTotal.toLocaleString()}
+      {/* 経費合計サマリー表 */}
+      <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
+        <Box p={2} borderBottom={1} borderColor="divider">
+          <Typography variant="h6">{t('expense_total_row')}</Typography>
+        </Box>
+        <Table size="small">
+          <TableHead>
+            <TableRow sx={{ backgroundColor: 'grey.100' }}>
+              <TableCell />
+              {allMonths.map(ym => {
+                const m = ym.split('-')[1];
+                return (
+                  <TableCell key={ym} align="right">
+                    {t('month_label_short', { month: Number(m) })}
                   </TableCell>
-                ))}
-                <TableCell align="right">
-                  <Typography fontWeight="bold">
-                    {data.yearlyTotals.totalFixed.toLocaleString()}
-                  </Typography>
+                );
+              })}
+              <TableCell align="right">{t('yearly_total')}</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <TableRow>
+              <TableCell>{t('fixed_total_row')}</TableCell>
+              {data.monthlyTotals.map(mt => (
+                <TableCell key={mt.yearMonth} align="right">
+                  {mt.fixedTotal.toLocaleString()}
                 </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>{t('variable_total_row')}</TableCell>
-                {data.monthlyTotals.map(mt => (
-                  <TableCell key={mt.yearMonth} align="right">
-                    {mt.variableTotal.toLocaleString()}
-                  </TableCell>
-                ))}
-                <TableCell align="right">
-                  <Typography fontWeight="bold">
-                    {data.yearlyTotals.totalVariable.toLocaleString()}
-                  </Typography>
+              ))}
+              <TableCell align="right">
+                <Typography fontWeight="bold">
+                  {data.yearlyTotals.totalFixed.toLocaleString()}
+                </Typography>
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>{t('variable_total_row')}</TableCell>
+              {data.monthlyTotals.map(mt => (
+                <TableCell key={mt.yearMonth} align="right">
+                  {mt.variableTotal.toLocaleString()}
                 </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>{t('labor_total_row')}</TableCell>
-                {data.monthlyTotals.map(mt => (
-                  <TableCell key={mt.yearMonth} align="right">
-                    {mt.laborTotal.toLocaleString()}
-                  </TableCell>
-                ))}
-                <TableCell align="right">
-                  <Typography fontWeight="bold">
-                    {data.yearlyTotals.totalLabor.toLocaleString()}
-                  </Typography>
+              ))}
+              <TableCell align="right">
+                <Typography fontWeight="bold">
+                  {data.yearlyTotals.totalVariable.toLocaleString()}
+                </Typography>
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>{t('labor_total_row')}</TableCell>
+              {data.monthlyTotals.map(mt => (
+                <TableCell key={mt.yearMonth} align="right">
+                  {mt.laborTotal.toLocaleString()}
                 </TableCell>
-              </TableRow>
-              <TableRow sx={{ backgroundColor: 'grey.50' }}>
-                <TableCell>
-                  <Typography fontWeight="bold">{t('expense_total_row')}</Typography>
+              ))}
+              <TableCell align="right">
+                <Typography fontWeight="bold">
+                  {data.yearlyTotals.totalLabor.toLocaleString()}
+                </Typography>
+              </TableCell>
+            </TableRow>
+            <TableRow sx={{ backgroundColor: 'grey.50' }}>
+              <TableCell>
+                <Typography fontWeight="bold">{t('expense_total_row')}</Typography>
+              </TableCell>
+              {data.monthlyTotals.map(mt => (
+                <TableCell key={mt.yearMonth} align="right">
+                  <Typography fontWeight="bold">{mt.totalExpense.toLocaleString()}</Typography>
                 </TableCell>
-                {data.monthlyTotals.map(mt => (
-                  <TableCell key={mt.yearMonth} align="right">
-                    <Typography fontWeight="bold">{mt.totalExpense.toLocaleString()}</Typography>
-                  </TableCell>
-                ))}
-                <TableCell align="right">
-                  <Typography fontWeight="bold">
-                    {data.yearlyTotals.totalExpense.toLocaleString()}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </Paper>
+              ))}
+              <TableCell align="right">
+                <Typography fontWeight="bold">
+                  {data.yearlyTotals.totalExpense.toLocaleString()}
+                </Typography>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Paper>
 
-        <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2 }} />
 
-        {/* 月次経費推移グラフ */}
-        <Typography variant="h6" gutterBottom>
-          {t('expense_yearly_chart_title')} ({currency})
-        </Typography>
-        <ResponsiveContainer width="100%" height={320}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis tickFormatter={v => Number(v).toLocaleString()} />
-            <Tooltip formatter={tooltipFormatter} />
-            <Legend />
-            <Bar
-              dataKey={t('fixed_expenses_section')}
-              stackId="expense"
-              fill="#f44336"
-            />
-            <Bar
-              dataKey={t('variable_expenses_section')}
-              stackId="expense"
-              fill="#ff9800"
-            />
-            <Bar
-              dataKey={t('labor_cost_section')}
-              stackId="expense"
-              fill="#2196f3"
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      {/* 月次経費推移グラフ */}
+      <Typography variant="h6" gutterBottom>
+        {t('expense_yearly_chart_title')} ({currency})
+      </Typography>
+      <ResponsiveContainer width="100%" height={320}>
+        <BarChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis tickFormatter={v => Number(v).toLocaleString()} />
+          <Tooltip formatter={tooltipFormatter} />
+          <Legend />
+          <Bar
+            dataKey={t('fixed_expenses_section')}
+            stackId="expense"
+            fill="#f44336"
+          />
+          <Bar
+            dataKey={t('variable_expenses_section')}
+            stackId="expense"
+            fill="#ff9800"
+          />
+          <Bar
+            dataKey={t('labor_cost_section')}
+            stackId="expense"
+            fill="#2196f3"
+          />
+        </BarChart>
+      </ResponsiveContainer>
     </Box>
   );
 }

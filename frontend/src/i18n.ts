@@ -262,6 +262,13 @@ const en = {
     sales_col: 'Sales',
     cost_col: 'Cost',
     total_col: 'Total',
+    longterm: 'Long-term',
+    forecast_years: 'Years',
+    longterm_sales_title: 'Long-term Sales Outlook',
+    longterm_expense_title: 'Long-term Expense Outlook',
+    longterm_loan_title: 'Long-term Loan Outlook',
+    longterm_cashflow_title: 'Long-term Cash Flow Outlook',
+    longterm_profitloss_title: 'Long-term Profit & Loss Outlook',
   },
 };
 
@@ -526,6 +533,13 @@ const ja = {
     sales_col: '売上',
     cost_col: '原価',
     total_col: '合計',
+    longterm: '長期展望',
+    forecast_years: '年数',
+    longterm_sales_title: '長期売上展望',
+    longterm_expense_title: '長期経費展望',
+    longterm_loan_title: '長期借入展望',
+    longterm_cashflow_title: '長期キャッシュフロー展望',
+    longterm_profitloss_title: '長期損益展望',
   },
 };
 

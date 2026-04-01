@@ -1,8 +1,7 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   Paper,
   Table,
@@ -12,10 +11,8 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
 import { useTranslation } from 'react-i18next';
 import { useProfitLossYearly } from '../hooks/useSalesSimulation';
-import { printElement } from '../utils/print';
 
 interface ProfitLossYearlyTableProps {
   projectId: string;
@@ -26,11 +23,10 @@ interface ProfitLossYearlyTableProps {
 
 /**
  * 指定年の損益計算書を月次一覧で表示するコンポーネント。
- * 最終行に年次合計を表示する。PDFダウンロードボタンも提供する。
+ * 最終行に年次合計を表示する。
  */
 export default function ProfitLossYearlyTable({ projectId, year, currency }: ProfitLossYearlyTableProps) {
   const { t } = useTranslation();
-  const printRef = useRef<HTMLDivElement>(null);
   const { data, isLoading, isError } = useProfitLossYearly(projectId, year);
 
   if (isLoading) {
@@ -47,27 +43,9 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
 
   const { months, yearly } = data;
 
-  /** PDFダウンロード: ブラウザの印刷ダイアログを表示する */
-  const handlePrint = () => {
-    if (printRef.current) printElement(printRef.current);
-  };
-
   return (
     <Box>
-      {/* PDFダウンロードボタン */}
-      <Box display="flex" justifyContent="flex-end" mb={2}>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handlePrint}
-        >
-          {t('download_pdf')}
-        </Button>
-      </Box>
-
-      {/* 印刷対象エリア */}
-      <div ref={printRef}>
-        <Paper variant="outlined" sx={{ overflow: 'auto' }}>
+      <Paper variant="outlined" sx={{ overflow: 'auto' }}>
       <Table size="small">
         <TableHead>
           <TableRow sx={{ backgroundColor: 'grey.100' }}>
@@ -177,7 +155,6 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
         </TableBody>
       </Table>
     </Paper>
-      </div>
     </Box>
   );
 }

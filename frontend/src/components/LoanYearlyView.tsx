@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   Divider,
   Paper,
@@ -13,7 +12,6 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
 import {
   LineChart,
   Line,
@@ -27,7 +25,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useLoans, useLoanRepaymentSchedule } from '../hooks/useLoan';
 import { Loan, LoanRepayment } from '../types/Loan';
-import { printElement } from '../utils/print';
 
 interface LoanYearlyViewProps {
   projectId: string;
@@ -37,7 +34,7 @@ interface LoanYearlyViewProps {
   currency: string;
 }
 
-/** PDFダウンロード用のカラーパレット */
+/** グラフのカラーパレット */
 const CHART_COLORS = [
   '#4caf50', '#2196f3', '#ff9800', '#f44336', '#9c27b0',
   '#00bcd4', '#ffeb3b', '#795548', '#607d8b', '#e91e63',
@@ -118,11 +115,9 @@ function LoanYearRow({
 /**
  * 借入管理の年次表示コンポーネント。
  * 各ローンの年間返済額と残高推移表、月次残高グラフを表示する。
- * PDFダウンロード（window.print）ボタンも提供する。
  */
 export default function LoanYearlyView({ projectId, year, currency }: LoanYearlyViewProps) {
   const { t } = useTranslation();
-  const printRef = useRef<HTMLDivElement>(null);
   const { data: loansData, isLoading: loansLoading, isError: loansError } = useLoans(projectId);
 
   // 各ローンの返済スケジュールを管理するマップ (loanId -> schedule)
@@ -168,11 +163,6 @@ export default function LoanYearlyView({ projectId, year, currency }: LoanYearly
     return entry;
   });
 
-  /** PDFダウンロード: ブラウザの印刷ダイアログを表示する */
-  const handlePrint = () => {
-    if (printRef.current) printElement(printRef.current);
-  };
-
   return (
     <Box>
       {/* 各ローンのスケジュールをバックグラウンドでフェッチするローダー */}
@@ -185,80 +175,66 @@ export default function LoanYearlyView({ projectId, year, currency }: LoanYearly
         />
       ))}
 
-      {/* PDFダウンロードボタン */}
-      <Box display="flex" justifyContent="flex-end" mb={2}>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handlePrint}
-        >
-          {t('download_pdf')}
-        </Button>
-      </Box>
+      <Typography variant="h6" gutterBottom>
+        {t('yearly_loan_summary')} ({t('year_label', { year })})
+      </Typography>
 
-      {/* 印刷対象エリア */}
-      <div ref={printRef}>
-        <Typography variant="h6" gutterBottom>
-          {t('yearly_loan_summary')} ({t('year_label', { year })})
-        </Typography>
-
-        {loans.length === 0 ? (
-          <Alert severity="info">{t('no_loans')}</Alert>
-        ) : (
-          <>
-            {/* 年次借入サマリー表 */}
-            <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                    <TableCell>{t('lender_name')}</TableCell>
-                    <TableCell align="right">{t('principal_amount')}</TableCell>
-                    <TableCell align="right">{t('annual_repayment')}</TableCell>
-                    <TableCell align="right">{t('annual_interest')}</TableCell>
-                    <TableCell align="right">{t('year_end_balance')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loans.map(loan => (
-                    <LoanYearRow
-                      key={loan.id}
-                      loan={loan}
-                      year={year}
-                      currency={currency}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </Paper>
-
-            <Divider sx={{ my: 2 }} />
-
-            {/* 月次残高グラフ（各ローンの残高推移） */}
-            <Typography variant="h6" gutterBottom>
-              {t('loan_yearly_chart_title')} ({currency})
-            </Typography>
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis tickFormatter={v => Number(v).toLocaleString()} />
-                <Tooltip formatter={tooltipFormatter} />
-                <Legend />
-                {loans.map((loan, idx) => (
-                  <Line
+      {loans.length === 0 ? (
+        <Alert severity="info">{t('no_loans')}</Alert>
+      ) : (
+        <>
+          {/* 年次借入サマリー表 */}
+          <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ backgroundColor: 'grey.100' }}>
+                  <TableCell>{t('lender_name')}</TableCell>
+                  <TableCell align="right">{t('principal_amount')}</TableCell>
+                  <TableCell align="right">{t('annual_repayment')}</TableCell>
+                  <TableCell align="right">{t('annual_interest')}</TableCell>
+                  <TableCell align="right">{t('year_end_balance')}</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loans.map(loan => (
+                  <LoanYearRow
                     key={loan.id}
-                    type="monotone"
-                    dataKey={loan.lenderName}
-                    stroke={CHART_COLORS[idx % CHART_COLORS.length]}
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
+                    loan={loan}
+                    year={year}
+                    currency={currency}
                   />
                 ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </>
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          </Paper>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* 月次残高グラフ（各ローンの残高推移） */}
+          <Typography variant="h6" gutterBottom>
+            {t('loan_yearly_chart_title')} ({currency})
+          </Typography>
+          <ResponsiveContainer width="100%" height={320}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={v => Number(v).toLocaleString()} />
+              <Tooltip formatter={tooltipFormatter} />
+              <Legend />
+              {loans.map((loan, idx) => (
+                <Line
+                  key={loan.id}
+                  type="monotone"
+                  dataKey={loan.lenderName}
+                  stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </>
+      )}
     </Box>
   );
 }

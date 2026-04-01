@@ -1,8 +1,7 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   Divider,
   Paper,
@@ -13,7 +12,6 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
 import {
   BarChart,
   Bar,
@@ -26,7 +24,6 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { useSalesSimulationYearly } from '../hooks/useSalesSimulation';
-import { printElement } from '../utils/print';
 
 interface SalesYearlyViewProps {
   projectId: string;
@@ -36,7 +33,7 @@ interface SalesYearlyViewProps {
   currency: string;
 }
 
-/** PDFダウンロード用のカラーパレット */
+/** グラフのカラーパレット */
 const CHART_COLORS = [
   '#4caf50', '#2196f3', '#ff9800', '#f44336', '#9c27b0',
   '#00bcd4', '#ffeb3b', '#795548', '#607d8b', '#e91e63',
@@ -53,11 +50,9 @@ const tooltipFormatter = (v: unknown) =>
 /**
  * 売上シミュレーションの年次表示コンポーネント。
  * カテゴリー別の年間売上集計表と月次売上推移グラフを表示する。
- * PDFダウンロード（window.print）ボタンも提供する。
  */
 export default function SalesYearlyView({ projectId, year, currency }: SalesYearlyViewProps) {
   const { t } = useTranslation();
-  const printRef = useRef<HTMLDivElement>(null);
   const { data, isLoading, isError } = useSalesSimulationYearly(projectId, year);
 
   if (isLoading) {
@@ -83,109 +78,90 @@ export default function SalesYearlyView({ projectId, year, currency }: SalesYear
     return entry;
   });
 
-  /** PDFダウンロード: ブラウザの印刷ダイアログを表示する */
-  const handlePrint = () => {
-    if (printRef.current) printElement(printRef.current);
-  };
-
   return (
     <Box>
-      {/* PDFダウンロードボタン */}
-      <Box display="flex" justifyContent="flex-end" mb={2}>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handlePrint}
-        >
-          {t('download_pdf')}
-        </Button>
-      </Box>
+      <Typography variant="h6" gutterBottom>
+        {t('yearly_sales_by_category')} ({t('year_label', { year })})
+      </Typography>
 
-      {/* 印刷対象エリア */}
-      <div ref={printRef}>
-        <Typography variant="h6" gutterBottom>
-          {t('yearly_sales_by_category')} ({t('year_label', { year })})
-        </Typography>
-
-        {/* カテゴリー別年間売上表 */}
-        <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                <TableCell>{t('category_name_col')}</TableCell>
-                {data.monthlyTotals.map(mt => {
-                  const m = mt.yearMonth.split('-')[1];
-                  return (
-                    <TableCell key={mt.yearMonth} align="right">
-                      {t('month_label_short', { month: Number(m) })}
-                    </TableCell>
-                  );
-                })}
-                <TableCell align="right">{t('category_total')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {data.categories.map(cat => (
-                <TableRow key={cat.categoryId}>
-                  <TableCell>{cat.categoryName}</TableCell>
-                  {cat.months.map(m => (
-                    <TableCell key={m.yearMonth} align="right">
-                      {m.monthlySales.toLocaleString()}
-                    </TableCell>
-                  ))}
-                  <TableCell align="right">
-                    <Typography fontWeight="bold">
-                      {cat.yearlyTotal.toLocaleString()}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {/* 月次合計行 */}
-              <TableRow sx={{ backgroundColor: 'grey.50' }}>
-                <TableCell>
-                  <Typography fontWeight="bold">{t('yearly_total')}</Typography>
-                </TableCell>
-                {data.monthlyTotals.map(mt => (
+      {/* カテゴリー別年間売上表 */}
+      <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow sx={{ backgroundColor: 'grey.100' }}>
+              <TableCell>{t('category_name_col')}</TableCell>
+              {data.monthlyTotals.map(mt => {
+                const m = mt.yearMonth.split('-')[1];
+                return (
                   <TableCell key={mt.yearMonth} align="right">
-                    <Typography fontWeight="bold">
-                      {mt.totalSales.toLocaleString()}
-                    </Typography>
+                    {t('month_label_short', { month: Number(m) })}
+                  </TableCell>
+                );
+              })}
+              <TableCell align="right">{t('category_total')}</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data.categories.map(cat => (
+              <TableRow key={cat.categoryId}>
+                <TableCell>{cat.categoryName}</TableCell>
+                {cat.months.map(m => (
+                  <TableCell key={m.yearMonth} align="right">
+                    {m.monthlySales.toLocaleString()}
                   </TableCell>
                 ))}
                 <TableCell align="right">
                   <Typography fontWeight="bold">
-                    {data.yearlyTotal.toLocaleString()}
+                    {cat.yearlyTotal.toLocaleString()}
                   </Typography>
                 </TableCell>
               </TableRow>
-            </TableBody>
-          </Table>
-        </Paper>
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* 月次売上推移グラフ */}
-        <Typography variant="h6" gutterBottom>
-          {t('sales_yearly_chart_title')} ({currency})
-        </Typography>
-        <ResponsiveContainer width="100%" height={320}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis tickFormatter={v => Number(v).toLocaleString()} />
-            <Tooltip formatter={tooltipFormatter} />
-            <Legend />
-            {data.categories.map((cat, idx) => (
-              <Bar
-                key={cat.categoryId}
-                dataKey={cat.categoryName}
-                stackId="sales"
-                fill={CHART_COLORS[idx % CHART_COLORS.length]}
-              />
             ))}
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+            {/* 月次合計行 */}
+            <TableRow sx={{ backgroundColor: 'grey.50' }}>
+              <TableCell>
+                <Typography fontWeight="bold">{t('yearly_total')}</Typography>
+              </TableCell>
+              {data.monthlyTotals.map(mt => (
+                <TableCell key={mt.yearMonth} align="right">
+                  <Typography fontWeight="bold">
+                    {mt.totalSales.toLocaleString()}
+                  </Typography>
+                </TableCell>
+              ))}
+              <TableCell align="right">
+                <Typography fontWeight="bold">
+                  {data.yearlyTotal.toLocaleString()}
+                </Typography>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Paper>
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* 月次売上推移グラフ */}
+      <Typography variant="h6" gutterBottom>
+        {t('sales_yearly_chart_title')} ({currency})
+      </Typography>
+      <ResponsiveContainer width="100%" height={320}>
+        <BarChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis tickFormatter={v => Number(v).toLocaleString()} />
+          <Tooltip formatter={tooltipFormatter} />
+          <Legend />
+          {data.categories.map((cat, idx) => (
+            <Bar
+              key={cat.categoryId}
+              dataKey={cat.categoryName}
+              stackId="sales"
+              fill={CHART_COLORS[idx % CHART_COLORS.length]}
+            />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
     </Box>
   );
 }
