@@ -26,12 +26,11 @@ interface Version {
   summary: string | null;
   created_at: string;
 }
-interface Attachment { id: string; filename: string; url: string; mime_type: string; size: number; }
 interface Section { id: string; type: string; content: Record<string, unknown>; version: number; }
 interface Project {
   id: string; title: string; summary: string | null;
   visibility: string; currency: string; stage: string | null; tags: string[];
-  owner_id: string; sections: Section[]; attachments: Attachment[];
+  owner_id: string; sections: Section[];
   social_insurance_rate: number | null;
 }
 interface AccessRequest {
@@ -205,25 +204,6 @@ export default function ProjectViewPage() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const form = new FormData();
-    form.append('file', file);
-    try {
-      const r = await api.post(
-        `/projects/${id}/attachments`,
-        form,
-        { headers: { 'Content-Type': 'multipart/form-data' } },
-      );
-      setProject(prev =>
-        prev ? { ...prev, attachments: [...prev.attachments, r.data.data.attachment] } : prev,
-      );
-    } catch {
-      alert('Failed to upload file');
-    }
-  };
-
   const handleEditSave = async (data: EditFormData) => {
     setEditError('');
     try {
@@ -373,7 +353,6 @@ export default function ProjectViewPage() {
           <Divider sx={{ mb: 2 }} />
           <Tabs value={innerTabValue} onChange={(_, v) => setInnerTabValue(v)} sx={{ mb: 2 }}>
             <Tab label={t('sections')} />
-            <Tab label={t('attachments')} />
             <Tab label={t('comments')} />
             <Tab label={t('versions')} />
           </Tabs>
@@ -414,36 +393,6 @@ export default function ProjectViewPage() {
 
           {innerTabValue === 1 && (
             <Box>
-              {canEdit && (
-                <Box mb={2}>
-                  <Button variant="outlined" component="label">
-                    {t('upload_file')}
-                    <input type="file" hidden onChange={handleFileUpload} />
-                  </Button>
-                </Box>
-              )}
-              {project.attachments?.length === 0 && (
-                <Typography color="text.secondary">No attachments</Typography>
-              )}
-              <List>
-                {project.attachments?.map(att => (
-                  <ListItem key={att.id} divider>
-                    <ListItemText
-                      primary={
-                        <a href={att.url} target="_blank" rel="noopener noreferrer">
-                          {att.filename}
-                        </a>
-                      }
-                      secondary={`${att.mime_type} — ${(att.size / 1024).toFixed(1)} KB`}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          )}
-
-          {innerTabValue === 2 && (
-            <Box>
               <List>
                 {comments.map(c => (
                   <ListItem key={c.id} alignItems="flex-start" divider>
@@ -481,7 +430,7 @@ export default function ProjectViewPage() {
             </Box>
           )}
 
-          {innerTabValue === 3 && (
+          {innerTabValue === 2 && (
             <List>
               {versions.map(v => (
                 <ListItem key={v.id} divider>

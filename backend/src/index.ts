@@ -6,6 +6,8 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import http from 'http';
+import helmet from 'helmet';
+import compression from 'compression';
 import { sequelize } from './models';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
@@ -16,6 +18,17 @@ import logger from './utils/logger';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// セキュリティヘッダー（CSP は SPA のインラインスクリプト要件に合わせて無効化。
+// 本番運用時にはフロントエンドのビルド設定に合わせた nonce/hash ベースの CSP を検討すること）
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+}));
+
+// レスポンス圧縮
+app.use(compression());
 
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -28,13 +41,53 @@ app.use('/api/auth', authRateLimiter, authRoutes);
 app.use('/api/projects', apiRateLimiter, projectRoutes);
 app.use('/api/search', apiRateLimiter, searchRoutes);
 
-// Uploads static files
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
-
-// Health check
-app.get('/api/health', (_req, res) => {
-  res.json({ success: true, code: '', message: 'OK', data: null });
+// Health check（データベース接続確認）
+app.get('/api/health', apiRateLimiter, async (_req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.json({ success: true, code: '', message: 'OK', data: { status: 'healthy' } });
+  } catch (error) {
+    logger.error('Health check failed', { message: (error as Error).message });
+    res.status(503).json({
+      success: false,
+      code: 'unhealthy',
+      message: 'Database connection failed',
+      data: null,
+    });
+  }
 });
+
+// 本番環境：フロントエンド静的ファイルの配信
+if (isProduction) {
+  const frontendPath = '/var/www/frontend/dist';
+
+  // JS/CSSは長期キャッシュ、その他は1日キャッシュ
+  app.use(express.static(frontendPath, {
+    maxAge: '1d',
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    },
+  }));
+
+  // React Router のフォールバック（APIパス以外はindex.htmlを返す）
+  app.get('*', apiRateLimiter, (_req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
+      if (err) {
+        logger.error('Failed to send index.html', { message: (err as Error).message });
+        res.status(500).json({
+          success: false,
+          code: 'internal_error',
+          message: 'Failed to serve frontend',
+          data: null,
+        });
+      }
+    });
+  });
+}
 
 // 404
 app.use((_req, res) => {

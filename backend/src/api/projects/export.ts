@@ -4,7 +4,7 @@ import {
   SalesSimulationCategory, SalesSimulationItem, SalesSimulationSnapshot,
   FixedExpense, FixedExpenseMonth, VariableExpense,
   Loan, LoanRepayment, LaborCost, LaborCostMonth,
-  CashFlowMonthly, Attachment, Comment,
+  CashFlowMonthly, Comment,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from './utils';
@@ -97,7 +97,6 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
     laborCosts,
     laborCostMonths,
     cashFlows,
-    attachments,
     comments,
   ] = await Promise.all([
     ProjectSection.findAll({ where: { project_id: id } }),
@@ -112,7 +111,6 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
     LaborCost.findAll({ where: { project_id: id } }),
     LaborCostMonth.findAll({ where: { project_id: id } }),
     CashFlowMonthly.findAll({ where: { project_id: id } }),
-    Attachment.findAll({ where: { project_id: id } }),
     Comment.findAll({ where: { project_id: id } }),
   ]);
 
@@ -136,7 +134,6 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
       laborCosts: laborCosts.map(r => r.toJSON()),
       laborCostMonths: laborCostMonths.map(r => r.toJSON()),
       cashFlows: cashFlows.map(r => r.toJSON()),
-      attachments: attachments.map(r => r.toJSON()),
       comments: comments.map(r => r.toJSON()),
     },
   });
