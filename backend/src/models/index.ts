@@ -2,21 +2,32 @@ import { Sequelize, DataTypes, Model, Optional } from 'sequelize';
 import path from 'path';
 import logger from '../utils/logger';
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, '..', '..', 'data', 'pla-ledger.sqlite');
+const isProduction = process.env.NODE_ENV === 'production';
 
-export const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: dbPath,
-  logging: process.env.NODE_ENV === 'development'
-    ? (sql: string) => logger.debug(sql)
-    : false,
-  pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
-    idle: 10000,
-  },
-});
+export const sequelize = isProduction && process.env.DATABASE_URL
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      logging: false,
+      pool: {
+        max: 10,
+        min: 2,
+        acquire: 30000,
+        idle: 10000,
+      },
+    })
+  : new Sequelize({
+      dialect: 'sqlite',
+      storage: process.env.DB_PATH || path.join(__dirname, '..', '..', 'data', 'pla-ledger.sqlite'),
+      logging: process.env.NODE_ENV === 'development'
+        ? (sql: string) => logger.debug(sql)
+        : false,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
+    });
 
 // ========== User ==========
 interface UserAttributes {
@@ -228,41 +239,6 @@ ProjectVersion.init({
   summary: { type: DataTypes.TEXT, defaultValue: null },
   created_by: { type: DataTypes.UUID, allowNull: false },
 }, { sequelize, tableName: 'project_versions', underscored: true, updatedAt: false });
-
-// ========== Attachment ==========
-interface AttachmentAttributes {
-  id: string;
-  project_id: string;
-  filename: string;
-  mime_type: string;
-  url: string;
-  uploaded_by: string;
-  size: number;
-  created_at?: Date;
-}
-type AttachmentCreation = Optional<AttachmentAttributes, 'id'>;
-
-export class Attachment
-  extends Model<AttachmentAttributes, AttachmentCreation>
-  implements AttachmentAttributes {
-  declare id: string;
-  declare project_id: string;
-  declare filename: string;
-  declare mime_type: string;
-  declare url: string;
-  declare uploaded_by: string;
-  declare size: number;
-}
-
-Attachment.init({
-  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-  project_id: { type: DataTypes.UUID, allowNull: false },
-  filename: { type: DataTypes.STRING, allowNull: false },
-  mime_type: { type: DataTypes.STRING, allowNull: false },
-  url: { type: DataTypes.STRING, allowNull: false },
-  uploaded_by: { type: DataTypes.UUID, allowNull: false },
-  size: { type: DataTypes.INTEGER, defaultValue: 0 },
-}, { sequelize, tableName: 'attachments', underscored: true, updatedAt: false });
 
 // ========== Comment ==========
 interface CommentAttributes {
@@ -790,9 +766,6 @@ ProjectSection.belongsTo(Project, { foreignKey: 'project_id' });
 
 Project.hasMany(Permission, { foreignKey: 'project_id', as: 'permissions' });
 Permission.belongsTo(Project, { foreignKey: 'project_id' });
-
-Project.hasMany(Attachment, { foreignKey: 'project_id', as: 'attachments' });
-Attachment.belongsTo(Project, { foreignKey: 'project_id' });
 
 Project.hasMany(Comment, { foreignKey: 'project_id', as: 'comments' });
 Comment.belongsTo(Project, { foreignKey: 'project_id' });

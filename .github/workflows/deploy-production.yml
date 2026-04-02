@@ -1,0 +1,51 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          HOST: ${{ secrets.EC2_HOST }}
+          USER: ec2-user
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          # リポジトリ全体を転送（node_modules・.gitを除く）
+          rsync -avz --exclude 'node_modules' --exclude '.git' \
+            -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" \
+            ./ $USER@$HOST:/var/www/pla-ledger/
+
+          # リモートでデプロイスクリプト実行
+          ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST \
+            "cd /var/www/pla-ledger && ./deploy.sh"
+
+          rm -f private_key.pem
+
+      - name: Health Check
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          sleep 15
+          curl -f http://$HOST/api/health || exit 1

@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { Project, ProjectSection, Attachment, User } from '../../models';
+import { Project, ProjectSection, User } from '../../models';
 import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from './utils';
 
@@ -51,7 +51,6 @@ router.get('/:id', optionalAuthenticate, async (req: AuthRequest, res: Response)
   const project = await Project.findByPk(req.params['id'], {
     include: [
       { model: ProjectSection, as: 'sections' },
-      { model: Attachment, as: 'attachments' },
     ],
   });
   if (!project) {

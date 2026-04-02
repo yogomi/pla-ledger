@@ -271,7 +271,7 @@ export const ProjectExportSchema = z.object({
   laborCosts: z.array(LaborCostDataSchema),
   laborCostMonths: z.array(LaborCostMonthDataSchema),
   cashFlows: z.array(CashFlowMonthlyDataSchema),
-  attachments: z.array(AttachmentDataSchema),
+  attachments: z.array(AttachmentDataSchema).optional().default([]),
   comments: z.array(CommentDataSchema),
 });
 

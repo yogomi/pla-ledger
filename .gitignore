@@ -152,6 +152,12 @@ uploads/
 # Environment files
 .env
 
+# Deployment
+private_key.pem
+
+# Docker
+docker-compose.override.yml
+
 # OS files
 .DS_Store
 Thumbs.db
