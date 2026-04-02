@@ -22,9 +22,21 @@ docker-compose down
 docker-compose build --no-cache
 docker-compose up -d
 
-# ヘルスチェック
+# ヘルスチェック（最大60秒リトライ）
 echo "Waiting for services to be healthy..."
-sleep 15
-curl -f http://localhost/api/health || exit 1
+MAX_RETRIES=12
+RETRY_INTERVAL=5
+for i in $(seq 1 $MAX_RETRIES); do
+  if curl -sf http://localhost/api/health > /dev/null 2>&1; then
+    echo "Health check passed."
+    break
+  fi
+  if [ "$i" -eq "$MAX_RETRIES" ]; then
+    echo "Health check failed after $((MAX_RETRIES * RETRY_INTERVAL)) seconds."
+    exit 1
+  fi
+  echo "Waiting... ($i/$MAX_RETRIES)"
+  sleep $RETRY_INTERVAL
+done
 
 echo "=== Deployment completed successfully ==="

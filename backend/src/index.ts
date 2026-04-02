@@ -20,7 +20,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// セキュリティヘッダー（フロントエンドの静的配信に合わせてCSPは無効化）
+// セキュリティヘッダー（CSP は SPA のインラインスクリプト要件に合わせて無効化。
+// 本番運用時にはフロントエンドのビルド設定に合わせた nonce/hash ベースの CSP を検討すること）
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
@@ -41,11 +42,12 @@ app.use('/api/projects', apiRateLimiter, projectRoutes);
 app.use('/api/search', apiRateLimiter, searchRoutes);
 
 // Health check（データベース接続確認）
-app.get('/api/health', async (_req, res) => {
+app.get('/api/health', apiRateLimiter, async (_req, res) => {
   try {
     await sequelize.authenticate();
     res.json({ success: true, code: '', message: 'OK', data: { status: 'healthy' } });
-  } catch {
+  } catch (error) {
+    logger.error('Health check failed', { message: (error as Error).message });
     res.status(503).json({
       success: false,
       code: 'unhealthy',
@@ -72,8 +74,18 @@ if (isProduction) {
   }));
 
   // React Router のフォールバック（APIパス以外はindex.htmlを返す）
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'));
+  app.get('*', apiRateLimiter, (_req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
+      if (err) {
+        logger.error('Failed to send index.html', { message: (err as Error).message });
+        res.status(500).json({
+          success: false,
+          code: 'internal_error',
+          message: 'Failed to serve frontend',
+          data: null,
+        });
+      }
+    });
   });
 }
 

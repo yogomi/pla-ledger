@@ -152,7 +152,7 @@ curl http://localhost/api/health
 
 ```bash
 # PostgreSQL バックアップ例
-docker-compose exec postgres pg_dump -U plaledger plaledger > backup-$(date +%Y%m%d).sql
+docker-compose exec postgres pg_dump -U plaledger plaledger > backup-$(date +%Y%m%d-%H%M%S).sql
 ```
 
 ---
