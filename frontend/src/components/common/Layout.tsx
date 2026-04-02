@@ -83,6 +83,7 @@ export default function Layout() {
             >
               <MenuItem value="en">{t('locale_en')}</MenuItem>
               <MenuItem value="ja">{t('locale_ja')}</MenuItem>
+              <MenuItem value="uk">{t('locale_uk')}</MenuItem>
             </Select>
           </FormControl>
           {user ? (

@@ -71,6 +71,7 @@ export default function SettingsPage() {
           <Select value={locale} label={t('language')} onChange={e => setLocale(e.target.value)}>
             <MenuItem value="en">{t('locale_en')}</MenuItem>
             <MenuItem value="ja">{t('locale_ja')}</MenuItem>
+            <MenuItem value="uk">{t('locale_uk')}</MenuItem>
           </Select>
         </FormControl>
         <Box mt={2}>
