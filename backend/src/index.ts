@@ -184,11 +184,11 @@ process.on('SIGINT', () => {
     await sequelize.authenticate();
     logger.info('Database connection established successfully.');
 
-    // 開発環境のみ DB スキーマを同期
-    if (process.env.NODE_ENV !== 'production') {
-      await sequelize.sync();
-      logger.info('Database schema synchronized.');
-    }
+    // 開発環境のみ DB スキーマを同期（マイグレーション導入後は使用しない）
+    // if (process.env.NODE_ENV !== 'production') {
+    //   await sequelize.sync();
+    //   logger.info('Database schema synchronized.');
+    // }
 
     server = app.listen(PORT, () => {
       logger.info(`Backend running on http://localhost:${PORT}`);
