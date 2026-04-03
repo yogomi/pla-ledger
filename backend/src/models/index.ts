@@ -178,7 +178,7 @@ AccessRequest.init({
   status: { type: DataTypes.ENUM('pending', 'approved', 'rejected'), defaultValue: 'pending' },
   processed_by: { type: DataTypes.UUID, defaultValue: null },
   processed_at: { type: DataTypes.DATE, defaultValue: null },
-}, { sequelize, tableName: 'access_requests', underscored: true });
+}, { sequelize, tableName: 'access_requests', underscored: true, timestamps: false });
 
 // ========== ProjectSection ==========
 interface ProjectSectionAttributes {
