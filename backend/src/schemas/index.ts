@@ -4,7 +4,7 @@ export const SignupSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().min(1),
-  locale: z.enum(['en', 'ja']).optional().default('en'),
+  locale: z.enum(['en', 'ja', 'uk']).optional().default('en'),
 });
 
 export const LoginSchema = z.object({
