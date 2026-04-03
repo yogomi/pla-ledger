@@ -14,9 +14,20 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().min(1, 'Name is required'),
-  locale: z.enum(['en', 'ja']),
+  locale: z.enum(['en', 'ja', 'uk']),
 });
 type FormData = z.infer<typeof schema>;
+
+const getDefaultLocale = (): 'en' | 'ja' | 'uk' => {
+  const browserLang = navigator.language.toLowerCase();
+  if (browserLang.startsWith('ja')) {
+    return 'ja';
+  }
+  if (browserLang.startsWith('uk')) {
+    return 'uk';
+  }
+  return 'en';
+};
 
 export default function SignUpPage() {
   const { t } = useTranslation();
@@ -26,7 +37,7 @@ export default function SignUpPage() {
 
   const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { locale: 'en' },
+    defaultValues: { locale: getDefaultLocale() },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -85,6 +96,7 @@ export default function SignUpPage() {
                 <Select {...field} label={t('language')}>
                   <MenuItem value="en">{t('locale_en')}</MenuItem>
                   <MenuItem value="ja">{t('locale_ja')}</MenuItem>
+                  <MenuItem value="uk">{t('locale_uk')}</MenuItem>
                 </Select>
               </FormControl>
             )} />
