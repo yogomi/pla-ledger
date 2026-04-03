@@ -20,6 +20,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// リバースプロキシ（nginx 等）からの X-Forwarded-For ヘッダーを信頼する
+// これにより express-rate-limit が正確にクライアント IP を識別できる
+app.set('trust proxy', 1);
+
 // セキュリティヘッダー（CSP は SPA のインラインスクリプト要件に合わせて無効化。
 // 本番運用時にはフロントエンドのビルド設定に合わせた nonce/hash ベースの CSP を検討すること）
 app.use(helmet({
