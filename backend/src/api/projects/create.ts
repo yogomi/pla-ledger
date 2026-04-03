@@ -108,6 +108,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     user_id: req.user!.id,
     role: 'owner',
     granted_by: null,
+    granted_at: new Date(),
   });
   if (sections && sections.length > 0) {
     await Promise.all(sections.map(s => ProjectSection.create({

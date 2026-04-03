@@ -145,6 +145,7 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       user_id: userId,
       role: 'owner',
       granted_by: null,
+      granted_at: new Date(),
     }, { transaction });
 
     // セクション作成
