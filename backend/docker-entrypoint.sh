@@ -2,7 +2,7 @@
 set -e
 
 echo "Running database migrations..."
-npm run migrate
+./node_modules/.bin/sequelize-cli db:migrate
 
 echo "Starting application..."
 exec "$@"
