@@ -136,7 +136,8 @@ Permission.init({
   user_id: { type: DataTypes.UUID, allowNull: false },
   role: { type: DataTypes.ENUM('owner', 'editor', 'viewer'), allowNull: false },
   granted_by: { type: DataTypes.UUID, defaultValue: null },
-}, { sequelize, tableName: 'permissions', underscored: true });
+  granted_at: { type: DataTypes.DATE, allowNull: false },
+}, { sequelize, tableName: 'permissions', underscored: true, timestamps: false });
 
 // ========== AccessRequest ==========
 interface AccessRequestAttributes {
