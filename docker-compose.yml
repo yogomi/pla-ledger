@@ -1,12 +1,14 @@
 services:
   postgres:
     image: postgres:16-alpine
+    ports:
+      - 30041:5432
     environment:
       POSTGRES_USER: plaledger
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: plaledger
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - /opt/plaledger/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U plaledger"]
       interval: 10s
@@ -21,7 +23,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "30040:80"
     environment:
       NODE_ENV: production
       PORT: 80
@@ -42,9 +44,6 @@ services:
     restart: unless-stopped
     networks:
       - pla-ledger-network
-
-volumes:
-  postgres_data:
 
 networks:
   pla-ledger-network:
