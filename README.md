@@ -57,3 +57,25 @@ Docker Compose を使用して AWS EC2 にデプロイする。詳細は [docs/D
 | `DB_PATH` | SQLite ファイルパス（開発） | `./data/pla-ledger.sqlite` |
 | `JWT_SECRET` | JWT 署名シークレット | 任意の長いランダム文字列 |
 | `CORS_ORIGIN` | CORS 許可オリジン（本番） | `https://yourdomain.com` |
+
+## データベースマイグレーション
+
+sequelize-cli を使用してスキーマを管理する。コンテナ起動時に自動的にマイグレーションが実行される。
+
+### マイグレーション実行
+
+```bash
+docker-compose exec backend npm run migrate
+```
+
+### マイグレーション状態確認
+
+```bash
+docker-compose exec backend npm run migrate:status
+```
+
+### マイグレーションロールバック
+
+```bash
+docker-compose exec backend npm run migrate:undo
+```
