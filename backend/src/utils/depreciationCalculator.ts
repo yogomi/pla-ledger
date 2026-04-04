@@ -92,18 +92,18 @@ export function calculateDepreciationSchedule(
  * @param purchaseAmount - 取得価額
  * @param salvageValue - 残存価額
  * @param usefulLife - 耐用年数（年）
- * @param deprecitionMethod - 償却方法
- * @param startDeprecitionDate - 償却開始日
+ * @param depreciationMethod - 償却方法
+ * @param startDepreciationDate - 償却開始日
  * @returns 償却終了日と月次償却費（初月）
  */
 export function calculateAssetInfo(
   purchaseAmount: number,
   salvageValue: number,
   usefulLife: number,
-  deprecationMethod: 'straight_line' | 'diminishing',
-  startDeprecationDate: string,
+  depreciationMethod: 'straight_line' | 'diminishing',
+  startDepreciationDate: string,
 ): { endDepreciationDate: string; monthlyDepreciation: number } {
-  const startYearMonth = startDeprecationDate.substring(0, 7);
+  const startYearMonth = startDepreciationDate.substring(0, 7);
   const [startYear, startMonth] = startYearMonth.split('-').map(Number);
   const totalMonths = usefulLife * 12;
 
@@ -117,8 +117,8 @@ export function calculateAssetInfo(
     purchase_amount: purchaseAmount,
     salvage_value: salvageValue,
     useful_life: usefulLife,
-    depreciation_method: deprecationMethod,
-    start_depreciation_date: startDeprecationDate,
+    depreciation_method: depreciationMethod,
+    start_depreciation_date: startDepreciationDate,
   });
 
   const monthlyDepreciation = schedule.length > 0 ? schedule[0].monthlyDepreciation : 0;
