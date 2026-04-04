@@ -73,7 +73,6 @@ export interface CashFlowYearlyData {
 
 /** キャッシュフロー更新用入力データ */
 export interface CashFlowInputData {
-  depreciation: number;
   accountsReceivableChange: number;
   inventoryChange: number;
   accountsPayableChange: number;

@@ -6,6 +6,7 @@ import SalesSimulationMonthlyEditor from './SalesSimulationMonthlyEditor';
 import ExpenseMonthlyEditor from './ExpenseMonthlyEditor';
 import LoanListContainer from './LoanListContainer';
 import CashFlowMonthlyEditor from './CashFlowMonthlyEditor';
+import FixedAssetManager from './FixedAssetManager';
 
 interface SimulationSheetContainerProps {
   projectId: string;
@@ -40,6 +41,7 @@ export default function SimulationSheetContainer({
           <Tab label={t('expense_management_tab')} />
           <Tab label={t('loan_management_tab')} />
           <Tab label={t('cash_flow_tab')} />
+          <Tab label={t('fixed_asset_management_tab')} />
         </Tabs>
         <SalesSimulationPagination
           yearMonth={yearMonth}
@@ -61,6 +63,9 @@ export default function SimulationSheetContainer({
       )}
       {tab === 3 && (
         <CashFlowMonthlyEditor projectId={projectId} yearMonth={yearMonth} />
+      )}
+      {tab === 4 && (
+        <FixedAssetManager projectId={projectId} />
       )}
     </Box>
   );
