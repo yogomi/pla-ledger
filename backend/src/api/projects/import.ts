@@ -7,6 +7,7 @@ import {
   FixedExpense, FixedExpenseMonth, VariableExpense,
   Loan, LoanRepayment, LaborCost, LaborCostMonth,
   CashFlowMonthly, Comment, ActivityLog,
+  FixedAsset, FixedAssetDepreciationSchedule,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { ProjectImportSchema } from '../../schemas';
@@ -123,6 +124,12 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
     const loanIdMap: Record<string, string> = {};
     exportData.loans.forEach(l => {
       loanIdMap[l.id] = uuidv4();
+    });
+
+    // 固定資産IDのマッピング（旧ID → 新ID）
+    const fixedAssetIdMap: Record<string, string> = {};
+    (exportData.fixedAssets ?? []).forEach(a => {
+      fixedAssetIdMap[a.id] = uuidv4();
     });
 
     // プロジェクト作成
@@ -325,6 +332,38 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
         note_ja: cf.note_ja,
         note_en: cf.note_en,
       }, { transaction })));
+    }
+
+    // 固定資産作成
+    if ((exportData.fixedAssets ?? []).length > 0) {
+      await Promise.all((exportData.fixedAssets ?? []).map(a => FixedAsset.create({
+        id: fixedAssetIdMap[a.id],
+        project_id: newProjectId,
+        asset_name: a.asset_name,
+        asset_category: a.asset_category,
+        purchase_date: a.purchase_date,
+        purchase_amount: a.purchase_amount,
+        useful_life: a.useful_life,
+        salvage_value: a.salvage_value,
+        depreciation_method: a.depreciation_method,
+        start_depreciation_date: a.start_depreciation_date,
+        end_depreciation_date: a.end_depreciation_date,
+        monthly_depreciation: a.monthly_depreciation,
+        notes: a.notes,
+      }, { transaction })));
+    }
+
+    // 固定資産償却スケジュール作成（fixed_asset_idを新IDに置換）
+    if ((exportData.fixedAssetDepreciationSchedules ?? []).length > 0) {
+      await Promise.all((exportData.fixedAssetDepreciationSchedules ?? []).map(s =>
+        FixedAssetDepreciationSchedule.create({
+          fixed_asset_id: fixedAssetIdMap[s.fixed_asset_id] ?? s.fixed_asset_id,
+          year_month: s.year_month,
+          monthly_depreciation: s.monthly_depreciation,
+          accumulated_depreciation: s.accumulated_depreciation,
+          book_value: s.book_value,
+        }, { transaction }),
+      ));
     }
 
     // コメント作成（author_id は現在のユーザーIDに設定）
