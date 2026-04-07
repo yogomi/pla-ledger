@@ -9,6 +9,7 @@ import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearQuerySchema } from '../../schemas/salesSimulation';
 import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesSimulationHelper';
+import { calculateMonthlyDepreciation } from '../../utils/depreciationCalculator';
 
 /** 月次集計データの型 */
 interface MonthData {
@@ -18,6 +19,7 @@ interface MonthData {
   fixedTotal: number;
   variableTotal: number;
   laborTotal: number;
+  depreciation: number;
   totalExpense: number;
   operatingProfit: number;
   interestExpense: number;
@@ -114,7 +116,8 @@ async function buildMonthData(
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const laborTotal = laborCosts.reduce((sum, lc) => sum + Number(lc.monthly_total), 0);
-  const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal;
+  const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
+  const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal + depreciation;
   const operatingProfit = monthlySales - totalExpense;
 
   // 利息支払額：一括取得済みのマップから参照する（N+1クエリ回避）
@@ -132,6 +135,7 @@ async function buildMonthData(
     fixedTotal,
     variableTotal,
     laborTotal,
+    depreciation,
     totalExpense,
     operatingProfit,
     interestExpense,
@@ -271,6 +275,7 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
   const totalFixed = months.reduce((sum, m) => sum + m.fixedTotal, 0);
   const totalVariable = months.reduce((sum, m) => sum + m.variableTotal, 0);
   const totalLabor = months.reduce((sum, m) => sum + m.laborTotal, 0);
+  const totalDepreciation = months.reduce((sum, m) => sum + m.depreciation, 0);
   const totalExpense = months.reduce((sum, m) => sum + m.totalExpense, 0);
   const totalOperatingProfit = months.reduce((sum, m) => sum + m.operatingProfit, 0);
   const totalInterestExpense = months.reduce((sum, m) => sum + m.interestExpense, 0);
@@ -292,6 +297,7 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
         totalFixed,
         totalVariable,
         totalLabor,
+        totalDepreciation,
         totalExpense,
         totalOperatingProfit,
         totalInterestExpense,

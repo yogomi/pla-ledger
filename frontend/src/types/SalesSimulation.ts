@@ -63,6 +63,7 @@ export interface MonthlyProfitLoss {
   fixedTotal: number;
   variableTotal: number;
   laborTotal: number;
+  depreciation: number;
   totalExpense: number;
   operatingProfit: number;
   interestExpense: number;
@@ -81,6 +82,7 @@ export interface ProfitLossYearlyData {
     totalFixed: number;
     totalVariable: number;
     totalLabor: number;
+    totalDepreciation: number;
     totalExpense: number;
     totalOperatingProfit: number;
     totalInterestExpense: number;
