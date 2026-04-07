@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { getProfitLossYearly } from '../api/salesSimulations';
+import { formatAccountingNumber } from '../utils/numberFormat';
 import { ProfitLossYearlyData } from '../types/SalesSimulation';
 
 interface ProfitLossLongtermTableProps {
@@ -158,7 +159,7 @@ export default function ProfitLossLongtermTable({
                         fontWeight={row.bold ? 'bold' : 'normal'}
                         color={color}
                       >
-                        {typeof val === 'string' ? val : val.toLocaleString()}
+                        {typeof val === 'string' ? val : formatAccountingNumber(val)}
                       </Typography>
                     </TableCell>
                   );

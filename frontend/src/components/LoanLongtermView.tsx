@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useLoans, useLoanRepaymentSchedule } from '../hooks/useLoan';
+import { formatAccountingNumber } from '../utils/numberFormat';
 import { Loan, LoanRepayment } from '../types/Loan';
 
 interface LoanLongtermViewProps {
@@ -75,7 +76,7 @@ function LoanLongtermRow({
         const lastEntry = yearSchedule[yearSchedule.length - 1];
         return (
           <TableCell key={year} align="right">
-            {lastEntry.remainingBalance.toLocaleString()} {currency}
+          {formatAccountingNumber(lastEntry.remainingBalance)} {currency}
           </TableCell>
         );
       })}
@@ -168,7 +169,7 @@ export default function LoanLongtermView({
                   return (
                     <TableCell key={year} align="right">
                       <Typography fontWeight="bold">
-                        {total.toLocaleString()} {currency}
+                        {formatAccountingNumber(total)} {currency}
                       </Typography>
                     </TableCell>
                   );

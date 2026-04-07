@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { useLoans, useLoanRepaymentSchedule } from '../hooks/useLoan';
+import { formatAccountingNumber } from '../utils/numberFormat';
 import { Loan, LoanRepayment } from '../types/Loan';
 
 interface LoanYearlyViewProps {
@@ -43,10 +44,10 @@ const CHART_COLORS = [
 /**
  * Recharts の Tooltip formatter。
  * @param v - Tooltip が受け取る値（number | string | その他）
- * @returns 数値の場合は toLocaleString で整形した文字列、それ以外は String() 変換した文字列
+ * @returns 数値の場合は会計フォーマットした文字列、それ以外は String() 変換した文字列
  */
 const tooltipFormatter = (v: unknown) =>
-  typeof v === 'number' ? v.toLocaleString() : String(v);
+  typeof v === 'number' ? formatAccountingNumber(v) : String(v);
 
 /**
  * 1件の借入の返済スケジュールをフェッチし、データを親に通知するデータローダー。
@@ -104,10 +105,10 @@ function LoanYearRow({
   return (
     <TableRow>
       <TableCell>{loan.lenderName}</TableCell>
-      <TableCell align="right">{loan.principalAmount.toLocaleString()} {currency}</TableCell>
-      <TableCell align="right">{annualPrincipal.toLocaleString()} {currency}</TableCell>
-      <TableCell align="right">{annualInterest.toLocaleString()} {currency}</TableCell>
-      <TableCell align="right">{yearEndBalance.toLocaleString()} {currency}</TableCell>
+      <TableCell align="right">{formatAccountingNumber(loan.principalAmount)} {currency}</TableCell>
+      <TableCell align="right">{formatAccountingNumber(annualPrincipal)} {currency}</TableCell>
+      <TableCell align="right">{formatAccountingNumber(annualInterest)} {currency}</TableCell>
+      <TableCell align="right">{formatAccountingNumber(yearEndBalance)} {currency}</TableCell>
     </TableRow>
   );
 }

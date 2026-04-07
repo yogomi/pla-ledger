@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { getCashFlowYearly } from '../api/cashFlow';
+import { formatAccountingNumber } from '../utils/numberFormat';
 import { CashFlowYearlyData } from '../types/CashFlow';
 
 interface CashFlowLongtermTableProps {
@@ -128,7 +129,7 @@ export default function CashFlowLongtermTable({
                         fontWeight={row.bold ? 'bold' : 'normal'}
                         color={val < 0 ? 'error.main' : 'inherit'}
                       >
-                        {val.toLocaleString()} {row.bold ? currency : ''}
+                        {formatAccountingNumber(val)} {row.bold ? currency : ''}
                       </Typography>
                     </TableCell>
                   );

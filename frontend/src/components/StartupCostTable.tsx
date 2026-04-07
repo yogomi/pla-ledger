@@ -6,6 +6,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTranslation } from 'react-i18next';
+import { formatAccountingNumber } from '../utils/numberFormat';
 
 export interface StartupCostItem {
   id: string;
@@ -59,8 +60,7 @@ export default function StartupCostTable({
   };
 
   const formatCurrency = useCallback(
-    (value: number): string =>
-      new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value),
+    (value: number): string => `${formatAccountingNumber(value)} ${currency}`,
     [currency],
   );
 

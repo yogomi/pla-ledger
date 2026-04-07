@@ -21,6 +21,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTranslation } from 'react-i18next';
 import { useSalesSimulationMonthly, useExpenseSimulationMonthly } from '../hooks/useSalesSimulation';
+import { formatAccountingNumber } from '../utils/numberFormat';
 import ProfitLossYearlyTable from './ProfitLossYearlyTable';
 import ProfitLossMonthlyView from './ProfitLossMonthlyView';
 import SalesSimulationPagination from './SalesSimulationPagination';
@@ -244,27 +245,27 @@ function ExpenseMonthlyView({
             <TableBody>
               <TableRow>
                 <TableCell>{t('sales_row')}</TableCell>
-                <TableCell align="right">{data.monthlySales.toLocaleString()} {currency}</TableCell>
+                <TableCell align="right">{formatAccountingNumber(data.monthlySales)} {currency}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('cost_row')}</TableCell>
-                <TableCell align="right">{data.monthlyCost.toLocaleString()} {currency}</TableCell>
+                <TableCell align="right">{formatAccountingNumber(data.monthlyCost)} {currency}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('fixed_total_row')}</TableCell>
-                <TableCell align="right">{data.fixedTotal.toLocaleString()} {currency}</TableCell>
+                <TableCell align="right">{formatAccountingNumber(data.fixedTotal)} {currency}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('variable_total_row')}</TableCell>
-                <TableCell align="right">{data.variableTotal.toLocaleString()} {currency}</TableCell>
+                <TableCell align="right">{formatAccountingNumber(data.variableTotal)} {currency}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('labor_cost_section')}</TableCell>
-                <TableCell align="right">{data.laborTotal.toLocaleString()} {currency}</TableCell>
+                <TableCell align="right">{formatAccountingNumber(data.laborTotal)} {currency}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('expense_total_row')}</TableCell>
-                <TableCell align="right">{data.totalExpense.toLocaleString()} {currency}</TableCell>
+                <TableCell align="right">{formatAccountingNumber(data.totalExpense)} {currency}</TableCell>
               </TableRow>
               <TableRow sx={{ backgroundColor: 'grey.50' }}>
                 <TableCell><Typography fontWeight="bold">{t('operating_profit')}</Typography></TableCell>
@@ -273,7 +274,7 @@ function ExpenseMonthlyView({
                     fontWeight="bold"
                     color={data.operatingProfit >= 0 ? 'success.main' : 'error.main'}
                   >
-                    {data.operatingProfit.toLocaleString()} {currency}
+                    {formatAccountingNumber(data.operatingProfit)} {currency}
                   </Typography>
                 </TableCell>
               </TableRow>

@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useProfitLossYearly } from '../hooks/useSalesSimulation';
+import { formatAccountingNumber } from '../utils/numberFormat';
 
 interface ProfitLossMonthlyViewProps {
   projectId: string;
@@ -65,13 +66,13 @@ export default function ProfitLossMonthlyView({
             fontWeight="bold"
             color={colored ? (value >= 0 ? 'success.main' : 'error.main') : undefined}
           >
-            {value.toLocaleString()}
+            {formatAccountingNumber(value)}
           </Typography>
         ) : (
           <Typography
             color={colored ? (value >= 0 ? 'success.main' : 'error.main') : undefined}
           >
-            {value.toLocaleString()}
+            {formatAccountingNumber(value)}
           </Typography>
         )}
       </TableCell>

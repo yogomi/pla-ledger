@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { useSalesSimulationYearly } from '../hooks/useSalesSimulation';
+import { formatAccountingNumber } from '../utils/numberFormat';
 
 interface SalesYearlyViewProps {
   projectId: string;
@@ -42,10 +43,10 @@ const CHART_COLORS = [
 /**
  * Recharts の Tooltip formatter。
  * @param v - Tooltip が受け取る値（number | string | その他）
- * @returns 数値の場合は toLocaleString で整形した文字列、それ以外は String() 変換した文字列
+ * @returns 数値の場合は会計フォーマットした文字列、それ以外は String() 変換した文字列
  */
 const tooltipFormatter = (v: unknown) =>
-  typeof v === 'number' ? v.toLocaleString() : String(v);
+  typeof v === 'number' ? formatAccountingNumber(v) : String(v);
 
 /**
  * 売上シミュレーションの年次表示コンポーネント。
