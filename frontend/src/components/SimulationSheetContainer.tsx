@@ -19,7 +19,7 @@ interface SimulationSheetContainerProps {
 }
 
 /**
- * 売上シミュレーション・経費管理・借入管理・キャッシュフローの4タブコンテナ（入力ページ用）。
+ * 売上シミュレーション・経費管理・固定資産・借入管理・キャッシュフローの5タブコンテナ（入力ページ用）。
  * ページネーションで表示月を切り替えられる。月次表示のみ。
  * yearMonth / onYearMonthChange は親から受け取りタブ間で年月を共有する。
  * 損益計算表は事業計画閲覧（SimulationViewContainer）に移動済み。
@@ -39,9 +39,9 @@ export default function SimulationSheetContainer({
         <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
           <Tab label={t('sales_simulation_tab')} />
           <Tab label={t('expense_management_tab')} />
+          <Tab label={t('fixed_asset_management_tab')} />
           <Tab label={t('loan_management_tab')} />
           <Tab label={t('cash_flow_tab')} />
-          <Tab label={t('fixed_asset_management_tab')} />
         </Tabs>
         <SalesSimulationPagination
           yearMonth={yearMonth}
@@ -59,13 +59,13 @@ export default function SimulationSheetContainer({
         <ExpenseMonthlyEditor projectId={projectId} yearMonth={yearMonth} />
       )}
       {tab === 2 && (
-        <LoanListContainer projectId={projectId} currency={currency} canEdit={true} />
+        <FixedAssetManager projectId={projectId} />
       )}
       {tab === 3 && (
-        <CashFlowMonthlyEditor projectId={projectId} yearMonth={yearMonth} />
+        <LoanListContainer projectId={projectId} currency={currency} canEdit={true} />
       )}
       {tab === 4 && (
-        <FixedAssetManager projectId={projectId} />
+        <CashFlowMonthlyEditor projectId={projectId} yearMonth={yearMonth} />
       )}
     </Box>
   );
