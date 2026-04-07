@@ -22,6 +22,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTranslation } from 'react-i18next';
 import { useSalesSimulationMonthly, useExpenseSimulationMonthly } from '../hooks/useSalesSimulation';
 import ProfitLossYearlyTable from './ProfitLossYearlyTable';
+import ProfitLossMonthlyView from './ProfitLossMonthlyView';
 import SalesSimulationPagination from './SalesSimulationPagination';
 import LoanListContainer from './LoanListContainer';
 import CashFlowMonthlyView from './CashFlowMonthlyView';
@@ -361,7 +362,7 @@ export default function SimulationViewContainer({
         <CashFlowMonthlyView projectId={projectId} yearMonth={yearMonth} />
       )}
       {viewMode === 'monthly' && tab === 4 && (
-        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
+        <ProfitLossMonthlyView projectId={projectId} yearMonth={yearMonth} currency={currency} />
       )}
 
       {/* 年次表示 */}
