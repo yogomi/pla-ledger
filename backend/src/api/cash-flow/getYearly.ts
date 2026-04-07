@@ -7,6 +7,7 @@ import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearSchema } from '../../schemas/salesSimulation';
 import { fetchProfitAndInterest, fetchBorrowingData, fetchPrevCashEnding } from './getMonthly';
+import { calculateMonthlyDepreciation } from '../../utils/depreciationCalculator';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -120,7 +121,7 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
       const { borrowingProceeds, loanRepaymentAmount } =
         await fetchBorrowingData(projectId, yearMonth);
 
-      const depreciation = Number(r.depreciation);
+      const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
       const accountsReceivableChange = Number(r.accounts_receivable_change);
       const inventoryChange = Number(r.inventory_change);
       const accountsPayableChange = Number(r.accounts_payable_change);
@@ -169,7 +170,8 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
         await fetchBorrowingData(projectId, yearMonth);
 
       // 未保存月は手動調整項目がないため、自動連携分のみで計算する
-      const operatingCF = profitBeforeTax - interestExpense;
+      const monthlyDepreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
+      const operatingCF = profitBeforeTax + monthlyDepreciation - interestExpense;
       const financingCF = borrowingProceeds + loanRepaymentAmount;
       const netCashChange = operatingCF + financingCF; // investingCF = 0
       const cashEnding = cashBeginning + netCashChange;

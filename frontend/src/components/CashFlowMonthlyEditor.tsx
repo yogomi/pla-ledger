@@ -21,7 +21,6 @@ import { getCashFlowMonthly } from '../api/cashFlow';
 import { CashFlowInputData } from '../types/CashFlow';
 
 const DEFAULT_FORM: CashFlowInputData = {
-  depreciation: 0,
   accountsReceivableChange: 0,
   inventoryChange: 0,
   accountsPayableChange: 0,
@@ -62,7 +61,6 @@ export default function CashFlowMonthlyEditor({
   useEffect(() => {
     if (data) {
       setFormData({
-        depreciation: data.operating.depreciation,
         accountsReceivableChange: data.operating.accountsReceivableChange,
         inventoryChange: data.operating.inventoryChange,
         accountsPayableChange: data.operating.accountsPayableChange,
@@ -84,13 +82,14 @@ export default function CashFlowMonthlyEditor({
   // 小計・合計のリアルタイム計算
   const calculatedValues = useMemo(() => {
     const profitBeforeTax = data?.operating.profitBeforeTax ?? 0;
+    const depreciation = data?.operating.depreciation ?? 0;
     const interestExpense = data?.operating.interestExpense ?? 0;
     const borrowingProceeds = data?.financing.borrowingProceeds ?? 0;
     const loanRepayment = data?.financing.loanRepayment ?? 0;
 
     const operatingSubtotal =
       profitBeforeTax
-      + formData.depreciation
+      + depreciation
       - interestExpense
       + formData.accountsReceivableChange
       + formData.inventoryChange
@@ -156,7 +155,6 @@ export default function CashFlowMonthlyEditor({
       const prev = await getCashFlowMonthly(projectId, prevYearMonth);
       setFormData(current => ({
         ...current,
-        depreciation: prev.operating.depreciation,
         accountsReceivableChange: prev.operating.accountsReceivableChange,
         inventoryChange: prev.operating.inventoryChange,
         accountsPayableChange: prev.operating.accountsPayableChange,
@@ -220,11 +218,12 @@ export default function CashFlowMonthlyEditor({
               inputProps={{ style: { backgroundColor: '#f5f5f5' } }}
             />
             <TextField
-              label={t('depreciation')}
-              type="number"
-              value={formData.depreciation}
-              onChange={e => handleChange('depreciation', e.target.value)}
+              label={`${t('depreciation')} ${t('auto_linked')}`}
+              value={data?.operating.depreciation ?? 0}
+              disabled
               size="small"
+              inputProps={{ style: { backgroundColor: '#f5f5f5' } }}
+              helperText={t('go_to_fixed_assets')}
             />
             <TextField
               label={`${t('interest_expense')} ${t('auto_linked')}`}

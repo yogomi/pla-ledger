@@ -10,6 +10,7 @@ import {
   fetchBorrowingData,
   fetchPrevCashEnding,
 } from './getMonthly';
+import { calculateMonthlyDepreciation } from '../../utils/depreciationCalculator';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -17,7 +18,6 @@ const ParamsSchema = z.object({
 });
 
 const UpdateCashFlowSchema = z.object({
-  depreciation: z.number(),
   accountsReceivableChange: z.number(),
   inventoryChange: z.number(),
   accountsPayableChange: z.number(),
@@ -43,10 +43,11 @@ const UpdateCashFlowSchema = z.object({
  *
  * @request
  *   - params: projectId (UUID), yearMonth (YYYY-MM形式)
- *   - body: { depreciation, accountsReceivableChange, inventoryChange, accountsPayableChange,
+ *   - body: { accountsReceivableChange, inventoryChange, accountsPayableChange,
  *             otherOperating, capexAcquisition, assetSale, intangibleAcquisition, otherInvesting,
  *             capitalIncrease, dividendPayment, otherFinancing, cashBeginning?, noteJa?, noteEn? }
  *   - バリデーション：Zodで全フィールドをnumber型でチェック
+ *   - depreciation は受け付けない（固定資産マスターから自動計算）
  *   - 認証必須、Editor権限以上が必要
  *
  * @response
@@ -121,7 +122,6 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   }
 
   const {
-    depreciation,
     accountsReceivableChange,
     inventoryChange,
     accountsPayableChange,
@@ -140,6 +140,8 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   // 自動連携データを取得
   const { profitBeforeTax, interestExpense } = await fetchProfitAndInterest(projectId, yearMonth);
   const { borrowingProceeds, loanRepaymentAmount } = await fetchBorrowingData(projectId, yearMonth);
+  // 固定資産マスターから月次減価償却費を自動計算
+  const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
 
   // 期首残高：明示的に指定があればそれを使用し、なければ前月のcash_endingを使用
   const cashBeginning =

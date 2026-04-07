@@ -234,6 +234,35 @@ const CashFlowMonthlyDataSchema = z.object({
   updated_at: z.string().optional(),
 });
 
+const FixedAssetDataSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  asset_name: z.string(),
+  asset_category: z.enum(['building', 'equipment', 'vehicle', 'intangible', 'other']),
+  purchase_date: z.string(),
+  purchase_amount: z.number(),
+  useful_life: z.number(),
+  salvage_value: z.number(),
+  depreciation_method: z.enum(['straight_line', 'diminishing']),
+  start_depreciation_date: z.string(),
+  end_depreciation_date: z.string(),
+  monthly_depreciation: z.number(),
+  notes: z.string().nullable(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
+const FixedAssetDepreciationScheduleDataSchema = z.object({
+  id: z.string(),
+  fixed_asset_id: z.string(),
+  year_month: z.string(),
+  monthly_depreciation: z.number(),
+  accumulated_depreciation: z.number(),
+  book_value: z.number(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
 const AttachmentDataSchema = z.object({
   id: z.string(),
   project_id: z.string(),
@@ -271,6 +300,8 @@ export const ProjectExportSchema = z.object({
   laborCosts: z.array(LaborCostDataSchema),
   laborCostMonths: z.array(LaborCostMonthDataSchema),
   cashFlows: z.array(CashFlowMonthlyDataSchema),
+  fixedAssets: z.array(FixedAssetDataSchema).optional().default([]),
+  fixedAssetDepreciationSchedules: z.array(FixedAssetDepreciationScheduleDataSchema).optional().default([]),
   attachments: z.array(AttachmentDataSchema).optional().default([]),
   comments: z.array(CommentDataSchema),
 });

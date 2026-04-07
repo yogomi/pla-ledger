@@ -804,6 +804,121 @@ LaborCost.belongsTo(Project, { foreignKey: 'project_id' });
 Project.hasMany(LaborCostMonth, { foreignKey: 'project_id', as: 'laborCostMonths' });
 LaborCostMonth.belongsTo(Project, { foreignKey: 'project_id' });
 
+// ========== FixedAsset ==========
+interface FixedAssetAttributes {
+  id: string;
+  project_id: string;
+  asset_name: string;
+  asset_category: 'building' | 'equipment' | 'vehicle' | 'intangible' | 'other';
+  purchase_date: string;
+  purchase_amount: number;
+  useful_life: number;
+  salvage_value: number;
+  depreciation_method: 'straight_line' | 'diminishing';
+  start_depreciation_date: string;
+  end_depreciation_date: string;
+  monthly_depreciation: number;
+  notes: string | null;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type FixedAssetCreation = Optional<
+  FixedAssetAttributes,
+  'id' | 'salvage_value' | 'notes'
+>;
+
+export class FixedAsset
+  extends Model<FixedAssetAttributes, FixedAssetCreation>
+  implements FixedAssetAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare asset_name: string;
+  declare asset_category: 'building' | 'equipment' | 'vehicle' | 'intangible' | 'other';
+  declare purchase_date: string;
+  declare purchase_amount: number;
+  declare useful_life: number;
+  declare salvage_value: number;
+  declare depreciation_method: 'straight_line' | 'diminishing';
+  declare start_depreciation_date: string;
+  declare end_depreciation_date: string;
+  declare monthly_depreciation: number;
+  declare notes: string | null;
+}
+
+FixedAsset.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  asset_name: { type: DataTypes.STRING, allowNull: false },
+  asset_category: {
+    type: DataTypes.ENUM('building', 'equipment', 'vehicle', 'intangible', 'other'),
+    allowNull: false,
+  },
+  purchase_date: { type: DataTypes.STRING(10), allowNull: false },
+  purchase_amount: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
+  useful_life: { type: DataTypes.INTEGER, allowNull: false },
+  salvage_value: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  depreciation_method: {
+    type: DataTypes.ENUM('straight_line', 'diminishing'),
+    allowNull: false,
+  },
+  start_depreciation_date: { type: DataTypes.STRING(10), allowNull: false },
+  end_depreciation_date: { type: DataTypes.STRING(10), allowNull: false },
+  monthly_depreciation: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  notes: { type: DataTypes.TEXT, defaultValue: null },
+}, {
+  sequelize,
+  tableName: 'fixed_assets',
+  underscored: true,
+  indexes: [{ fields: ['project_id'] }],
+});
+
+// ========== FixedAssetDepreciationSchedule ==========
+interface FixedAssetDepreciationScheduleAttributes {
+  id: string;
+  fixed_asset_id: string;
+  year_month: string;
+  monthly_depreciation: number;
+  accumulated_depreciation: number;
+  book_value: number;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type FixedAssetDepreciationScheduleCreation = Optional<
+  FixedAssetDepreciationScheduleAttributes,
+  'id'
+>;
+
+export class FixedAssetDepreciationSchedule
+  extends Model<
+    FixedAssetDepreciationScheduleAttributes,
+    FixedAssetDepreciationScheduleCreation
+  >
+  implements FixedAssetDepreciationScheduleAttributes {
+  declare id: string;
+  declare fixed_asset_id: string;
+  declare year_month: string;
+  declare monthly_depreciation: number;
+  declare accumulated_depreciation: number;
+  declare book_value: number;
+}
+
+FixedAssetDepreciationSchedule.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  fixed_asset_id: { type: DataTypes.UUID, allowNull: false },
+  year_month: { type: DataTypes.STRING(7), allowNull: false },
+  monthly_depreciation: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  accumulated_depreciation: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  book_value: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+}, {
+  sequelize,
+  tableName: 'fixed_asset_depreciation_schedules',
+  underscored: true,
+  indexes: [
+    { unique: true, fields: ['fixed_asset_id', 'year_month'] },
+    { fields: ['fixed_asset_id'] },
+  ],
+});
+
 // ========== CashFlowMonthly ==========
 interface CashFlowMonthlyAttributes {
   id: string;
@@ -942,5 +1057,14 @@ CashFlowMonthly.init({
 
 Project.hasMany(CashFlowMonthly, { foreignKey: 'project_id', as: 'cashFlows' });
 CashFlowMonthly.belongsTo(Project, { foreignKey: 'project_id' });
+
+Project.hasMany(FixedAsset, { foreignKey: 'project_id', as: 'fixedAssets' });
+FixedAsset.belongsTo(Project, { foreignKey: 'project_id' });
+
+FixedAsset.hasMany(FixedAssetDepreciationSchedule, {
+  foreignKey: 'fixed_asset_id',
+  as: 'depreciationSchedules',
+});
+FixedAssetDepreciationSchedule.belongsTo(FixedAsset, { foreignKey: 'fixed_asset_id' });
 
 export default sequelize;

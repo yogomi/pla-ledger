@@ -5,6 +5,7 @@ import {
   FixedExpense, FixedExpenseMonth, VariableExpense,
   Loan, LoanRepayment, LaborCost, LaborCostMonth,
   CashFlowMonthly, Comment,
+  FixedAsset, FixedAssetDepreciationSchedule,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from './utils';
@@ -50,6 +51,8 @@ import { getProjectRole } from './utils';
  *       "laborCosts": [ ... ],
  *       "laborCostMonths": [ ... ],
  *       "cashFlows": [ ... ],
+ *       "fixedAssets": [ ... ],
+ *       "fixedAssetDepreciationSchedules": [ ... ],
  *       "attachments": [ ... ],
  *       "comments": [ ... ]
  *     }
@@ -98,6 +101,7 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
     laborCostMonths,
     cashFlows,
     comments,
+    fixedAssets,
   ] = await Promise.all([
     ProjectSection.findAll({ where: { project_id: id } }),
     SalesSimulationCategory.findAll({ where: { project_id: id } }),
@@ -112,7 +116,16 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
     LaborCostMonth.findAll({ where: { project_id: id } }),
     CashFlowMonthly.findAll({ where: { project_id: id } }),
     Comment.findAll({ where: { project_id: id } }),
+    FixedAsset.findAll({ where: { project_id: id } }),
   ]);
+
+  // 固定資産に紐づく償却スケジュールを取得
+  const fixedAssetIds = fixedAssets.map(a => a.id);
+  const fixedAssetDepreciationSchedules = fixedAssetIds.length > 0
+    ? await FixedAssetDepreciationSchedule.findAll({
+        where: { fixed_asset_id: fixedAssetIds },
+      })
+    : [];
 
   res.json({
     success: true,
@@ -134,6 +147,8 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
       laborCosts: laborCosts.map(r => r.toJSON()),
       laborCostMonths: laborCostMonths.map(r => r.toJSON()),
       cashFlows: cashFlows.map(r => r.toJSON()),
+      fixedAssets: fixedAssets.map(r => r.toJSON()),
+      fixedAssetDepreciationSchedules: fixedAssetDepreciationSchedules.map(r => r.toJSON()),
       comments: comments.map(r => r.toJSON()),
     },
   });

@@ -10,6 +10,7 @@ import { formatZodError } from '../../utils/zodError';
 import { YearMonthSchema } from '../../schemas/salesSimulation';
 import { z } from 'zod';
 import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesSimulationHelper';
+import { calculateMonthlyDepreciation } from '../../utils/depreciationCalculator';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -230,6 +231,8 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   // 自動連携データを取得
   const { profitBeforeTax, interestExpense } = await fetchProfitAndInterest(projectId, yearMonth);
   const { borrowingProceeds, loanRepaymentAmount } = await fetchBorrowingData(projectId, yearMonth);
+  // 固定資産マスターから月次減価償却費を自動計算
+  const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
 
   let record = await CashFlowMonthly.findOne({
     where: { project_id: projectId, year_month: yearMonth },
@@ -238,7 +241,7 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   if (!record) {
     // 未保存月はゼロ初期値で返す（自動継承なし）
     const cashBeginning = await fetchPrevCashEnding(projectId, yearMonth);
-    const operatingCfSubtotal = profitBeforeTax - interestExpense;
+    const operatingCfSubtotal = profitBeforeTax + depreciation - interestExpense;
     const financingCfSubtotal = borrowingProceeds + loanRepaymentAmount;
     const netCashChange = operatingCfSubtotal + financingCfSubtotal;
     const cashEnding = cashBeginning + netCashChange;
@@ -252,7 +255,7 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
         isInherited: false,
         operating: {
           profitBeforeTax,
-          depreciation: 0,
+          depreciation,
           interestExpense,
           accountsReceivableChange: 0,
           inventoryChange: 0,
@@ -289,7 +292,7 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   }
 
   // 既存レコードがある場合は自動連携データで上書き計算
-  const depreciation = Number(record.depreciation);
+  // depreciation は固定資産マスターから自動取得済み
   const accountsReceivableChange = Number(record.accounts_receivable_change);
   const inventoryChange = Number(record.inventory_change);
   const accountsPayableChange = Number(record.accounts_payable_change);
