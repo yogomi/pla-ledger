@@ -30,6 +30,7 @@ export default function ProfitLossMonthlyView({
   currency,
 }: ProfitLossMonthlyViewProps) {
   const { t } = useTranslation();
+  // yearMonth は 'YYYY-MM' 形式で親コンポーネント（SimulationViewContainer）から渡される
   const year = yearMonth.split('-')[0];
   const { data, isLoading, isError } = useProfitLossYearly(projectId, year);
 
@@ -45,10 +46,11 @@ export default function ProfitLossMonthlyView({
     return <Alert severity="error">{t('load_error')}</Alert>;
   }
 
+  // API は必ず1〜12月分を返すため、通常は undefined にならない（防御的チェック）
   const row = data.months.find(m => m.yearMonth === yearMonth);
 
   if (!row) {
-    return <Alert severity="warning">{t('load_error')}</Alert>;
+    return <Alert severity="error">{t('load_error')}</Alert>;
   }
 
   /** 行を描画するヘルパー */
