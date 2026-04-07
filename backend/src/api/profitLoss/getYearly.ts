@@ -23,6 +23,7 @@ interface MonthData {
   totalExpense: number;
   operatingProfit: number;
   interestExpense: number;
+  profitBeforeTax: number;
   netProfit: number;
   profitRate: number;
   isInherited: boolean;
@@ -122,7 +123,9 @@ async function buildMonthData(
 
   // 利息支払額：一括取得済みのマップから参照する（N+1クエリ回避）
   const interestExpense = interestExpenseMap.get(yearMonth) ?? 0;
-  const netProfit = operatingProfit - interestExpense;
+  // 税引前利益 = 営業利益 - 利息費用
+  const profitBeforeTax = operatingProfit - interestExpense;
+  const netProfit = profitBeforeTax;
 
   const profitRate = monthlySales > 0
     ? Math.round((operatingProfit / monthlySales) * 10000) / 100
@@ -139,6 +142,7 @@ async function buildMonthData(
     totalExpense,
     operatingProfit,
     interestExpense,
+    profitBeforeTax,
     netProfit,
     profitRate,
     isInherited: isInherited || isFixedInherited,
@@ -279,6 +283,7 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
   const totalExpense = months.reduce((sum, m) => sum + m.totalExpense, 0);
   const totalOperatingProfit = months.reduce((sum, m) => sum + m.operatingProfit, 0);
   const totalInterestExpense = months.reduce((sum, m) => sum + m.interestExpense, 0);
+  const totalProfitBeforeTax = months.reduce((sum, m) => sum + m.profitBeforeTax, 0);
   const totalNetProfit = months.reduce((sum, m) => sum + m.netProfit, 0);
   const averageProfitRate = totalSales > 0
     ? Math.round((totalOperatingProfit / totalSales) * 10000) / 100
@@ -301,6 +306,7 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
         totalExpense,
         totalOperatingProfit,
         totalInterestExpense,
+        totalProfitBeforeTax,
         totalNetProfit,
         averageProfitRate,
       },

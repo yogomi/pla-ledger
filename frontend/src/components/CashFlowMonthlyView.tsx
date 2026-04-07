@@ -76,7 +76,6 @@ export default function CashFlowMonthlyView({
             <TableBody>
               {renderRow(t('profit_before_tax'), data.operating.profitBeforeTax, true)}
               {renderRow(t('depreciation'), data.operating.depreciation)}
-              {renderRow(t('interest_expense'), data.operating.interestExpense, true)}
               {renderRow(
                 t('accounts_receivable_change'),
                 data.operating.accountsReceivableChange,

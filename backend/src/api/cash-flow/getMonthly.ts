@@ -18,16 +18,17 @@ const ParamsSchema = z.object({
 });
 
 /**
- * 指定月のtaxBefore利益と利息支払額を損益計算表ロジックで計算する。
+ * 指定月の税引前利益・利息支払額・減価償却費を損益計算表ロジックで計算する。
  * 売上スナップショット・固定費・変動費・人件費の継承ロジックを含む。
+ * 減価償却費は totalExpense に含めて営業利益を算出し、利息控除後の税引前利益を返す。
  * @param projectId - プロジェクトID
  * @param yearMonth - 対象年月 (YYYY-MM)
- * @returns 税引前利益（profitBeforeTax）と利息支払額（interestExpense）
+ * @returns 税引前利益（profitBeforeTax）、利息支払額（interestExpense）、月次減価償却費（depreciation）
  */
 async function fetchProfitAndInterest(
   projectId: string,
   yearMonth: string,
-): Promise<{ profitBeforeTax: number; interestExpense: number }> {
+): Promise<{ profitBeforeTax: number; interestExpense: number; depreciation: number }> {
   let snapshot: SalesSimulationSnapshot | null = await SalesSimulationSnapshot.findOne({
     where: { project_id: projectId, year_month: yearMonth },
   });
@@ -91,7 +92,9 @@ async function fetchProfitAndInterest(
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const laborTotal = laborCosts.reduce((sum, lc) => sum + Number(lc.monthly_total), 0);
-  const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal;
+  // 減価償却費は営業利益の計算に含める（損益計算書と一致させるため）
+  const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
+  const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal + depreciation;
   const operatingProfit = monthlySales - totalExpense;
 
   // 利息支払額：当月の返済スケジュールから集計する
@@ -101,10 +104,10 @@ async function fetchProfitAndInterest(
   });
   const interestExpense = repayments.reduce((sum, r) => sum + Number(r.interest_payment), 0);
 
-  // 税引前当期純利益 = 営業利益（利息控除前）
-  const profitBeforeTax = operatingProfit;
+  // 税引前利益 = 営業利益 - 利息費用（損益計算書の定義と一致させる）
+  const profitBeforeTax = operatingProfit - interestExpense;
 
-  return { profitBeforeTax, interestExpense };
+  return { profitBeforeTax, interestExpense, depreciation };
 }
 
 /**
@@ -228,11 +231,10 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     return;
   }
 
-  // 自動連携データを取得
-  const { profitBeforeTax, interestExpense } = await fetchProfitAndInterest(projectId, yearMonth);
+  // 自動連携データを取得（減価償却費・税引前利益・利息を一括計算）
+  const { profitBeforeTax, interestExpense, depreciation } =
+    await fetchProfitAndInterest(projectId, yearMonth);
   const { borrowingProceeds, loanRepaymentAmount } = await fetchBorrowingData(projectId, yearMonth);
-  // 固定資産マスターから月次減価償却費を自動計算
-  const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
 
   let record = await CashFlowMonthly.findOne({
     where: { project_id: projectId, year_month: yearMonth },
@@ -241,9 +243,11 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   if (!record) {
     // 未保存月はゼロ初期値で返す（自動継承なし）
     const cashBeginning = await fetchPrevCashEnding(projectId, yearMonth);
-    const operatingCfSubtotal = profitBeforeTax + depreciation - interestExpense;
+    // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算
+    const operatingCfSubtotal = profitBeforeTax + depreciation;
+    const investingCfSubtotal = 0;
     const financingCfSubtotal = borrowingProceeds + loanRepaymentAmount;
-    const netCashChange = operatingCfSubtotal + financingCfSubtotal;
+    const netCashChange = operatingCfSubtotal + investingCfSubtotal + financingCfSubtotal;
     const cashEnding = cashBeginning + netCashChange;
 
     return res.json({
@@ -268,7 +272,7 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
           assetSale: 0,
           intangibleAcquisition: 0,
           otherInvesting: 0,
-          subtotal: 0,
+          subtotal: investingCfSubtotal,
         },
         financing: {
           borrowingProceeds,
@@ -306,8 +310,9 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   const otherFinancing = Number(record.other_financing);
   const cashBeginning = Number(record.cash_beginning);
 
+  // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算し、運転資本増減を調整する
   const operatingCfSubtotal =
-    profitBeforeTax + depreciation - interestExpense
+    profitBeforeTax + depreciation
     + accountsReceivableChange + inventoryChange + accountsPayableChange + otherOperating;
   const investingCfSubtotal =
     capexAcquisition + assetSale + intangibleAcquisition + otherInvesting;

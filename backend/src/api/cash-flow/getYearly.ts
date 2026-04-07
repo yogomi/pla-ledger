@@ -7,7 +7,6 @@ import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearSchema } from '../../schemas/salesSimulation';
 import { fetchProfitAndInterest, fetchBorrowingData, fetchPrevCashEnding } from './getMonthly';
-import { calculateMonthlyDepreciation } from '../../utils/depreciationCalculator';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -116,12 +115,10 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
     if (r) {
       // 保存済み月：手動調整項目はDBから取得し、自動連携項目（損益・借入）はライブ再計算する
       // ※ getMonthly.ts と同一ロジックで常に最新の借入管理・損益データを反映する
-      const { profitBeforeTax, interestExpense } =
+      const { profitBeforeTax, interestExpense, depreciation } =
         await fetchProfitAndInterest(projectId, yearMonth);
       const { borrowingProceeds, loanRepaymentAmount } =
         await fetchBorrowingData(projectId, yearMonth);
-
-      const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
       const accountsReceivableChange = Number(r.accounts_receivable_change);
       const inventoryChange = Number(r.inventory_change);
       const accountsPayableChange = Number(r.accounts_payable_change);
@@ -134,8 +131,9 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
       const dividendPayment = Number(r.dividend_payment);
       const otherFinancing = Number(r.other_financing);
 
+      // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算し、運転資本増減を調整する
       const operatingCF =
-        profitBeforeTax + depreciation - interestExpense
+        profitBeforeTax + depreciation
         + accountsReceivableChange + inventoryChange + accountsPayableChange + otherOperating;
       const investingCF = capexAcquisition + assetSale + intangibleAcquisition + otherInvesting;
       const financingCF =
@@ -164,16 +162,17 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
         periodCashBeginning = cashBeginning;
       }
 
-      const { profitBeforeTax, interestExpense } =
+      const { profitBeforeTax, depreciation } =
         await fetchProfitAndInterest(projectId, yearMonth);
       const { borrowingProceeds, loanRepaymentAmount } =
         await fetchBorrowingData(projectId, yearMonth);
 
       // 未保存月は手動調整項目がないため、自動連携分のみで計算する
-      const monthlyDepreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
-      const operatingCF = profitBeforeTax + monthlyDepreciation - interestExpense;
+      // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算
+      const operatingCF = profitBeforeTax + depreciation;
+      const investingCF = 0;
       const financingCF = borrowingProceeds + loanRepaymentAmount;
-      const netCashChange = operatingCF + financingCF; // investingCF = 0
+      const netCashChange = operatingCF + investingCF + financingCF;
       const cashEnding = cashBeginning + netCashChange;
 
       previousMonthCashEnding = cashEnding;
@@ -181,7 +180,7 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
       months.push({
         yearMonth,
         operatingCF,
-        investingCF: 0,
+        investingCF,
         financingCF,
         netCashChange,
         cashEnding,

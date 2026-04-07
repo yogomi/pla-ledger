@@ -10,7 +10,6 @@ import {
   fetchBorrowingData,
   fetchPrevCashEnding,
 } from './getMonthly';
-import { calculateMonthlyDepreciation } from '../../utils/depreciationCalculator';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -137,11 +136,10 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     noteEn,
   } = parsedBody.data;
 
-  // 自動連携データを取得
-  const { profitBeforeTax, interestExpense } = await fetchProfitAndInterest(projectId, yearMonth);
+  // 自動連携データを取得（減価償却費・税引前利益・利息を一括計算）
+  const { profitBeforeTax, interestExpense, depreciation } =
+    await fetchProfitAndInterest(projectId, yearMonth);
   const { borrowingProceeds, loanRepaymentAmount } = await fetchBorrowingData(projectId, yearMonth);
-  // 固定資産マスターから月次減価償却費を自動計算
-  const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
 
   // 期首残高：明示的に指定があればそれを使用し、なければ前月のcash_endingを使用
   const cashBeginning =
@@ -149,9 +147,9 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
       ? parsedBody.data.cashBeginning
       : await fetchPrevCashEnding(projectId, yearMonth);
 
-  // 小計計算
+  // 小計計算（間接法：税引前利益に減価償却費を加算し、運転資本増減を調整する）
   const operatingCfSubtotal =
-    profitBeforeTax + depreciation - interestExpense
+    profitBeforeTax + depreciation
     + accountsReceivableChange + inventoryChange + accountsPayableChange + otherOperating;
   const investingCfSubtotal = capexAcquisition + assetSale + intangibleAcquisition + otherInvesting;
   const financingCfSubtotal =
