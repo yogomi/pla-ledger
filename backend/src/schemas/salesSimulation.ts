@@ -1,10 +1,23 @@
 import { z } from 'zod';
 
-/** yearMonth フォーマット: YYYY-MM */
-export const YearMonthSchema = z.string().regex(/^\d{4}-\d{2}$/, 'yearMonth must be YYYY-MM format');
+/** 事業開始年月（キャッシュフロー計算の起点） */
+const MIN_YEAR_MONTH = '2025-01';
 
-/** year フォーマット: YYYY */
-export const YearSchema = z.string().regex(/^\d{4}$/, 'year must be YYYY format');
+/** yearMonth フォーマット: YYYY-MM（2025-01以降） */
+export const YearMonthSchema = z.string()
+  .regex(/^\d{4}-\d{2}$/, 'yearMonth must be YYYY-MM format')
+  .refine(
+    (val) => val >= MIN_YEAR_MONTH,
+    { message: `yearMonth must be ${MIN_YEAR_MONTH} or later` },
+  );
+
+/** year フォーマット: YYYY（2025以降） */
+export const YearSchema = z.string()
+  .regex(/^\d{4}$/, 'year must be YYYY format')
+  .refine(
+    (val) => Number(val) >= 2025,
+    { message: 'year must be 2025 or later' },
+  );
 
 /** 月次 GET エンドポイント用クエリスキーマ */
 export const YearMonthQuerySchema = z.object({

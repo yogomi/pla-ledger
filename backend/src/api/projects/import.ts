@@ -326,8 +326,6 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
         other_financing: cf.other_financing,
         financing_cf_subtotal: cf.financing_cf_subtotal,
         net_cash_change: cf.net_cash_change,
-        cash_beginning: cf.cash_beginning,
-        cash_ending: cf.cash_ending,
         is_inherited: cf.is_inherited,
         note_ja: cf.note_ja,
         note_en: cf.note_en,

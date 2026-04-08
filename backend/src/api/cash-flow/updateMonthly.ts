@@ -8,7 +8,7 @@ import { YearMonthSchema } from '../../schemas/salesSimulation';
 import {
   fetchProfitAndInterest,
   fetchBorrowingData,
-  fetchPrevCashEnding,
+  calculateCashBalanceUpToMonth,
 } from './getMonthly';
 
 const ParamsSchema = z.object({
@@ -28,7 +28,6 @@ const UpdateCashFlowSchema = z.object({
   capitalIncrease: z.number(),
   dividendPayment: z.number(),
   otherFinancing: z.number(),
-  cashBeginning: z.number().optional(),
   noteJa: z.string().optional(),
   noteEn: z.string().optional(),
 });
@@ -39,12 +38,13 @@ const UpdateCashFlowSchema = z.object({
  *   - 指定月のキャッシュフローデータを更新
  *   - 手入力項目のみを受け付け、自動連携項目はサーバー側で再計算
  *   - 小計・合計も自動計算
+ *   - 期首残高・期末残高は DB に保存せず、2025-01 からの累積計算で算出する
  *
  * @request
- *   - params: projectId (UUID), yearMonth (YYYY-MM形式)
+ *   - params: projectId (UUID), yearMonth (YYYY-MM形式、2025-01以降)
  *   - body: { accountsReceivableChange, inventoryChange, accountsPayableChange,
  *             otherOperating, capexAcquisition, assetSale, intangibleAcquisition, otherInvesting,
- *             capitalIncrease, dividendPayment, otherFinancing, cashBeginning?, noteJa?, noteEn? }
+ *             capitalIncrease, dividendPayment, otherFinancing, noteJa?, noteEn? }
  *   - バリデーション：Zodで全フィールドをnumber型でチェック
  *   - depreciation は受け付けない（固定資産マスターから自動計算）
  *   - 認証必須、Editor権限以上が必要
@@ -70,7 +70,7 @@ const UpdateCashFlowSchema = z.object({
  *   }
  *
  * @author yogomi
- * @date 2026-03-21
+ * @date 2026-04-08
  */
 const router = Router({ mergeParams: true });
 
@@ -141,12 +141,6 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     await fetchProfitAndInterest(projectId, yearMonth);
   const { borrowingProceeds, loanRepaymentAmount } = await fetchBorrowingData(projectId, yearMonth);
 
-  // 期首残高：明示的に指定があればそれを使用し、なければ前月のcash_endingを使用
-  const cashBeginning =
-    parsedBody.data.cashBeginning !== undefined
-      ? parsedBody.data.cashBeginning
-      : await fetchPrevCashEnding(projectId, yearMonth);
-
   // 小計計算（間接法：税引前利益に減価償却費を加算し、運転資本増減を調整する）
   const operatingCfSubtotal =
     profitBeforeTax + depreciation
@@ -155,8 +149,8 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   const financingCfSubtotal =
     borrowingProceeds + loanRepaymentAmount + capitalIncrease + dividendPayment + otherFinancing;
   const netCashChange = operatingCfSubtotal + investingCfSubtotal + financingCfSubtotal;
-  const cashEnding = cashBeginning + netCashChange;
 
+  // DB保存（cash_beginning と cash_ending は保存しない）
   const [record] = await CashFlowMonthly.upsert({
     project_id: projectId,
     year_month: yearMonth,
@@ -180,12 +174,14 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     other_financing: otherFinancing,
     financing_cf_subtotal: financingCfSubtotal,
     net_cash_change: netCashChange,
-    cash_beginning: cashBeginning,
-    cash_ending: cashEnding,
     is_inherited: false,
     note_ja: noteJa ?? null,
     note_en: noteEn ?? null,
   });
+
+  // 期首残高・期末残高を 2025-01 からの累積計算で算出（レスポンス用）
+  const { cashBeginning, cashEnding } =
+    await calculateCashBalanceUpToMonth(projectId, yearMonth);
 
   res.json({
     success: true,

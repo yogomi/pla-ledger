@@ -69,12 +69,13 @@ interface ProjectAttributes {
   tags: string[];
   published_at: Date | null;
   social_insurance_rate: number;
+  initial_cash_balance: number;
   created_at?: Date;
   updated_at?: Date;
 }
 type ProjectCreation = Optional<
   ProjectAttributes,
-  'id' | 'summary' | 'stage' | 'tags' | 'published_at' | 'social_insurance_rate'
+  'id' | 'summary' | 'stage' | 'tags' | 'published_at' | 'social_insurance_rate' | 'initial_cash_balance'
 >;
 
 export class Project
@@ -90,6 +91,7 @@ export class Project
   declare tags: string[];
   declare published_at: Date | null;
   declare social_insurance_rate: number;
+  declare initial_cash_balance: number;
 }
 
 Project.init({
@@ -107,6 +109,12 @@ Project.init({
   tags: { type: DataTypes.JSON, defaultValue: [] },
   published_at: { type: DataTypes.DATE, defaultValue: null },
   social_insurance_rate: { type: DataTypes.DECIMAL(5, 2), allowNull: false, defaultValue: 15.0 },
+  initial_cash_balance: {
+    type: DataTypes.DECIMAL(15, 2),
+    allowNull: false,
+    defaultValue: 0,
+    comment: '事業開始時（2025年1月）の初期現金残高',
+  },
 }, { sequelize, tableName: 'projects', underscored: true });
 
 // ========== Permission ==========
@@ -948,8 +956,6 @@ interface CashFlowMonthlyAttributes {
   financing_cf_subtotal: number;
   // 概要
   net_cash_change: number;
-  cash_beginning: number;
-  cash_ending: number;
   is_inherited: boolean;
   note_ja: string | null;
   note_en: string | null;
@@ -979,8 +985,6 @@ type CashFlowMonthlyCreation = Optional<
   | 'other_financing'
   | 'financing_cf_subtotal'
   | 'net_cash_change'
-  | 'cash_beginning'
-  | 'cash_ending'
   | 'is_inherited'
   | 'note_ja'
   | 'note_en'
@@ -1012,8 +1016,6 @@ export class CashFlowMonthly
   declare other_financing: number;
   declare financing_cf_subtotal: number;
   declare net_cash_change: number;
-  declare cash_beginning: number;
-  declare cash_ending: number;
   declare is_inherited: boolean;
   declare note_ja: string | null;
   declare note_en: string | null;
@@ -1043,8 +1045,6 @@ CashFlowMonthly.init({
   other_financing: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
   financing_cf_subtotal: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
   net_cash_change: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
-  cash_beginning: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
-  cash_ending: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
   is_inherited: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
   note_ja: { type: DataTypes.TEXT, defaultValue: null },
   note_en: { type: DataTypes.TEXT, defaultValue: null },

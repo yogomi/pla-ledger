@@ -18,6 +18,7 @@ import api from '../utils/api';
 import StartupCostTable, { StartupCostItem } from '../components/StartupCostTable';
 import SimulationViewContainer from '../components/SimulationViewContainer';
 import SimulationSheetContainer from '../components/SimulationSheetContainer';
+import ProjectInitialCashBalance from '../components/ProjectInitialCashBalance';
 
 interface Comment { id: string; author_id: string; body: string; created_at: string; }
 interface Version {
@@ -32,6 +33,7 @@ interface Project {
   visibility: string; currency: string; stage: string | null; tags: string[];
   owner_id: string; sections: Section[];
   social_insurance_rate: number | null;
+  initial_cash_balance: number | null;
 }
 interface AccessRequest {
   id: string; requester_id: string; request_type: string; message: string | null;
@@ -566,6 +568,22 @@ export default function ProjectViewPage() {
                     onChange={e => field.onChange(Number(e.target.value))}
                   />
                 )}
+              />
+
+              <Divider sx={{ my: 3 }} />
+
+              <ProjectInitialCashBalance
+                projectId={id!}
+                currentBalance={project.initial_cash_balance != null
+                  ? Number(project.initial_cash_balance) : 0}
+                currency={editCurrency}
+                isOwner={isOwner}
+                onUpdate={async (newBalance) => {
+                  await api.patch(`/projects/${id}/initial-cash-balance`, {
+                    initialCashBalance: newBalance,
+                  });
+                  setProject(prev => prev ? { ...prev, initial_cash_balance: newBalance } : prev);
+                }}
               />
 
               <Divider sx={{ my: 3 }} />

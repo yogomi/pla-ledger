@@ -15,6 +15,7 @@ import addCommentRouter from '../api/projects/addComment';
 import listRouter from '../api/projects/list';
 import exportRouter from '../api/projects/export';
 import importRouter from '../api/projects/import';
+import updateInitialCashBalanceRouter from '../api/projects/updateInitialCashBalance';
 import salesSimulationsRouter from './salesSimulations';
 import expenseSimulationsRouter from './expenseSimulations';
 import profitLossRouter from './profitLoss';
@@ -44,6 +45,7 @@ router.use('/', getCommentsRouter);
 router.use('/', addCommentRouter);
 router.use('/', listRouter);
 router.use('/', exportRouter);
+router.use('/', updateInitialCashBalanceRouter);
 
 router.use('/:projectId/sales-simulations', salesSimulationsRouter);
 router.use('/:projectId/expense-simulations', expenseSimulationsRouter);
