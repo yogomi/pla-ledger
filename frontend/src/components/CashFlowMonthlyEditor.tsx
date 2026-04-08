@@ -83,14 +83,13 @@ export default function CashFlowMonthlyEditor({
   const calculatedValues = useMemo(() => {
     const profitBeforeTax = data?.operating.profitBeforeTax ?? 0;
     const depreciation = data?.operating.depreciation ?? 0;
-    const interestExpense = data?.operating.interestExpense ?? 0;
     const borrowingProceeds = data?.financing.borrowingProceeds ?? 0;
     const loanRepayment = data?.financing.loanRepayment ?? 0;
 
+    // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算し、運転資本増減を調整する
     const operatingSubtotal =
       profitBeforeTax
       + depreciation
-      - interestExpense
       + formData.accountsReceivableChange
       + formData.inventoryChange
       + formData.accountsPayableChange
@@ -224,13 +223,6 @@ export default function CashFlowMonthlyEditor({
               size="small"
               inputProps={{ style: { backgroundColor: '#f5f5f5' } }}
               helperText={t('go_to_fixed_assets')}
-            />
-            <TextField
-              label={`${t('interest_expense')} ${t('auto_linked')}`}
-              value={data?.operating.interestExpense ?? 0}
-              disabled
-              size="small"
-              inputProps={{ style: { backgroundColor: '#f5f5f5' } }}
             />
             <TextField
               label={t('accounts_receivable_change')}

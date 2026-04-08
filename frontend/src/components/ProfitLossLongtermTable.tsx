@@ -106,6 +106,12 @@ export default function ProfitLossLongtermTable({
       getValue: data => data?.yearly.totalInterestExpense ?? 0,
     },
     {
+      label: `${t('profit_before_tax')} (${currency})`,
+      getValue: data => data?.yearly.totalProfitBeforeTax ?? 0,
+      bold: true,
+      colorized: true,
+    },
+    {
       label: `${t('net_profit')} (${currency})`,
       getValue: data => data?.yearly.totalNetProfit ?? 0,
       bold: true,

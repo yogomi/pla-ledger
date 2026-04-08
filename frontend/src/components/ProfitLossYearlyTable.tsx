@@ -59,6 +59,7 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
             <TableCell align="right">{t('expense_total_row')} ({currency})</TableCell>
             <TableCell align="right">{t('operating_profit')} ({currency})</TableCell>
             <TableCell align="right">{t('interest_expense')} ({currency})</TableCell>
+            <TableCell align="right">{t('profit_before_tax')} ({currency})</TableCell>
             <TableCell align="right">{t('net_profit')} ({currency})</TableCell>
             <TableCell align="right">{t('profit_rate')}</TableCell>
           </TableRow>
@@ -92,6 +93,12 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
                   {row.operatingProfit.toLocaleString()}
                 </TableCell>
                 <TableCell align="right">{row.interestExpense.toLocaleString()}</TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ color: row.profitBeforeTax >= 0 ? 'success.main' : 'error.main' }}
+                >
+                  {row.profitBeforeTax.toLocaleString()}
+                </TableCell>
                 <TableCell
                   align="right"
                   sx={{ color: row.netProfit >= 0 ? 'success.main' : 'error.main' }}
@@ -143,6 +150,14 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
             <TableCell align="right">
               <Typography fontWeight="bold">
                 {yearly.totalInterestExpense.toLocaleString()}
+              </Typography>
+            </TableCell>
+            <TableCell
+              align="right"
+              sx={{ color: yearly.totalProfitBeforeTax >= 0 ? 'success.main' : 'error.main' }}
+            >
+              <Typography fontWeight="bold">
+                {yearly.totalProfitBeforeTax.toLocaleString()}
               </Typography>
             </TableCell>
             <TableCell
