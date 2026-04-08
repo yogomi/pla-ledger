@@ -3,8 +3,6 @@ import { Alert, Box, Button, TextField, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 interface ProjectInitialCashBalanceProps {
-  /** プロジェクトID */
-  projectId: string;
   /** 現在の初期現金残高 */
   currentBalance: number;
   /** 通貨コード */

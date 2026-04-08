@@ -573,7 +573,6 @@ export default function ProjectViewPage() {
               <Divider sx={{ my: 3 }} />
 
               <ProjectInitialCashBalance
-                projectId={id!}
                 currentBalance={project.initial_cash_balance != null
                   ? Number(project.initial_cash_balance) : 0}
                 currency={editCurrency}

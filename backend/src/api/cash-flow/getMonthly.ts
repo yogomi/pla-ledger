@@ -141,36 +141,9 @@ async function fetchBorrowingData(
 }
 
 /**
- * 指定月の現金純増減額（net_cash_change）を計算または取得する。
- * 保存済みレコードがある場合は手動調整項目も加味する。
- * 未保存の場合は自動連携データ（損益・借入）のみで計算する。
- * @param projectId - プロジェクトID
- * @param yearMonth - 対象年月 (YYYY-MM)
- * @returns 当月の現金純増減額
- */
-async function calculateMonthlyNetCashChange(
-  projectId: string,
-  yearMonth: string,
-): Promise<number> {
-  const record = await CashFlowMonthly.findOne({
-    where: { project_id: projectId, year_month: yearMonth },
-    attributes: ['net_cash_change'],
-  });
-
-  if (record) {
-    return Number(record.net_cash_change);
-  }
-
-  // 未保存月は自動連携データから計算（手動調整項目はゼロ）
-  const { profitBeforeTax, depreciation } = await fetchProfitAndInterest(projectId, yearMonth);
-  const { borrowingProceeds, loanRepaymentAmount } = await fetchBorrowingData(projectId, yearMonth);
-
-  return profitBeforeTax + depreciation + borrowingProceeds + loanRepaymentAmount;
-}
-
-/**
  * 2025-01 から指定月までの現金残高を順次計算する。
  * プロジェクトの initial_cash_balance を起点として、各月の net_cash_change を累積する。
+ * 保存済みレコードは一括取得してマップ化し、N+1クエリを防ぐ。
  * @param projectId - プロジェクトID
  * @param targetYearMonth - 対象年月 (YYYY-MM)
  * @returns 対象月の期首残高（cashBeginning）と期末残高（cashEnding）
@@ -186,9 +159,17 @@ async function calculateCashBalanceUpToMonth(
     throw new Error('Project not found');
   }
 
-  let runningBalance = Number(project.initial_cash_balance);
-
   const [targetYear, targetMonth] = targetYearMonth.split('-').map(Number);
+
+  // 2025-01 から targetYearMonth までの保存済みレコードを一括取得してマップ化する
+  const savedRecords = await CashFlowMonthly.findAll({
+    where: { project_id: projectId },
+    attributes: ['year_month', 'net_cash_change'],
+    order: [['year_month', 'ASC']],
+  });
+  const savedMap = new Map(savedRecords.map(r => [r.year_month, Number(r.net_cash_change)]));
+
+  let runningBalance = Number(project.initial_cash_balance);
   let cashBeginning = runningBalance;
 
   // 2025-01 から targetYearMonth まで月ごとに累積する
@@ -201,7 +182,18 @@ async function calculateCashBalanceUpToMonth(
         cashBeginning = runningBalance;
       }
 
-      const netCashChange = await calculateMonthlyNetCashChange(projectId, yearMonth);
+      let netCashChange: number;
+      if (savedMap.has(yearMonth)) {
+        netCashChange = savedMap.get(yearMonth)!;
+      } else {
+        // 未保存月は自動連携データから計算（手動調整項目はゼロ）
+        const { profitBeforeTax, depreciation } =
+          await fetchProfitAndInterest(projectId, yearMonth);
+        const { borrowingProceeds, loanRepaymentAmount } =
+          await fetchBorrowingData(projectId, yearMonth);
+        netCashChange = profitBeforeTax + depreciation + borrowingProceeds + loanRepaymentAmount;
+      }
+
       runningBalance += netCashChange;
     }
   }
