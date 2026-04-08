@@ -45,7 +45,7 @@ const CHART_COLORS = [
  * @returns 数値の場合は toLocaleString で整形した文字列、それ以外は String() 変換した文字列
  */
 const tooltipFormatter = (v: unknown) =>
-  typeof v === 'number' ? v.toLocaleString() : String(v);
+  typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 /**
  * 売上シミュレーションの年次表示コンポーネント。
@@ -107,12 +107,12 @@ export default function SalesYearlyView({ projectId, year, currency }: SalesYear
                 <TableCell>{cat.categoryName}</TableCell>
                 {cat.months.map(m => (
                   <TableCell key={m.yearMonth} align="right">
-                    {m.monthlySales.toLocaleString()}
+                    {Math.round(m.monthlySales).toLocaleString()}
                   </TableCell>
                 ))}
                 <TableCell align="right">
                   <Typography fontWeight="bold">
-                    {cat.yearlyTotal.toLocaleString()}
+                    {Math.round(cat.yearlyTotal).toLocaleString()}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -125,13 +125,13 @@ export default function SalesYearlyView({ projectId, year, currency }: SalesYear
               {data.monthlyTotals.map(mt => (
                 <TableCell key={mt.yearMonth} align="right">
                   <Typography fontWeight="bold">
-                    {mt.totalSales.toLocaleString()}
+                    {Math.round(mt.totalSales).toLocaleString()}
                   </Typography>
                 </TableCell>
               ))}
               <TableCell align="right">
                 <Typography fontWeight="bold">
-                  {data.yearlyTotal.toLocaleString()}
+                  {Math.round(data.yearlyTotal).toLocaleString()}
                 </Typography>
               </TableCell>
             </TableRow>

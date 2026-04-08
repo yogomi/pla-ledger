@@ -121,7 +121,7 @@ export default function LoanListContainer({
                     {loan.lenderName}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t('principal_amount')}: {loan.principalAmount.toLocaleString()} {currency}
+                    {t('principal_amount')}: {Math.round(loan.principalAmount).toLocaleString()} {currency}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {t('interest_rate')}: {loan.interestRate}%　
@@ -138,7 +138,7 @@ export default function LoanListContainer({
                     {t('repayment_method')}: {repaymentMethodLabel(loan.repaymentMethod)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t('remaining_balance')}: {loan.remainingBalance.toLocaleString()} {currency}
+                    {t('remaining_balance')}: {Math.round(loan.remainingBalance).toLocaleString()} {currency}
                   </Typography>
                   {loan.description && (
                     <Typography variant="body2" color="text.secondary">

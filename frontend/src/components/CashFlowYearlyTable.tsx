@@ -128,7 +128,7 @@ export default function CashFlowYearlyTable({
                     fontWeight={row.bold ? 'bold' : 'normal'}
                     color={v < 0 ? 'error.main' : 'inherit'}
                   >
-                    {v.toLocaleString()}
+                    {Math.round(v).toLocaleString()}
                   </Typography>
                 </TableCell>
               ))}
@@ -138,7 +138,7 @@ export default function CashFlowYearlyTable({
                   fontWeight="bold"
                   color={row.total < 0 ? 'error.main' : 'inherit'}
                 >
-                  {row.total.toLocaleString()} {currency}
+                  {Math.round(row.total).toLocaleString()} {currency}
                 </Typography>
               </TableCell>
             </TableRow>

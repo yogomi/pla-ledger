@@ -75,7 +75,7 @@ function LoanLongtermRow({
         const lastEntry = yearSchedule[yearSchedule.length - 1];
         return (
           <TableCell key={year} align="right">
-            {lastEntry.remainingBalance.toLocaleString()} {currency}
+            {Math.round(lastEntry.remainingBalance).toLocaleString()} {currency}
           </TableCell>
         );
       })}
@@ -168,7 +168,7 @@ export default function LoanLongtermView({
                   return (
                     <TableCell key={year} align="right">
                       <Typography fontWeight="bold">
-                        {total.toLocaleString()} {currency}
+                        {Math.round(total).toLocaleString()} {currency}
                       </Typography>
                     </TableCell>
                   );

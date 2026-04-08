@@ -46,7 +46,7 @@ const CHART_COLORS = [
  * @returns 数値の場合は toLocaleString で整形した文字列、それ以外は String() 変換した文字列
  */
 const tooltipFormatter = (v: unknown) =>
-  typeof v === 'number' ? v.toLocaleString() : String(v);
+  typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 /**
  * 1件の借入の返済スケジュールをフェッチし、データを親に通知するデータローダー。
@@ -104,10 +104,10 @@ function LoanYearRow({
   return (
     <TableRow>
       <TableCell>{loan.lenderName}</TableCell>
-      <TableCell align="right">{loan.principalAmount.toLocaleString()} {currency}</TableCell>
-      <TableCell align="right">{annualPrincipal.toLocaleString()} {currency}</TableCell>
-      <TableCell align="right">{annualInterest.toLocaleString()} {currency}</TableCell>
-      <TableCell align="right">{yearEndBalance.toLocaleString()} {currency}</TableCell>
+      <TableCell align="right">{Math.round(loan.principalAmount).toLocaleString()} {currency}</TableCell>
+      <TableCell align="right">{Math.round(annualPrincipal).toLocaleString()} {currency}</TableCell>
+      <TableCell align="right">{Math.round(annualInterest).toLocaleString()} {currency}</TableCell>
+      <TableCell align="right">{Math.round(yearEndBalance).toLocaleString()} {currency}</TableCell>
     </TableRow>
   );
 }

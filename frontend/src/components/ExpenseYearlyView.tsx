@@ -39,7 +39,7 @@ interface ExpenseYearlyViewProps {
  * @returns 数値の場合は toLocaleString で整形した文字列、それ以外は String() 変換した文字列
  */
 const tooltipFormatter = (v: unknown) =>
-  typeof v === 'number' ? v.toLocaleString() : String(v);
+  typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 /**
  * 経費管理の年次表示コンポーネント。
@@ -129,12 +129,12 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
                   const m = cat.months.find(mo => mo.yearMonth === ym);
                   return (
                     <TableCell key={ym} align="right">
-                      {(m ? m.amount : 0).toLocaleString()}
+                      {Math.round(m ? m.amount : 0).toLocaleString()}
                     </TableCell>
                   );
                 })}
                 <TableCell align="right">
-                  <Typography fontWeight="bold">{cat.yearlyTotal.toLocaleString()}</Typography>
+                  <Typography fontWeight="bold">{Math.round(cat.yearlyTotal).toLocaleString()}</Typography>
                 </TableCell>
               </TableRow>
             ))}
@@ -145,11 +145,11 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
                 </TableCell>
                 {columnTotal.map((v, i) => (
                   <TableCell key={allMonths[i]} align="right">
-                    <Typography fontWeight="bold">{v.toLocaleString()}</Typography>
+                    <Typography fontWeight="bold">{Math.round(v).toLocaleString()}</Typography>
                   </TableCell>
                 ))}
                 <TableCell align="right">
-                  <Typography fontWeight="bold">{grandTotal.toLocaleString()}</Typography>
+                  <Typography fontWeight="bold">{Math.round(grandTotal).toLocaleString()}</Typography>
                 </TableCell>
               </TableRow>
             )}
@@ -204,12 +204,12 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
               <TableCell>{t('labor_cost_section')}</TableCell>
               {data.laborMonths.map(lm => (
                 <TableCell key={lm.yearMonth} align="right">
-                  {lm.amount.toLocaleString()}
+                  {Math.round(lm.amount).toLocaleString()}
                 </TableCell>
               ))}
               <TableCell align="right">
                 <Typography fontWeight="bold">
-                  {data.yearlyTotals.totalLabor.toLocaleString()}
+                  {Math.round(data.yearlyTotals.totalLabor).toLocaleString()}
                 </Typography>
               </TableCell>
             </TableRow>
@@ -242,12 +242,12 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
               <TableCell>{t('fixed_total_row')}</TableCell>
               {data.monthlyTotals.map(mt => (
                 <TableCell key={mt.yearMonth} align="right">
-                  {mt.fixedTotal.toLocaleString()}
+                  {Math.round(mt.fixedTotal).toLocaleString()}
                 </TableCell>
               ))}
               <TableCell align="right">
                 <Typography fontWeight="bold">
-                  {data.yearlyTotals.totalFixed.toLocaleString()}
+                  {Math.round(data.yearlyTotals.totalFixed).toLocaleString()}
                 </Typography>
               </TableCell>
             </TableRow>
@@ -255,12 +255,12 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
               <TableCell>{t('variable_total_row')}</TableCell>
               {data.monthlyTotals.map(mt => (
                 <TableCell key={mt.yearMonth} align="right">
-                  {mt.variableTotal.toLocaleString()}
+                  {Math.round(mt.variableTotal).toLocaleString()}
                 </TableCell>
               ))}
               <TableCell align="right">
                 <Typography fontWeight="bold">
-                  {data.yearlyTotals.totalVariable.toLocaleString()}
+                  {Math.round(data.yearlyTotals.totalVariable).toLocaleString()}
                 </Typography>
               </TableCell>
             </TableRow>
@@ -268,12 +268,12 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
               <TableCell>{t('labor_total_row')}</TableCell>
               {data.monthlyTotals.map(mt => (
                 <TableCell key={mt.yearMonth} align="right">
-                  {mt.laborTotal.toLocaleString()}
+                  {Math.round(mt.laborTotal).toLocaleString()}
                 </TableCell>
               ))}
               <TableCell align="right">
                 <Typography fontWeight="bold">
-                  {data.yearlyTotals.totalLabor.toLocaleString()}
+                  {Math.round(data.yearlyTotals.totalLabor).toLocaleString()}
                 </Typography>
               </TableCell>
             </TableRow>
@@ -283,12 +283,12 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
               </TableCell>
               {data.monthlyTotals.map(mt => (
                 <TableCell key={mt.yearMonth} align="right">
-                  <Typography fontWeight="bold">{mt.totalExpense.toLocaleString()}</Typography>
+                  <Typography fontWeight="bold">{Math.round(mt.totalExpense).toLocaleString()}</Typography>
                 </TableCell>
               ))}
               <TableCell align="right">
                 <Typography fontWeight="bold">
-                  {data.yearlyTotals.totalExpense.toLocaleString()}
+                  {Math.round(data.yearlyTotals.totalExpense).toLocaleString()}
                 </Typography>
               </TableCell>
             </TableRow>

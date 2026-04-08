@@ -65,13 +65,13 @@ export default function ProfitLossMonthlyView({
             fontWeight="bold"
             color={colored ? (value >= 0 ? 'success.main' : 'error.main') : undefined}
           >
-            {value.toLocaleString()}
+            {Math.round(value).toLocaleString()}
           </Typography>
         ) : (
           <Typography
             color={colored ? (value >= 0 ? 'success.main' : 'error.main') : undefined}
           >
-            {value.toLocaleString()}
+            {Math.round(value).toLocaleString()}
           </Typography>
         )}
       </TableCell>

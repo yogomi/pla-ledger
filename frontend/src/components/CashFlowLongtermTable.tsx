@@ -128,7 +128,7 @@ export default function CashFlowLongtermTable({
                         fontWeight={row.bold ? 'bold' : 'normal'}
                         color={val < 0 ? 'error.main' : 'inherit'}
                       >
-                        {val.toLocaleString()} {row.bold ? currency : ''}
+                        {Math.round(val).toLocaleString()} {row.bold ? currency : ''}
                       </Typography>
                     </TableCell>
                   );

@@ -79,31 +79,31 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
                     )}
                   </Box>
                 </TableCell>
-                <TableCell align="right">{row.monthlySales.toLocaleString()}</TableCell>
-                <TableCell align="right">{row.monthlyCost.toLocaleString()}</TableCell>
-                <TableCell align="right">{row.fixedTotal.toLocaleString()}</TableCell>
-                <TableCell align="right">{row.variableTotal.toLocaleString()}</TableCell>
-                <TableCell align="right">{(row.laborTotal ?? 0).toLocaleString()}</TableCell>
-                <TableCell align="right">{(row.depreciation ?? 0).toLocaleString()}</TableCell>
-                <TableCell align="right">{row.totalExpense.toLocaleString()}</TableCell>
+                <TableCell align="right">{Math.round(row.monthlySales).toLocaleString()}</TableCell>
+                <TableCell align="right">{Math.round(row.monthlyCost).toLocaleString()}</TableCell>
+                <TableCell align="right">{Math.round(row.fixedTotal).toLocaleString()}</TableCell>
+                <TableCell align="right">{Math.round(row.variableTotal).toLocaleString()}</TableCell>
+                <TableCell align="right">{Math.round(row.laborTotal ?? 0).toLocaleString()}</TableCell>
+                <TableCell align="right">{Math.round(row.depreciation ?? 0).toLocaleString()}</TableCell>
+                <TableCell align="right">{Math.round(row.totalExpense).toLocaleString()}</TableCell>
                 <TableCell
                   align="right"
                   sx={{ color: row.operatingProfit >= 0 ? 'success.main' : 'error.main' }}
                 >
-                  {row.operatingProfit.toLocaleString()}
+                  {Math.round(row.operatingProfit).toLocaleString()}
                 </TableCell>
-                <TableCell align="right">{row.interestExpense.toLocaleString()}</TableCell>
+                <TableCell align="right">{Math.round(row.interestExpense).toLocaleString()}</TableCell>
                 <TableCell
                   align="right"
                   sx={{ color: row.profitBeforeTax >= 0 ? 'success.main' : 'error.main' }}
                 >
-                  {row.profitBeforeTax.toLocaleString()}
+                  {Math.round(row.profitBeforeTax).toLocaleString()}
                 </TableCell>
                 <TableCell
                   align="right"
                   sx={{ color: row.netProfit >= 0 ? 'success.main' : 'error.main' }}
                 >
-                  {row.netProfit.toLocaleString()}
+                  {Math.round(row.netProfit).toLocaleString()}
                 </TableCell>
                 <TableCell align="right">
                   {`${row.profitRate.toFixed(1)}%`}
@@ -115,41 +115,41 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
           <TableRow sx={{ backgroundColor: 'grey.50', fontWeight: 'bold' }}>
             <TableCell><Typography fontWeight="bold">{t('yearly_total')}</Typography></TableCell>
             <TableCell align="right">
-              <Typography fontWeight="bold">{yearly.totalSales.toLocaleString()}</Typography>
+              <Typography fontWeight="bold">{Math.round(yearly.totalSales).toLocaleString()}</Typography>
             </TableCell>
             <TableCell align="right">
-              <Typography fontWeight="bold">{yearly.totalCost.toLocaleString()}</Typography>
+              <Typography fontWeight="bold">{Math.round(yearly.totalCost).toLocaleString()}</Typography>
             </TableCell>
             <TableCell align="right">
-              <Typography fontWeight="bold">{yearly.totalFixed.toLocaleString()}</Typography>
+              <Typography fontWeight="bold">{Math.round(yearly.totalFixed).toLocaleString()}</Typography>
             </TableCell>
             <TableCell align="right">
-              <Typography fontWeight="bold">{yearly.totalVariable.toLocaleString()}</Typography>
+              <Typography fontWeight="bold">{Math.round(yearly.totalVariable).toLocaleString()}</Typography>
             </TableCell>
             <TableCell align="right">
               <Typography fontWeight="bold">
-                {(yearly.totalLabor ?? 0).toLocaleString()}
+                {Math.round(yearly.totalLabor ?? 0).toLocaleString()}
               </Typography>
             </TableCell>
             <TableCell align="right">
               <Typography fontWeight="bold">
-                {(yearly.totalDepreciation ?? 0).toLocaleString()}
+                {Math.round(yearly.totalDepreciation ?? 0).toLocaleString()}
               </Typography>
             </TableCell>
             <TableCell align="right">
-              <Typography fontWeight="bold">{yearly.totalExpense.toLocaleString()}</Typography>
+              <Typography fontWeight="bold">{Math.round(yearly.totalExpense).toLocaleString()}</Typography>
             </TableCell>
             <TableCell
               align="right"
               sx={{ color: yearly.totalOperatingProfit >= 0 ? 'success.main' : 'error.main' }}
             >
               <Typography fontWeight="bold">
-                {yearly.totalOperatingProfit.toLocaleString()}
+                {Math.round(yearly.totalOperatingProfit).toLocaleString()}
               </Typography>
             </TableCell>
             <TableCell align="right">
               <Typography fontWeight="bold">
-                {yearly.totalInterestExpense.toLocaleString()}
+                {Math.round(yearly.totalInterestExpense).toLocaleString()}
               </Typography>
             </TableCell>
             <TableCell
@@ -157,7 +157,7 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
               sx={{ color: yearly.totalProfitBeforeTax >= 0 ? 'success.main' : 'error.main' }}
             >
               <Typography fontWeight="bold">
-                {yearly.totalProfitBeforeTax.toLocaleString()}
+                {Math.round(yearly.totalProfitBeforeTax).toLocaleString()}
               </Typography>
             </TableCell>
             <TableCell
@@ -165,7 +165,7 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
               sx={{ color: yearly.totalNetProfit >= 0 ? 'success.main' : 'error.main' }}
             >
               <Typography fontWeight="bold">
-                {yearly.totalNetProfit.toLocaleString()}
+                {Math.round(yearly.totalNetProfit).toLocaleString()}
               </Typography>
             </TableCell>
             <TableCell align="right">
