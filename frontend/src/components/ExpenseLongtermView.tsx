@@ -119,7 +119,7 @@ export default function ExpenseLongtermView({
                 {results.map((r, i) => (
                   <TableCell key={years[i]} align="right">
                     <Typography fontWeight={row.bold ? 'bold' : 'normal'}>
-                      {row.getValue(r.data).toLocaleString()} {row.bold ? currency : ''}
+                      {Math.round(row.getValue(r.data)).toLocaleString()} {row.bold ? currency : ''}
                     </Typography>
                   </TableCell>
                 ))}

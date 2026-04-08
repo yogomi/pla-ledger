@@ -78,13 +78,20 @@ export default function ProjectViewPage() {
   const [commentBody, setCommentBody] = useState('');
   const [innerTabValue, setInnerTabValue] = useState(0);
 
-  /** Simulation / Simulation Input タブ間で共有する年月 (YYYY-MM) */
+  /** Simulation / Simulation Input タブ間で共有する年月 (YYYY-MM)。プロジェクト別に localStorage でキャッシュする。 */
   const [simulationYearMonth, setSimulationYearMonth] = useState(() => {
+    const cached = localStorage.getItem(`sim_yearMonth_${id}`);
+    if (cached && /^\d{4}-\d{2}$/.test(cached)) return cached;
     const now = new Date();
     const y = now.getFullYear();
     const m = String(now.getMonth() + 1).padStart(2, '0');
     return `${y}-${m}`;
   });
+
+  /** simulationYearMonth が変化するたびにプロジェクト別キャッシュへ保存する */
+  useEffect(() => {
+    localStorage.setItem(`sim_yearMonth_${id}`, simulationYearMonth);
+  }, [id, simulationYearMonth]);
 
   // 編集フォーム
   const [editError, setEditError] = useState('');

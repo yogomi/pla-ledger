@@ -12,13 +12,11 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCashFlowYearly } from '../hooks/useCashFlow';
 
 /**
  * 年次キャッシュフロー12ヶ月横並び表示テーブルコンポーネント。
- * 各セルをクリックすると該当月の詳細画面へ遷移する。
  */
 export default function CashFlowYearlyTable({
   projectId,
@@ -30,7 +28,6 @@ export default function CashFlowYearlyTable({
   currency: string;
 }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { data, isLoading, isError } = useCashFlowYearly(projectId, year);
 
   if (isLoading) {
@@ -90,10 +87,7 @@ export default function CashFlowYearlyTable({
                 <TableCell
                   key={m.yearMonth}
                   align="right"
-                  sx={{ minWidth: 90, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
-                  onClick={() =>
-                    navigate(`/projects/${projectId}/simulation/edit?yearMonth=${m.yearMonth}`)
-                  }
+                  sx={{ minWidth: 90 }}
                 >
                   {t('month_label_short', { month: String(Number(month)) })}
                 </TableCell>
@@ -116,19 +110,13 @@ export default function CashFlowYearlyTable({
                 <TableCell
                   key={months[i].yearMonth}
                   align="right"
-                  sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
-                  onClick={() =>
-                    navigate(
-                      `/projects/${projectId}/simulation/edit?yearMonth=${months[i].yearMonth}`,
-                    )
-                  }
                 >
                   <Typography
                     variant="body2"
                     fontWeight={row.bold ? 'bold' : 'normal'}
                     color={v < 0 ? 'error.main' : 'inherit'}
                   >
-                    {v.toLocaleString()}
+                    {Math.round(v).toLocaleString()}
                   </Typography>
                 </TableCell>
               ))}
@@ -138,7 +126,7 @@ export default function CashFlowYearlyTable({
                   fontWeight="bold"
                   color={row.total < 0 ? 'error.main' : 'inherit'}
                 >
-                  {row.total.toLocaleString()} {currency}
+                  {Math.round(row.total).toLocaleString()} {currency}
                 </Typography>
               </TableCell>
             </TableRow>

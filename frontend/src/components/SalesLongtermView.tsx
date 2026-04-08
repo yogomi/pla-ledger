@@ -96,7 +96,7 @@ export default function SalesLongtermView({
                   const cat = r.data?.categories.find(c => c.categoryName === catName);
                   return (
                     <TableCell key={years[i]} align="right">
-                      {(cat?.yearlyTotal ?? 0).toLocaleString()}
+                      {Math.round(cat?.yearlyTotal ?? 0).toLocaleString()}
                     </TableCell>
                   );
                 })}
@@ -109,7 +109,7 @@ export default function SalesLongtermView({
               {results.map((r, i) => (
                 <TableCell key={years[i]} align="right">
                   <Typography fontWeight="bold">
-                    {(r.data?.yearlyTotal ?? 0).toLocaleString()} {currency}
+                    {Math.round(r.data?.yearlyTotal ?? 0).toLocaleString()} {currency}
                   </Typography>
                 </TableCell>
               ))}

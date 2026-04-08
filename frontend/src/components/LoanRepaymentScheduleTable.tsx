@@ -66,23 +66,23 @@ export default function LoanRepaymentScheduleTable({
           {schedule.map(row => (
             <TableRow key={row.yearMonth}>
               <TableCell>{row.yearMonth}</TableCell>
-              <TableCell align="right">{row.principalPayment.toLocaleString()}</TableCell>
-              <TableCell align="right">{row.interestPayment.toLocaleString()}</TableCell>
-              <TableCell align="right">{row.remainingBalance.toLocaleString()}</TableCell>
+              <TableCell align="right">{Math.round(row.principalPayment).toLocaleString()}</TableCell>
+              <TableCell align="right">{Math.round(row.interestPayment).toLocaleString()}</TableCell>
+              <TableCell align="right">{Math.round(row.remainingBalance).toLocaleString()}</TableCell>
             </TableRow>
           ))}
           {/* 合計行 */}
           <TableRow sx={{ backgroundColor: 'grey.50' }}>
             <TableCell><Typography fontWeight="bold">{t('total')}</Typography></TableCell>
             <TableCell align="right">
-              <Typography fontWeight="bold">{totalPrincipal.toLocaleString()}</Typography>
+              <Typography fontWeight="bold">{Math.round(totalPrincipal).toLocaleString()}</Typography>
             </TableCell>
             <TableCell align="right">
-              <Typography fontWeight="bold">{totalInterest.toLocaleString()}</Typography>
+              <Typography fontWeight="bold">{Math.round(totalInterest).toLocaleString()}</Typography>
             </TableCell>
             <TableCell align="right">
               <Typography variant="body2" color="text.secondary">
-                {t('total_repayment')}: {totalRepayment.toLocaleString()}
+                {t('total_repayment')}: {Math.round(totalRepayment).toLocaleString()}
               </Typography>
             </TableCell>
           </TableRow>

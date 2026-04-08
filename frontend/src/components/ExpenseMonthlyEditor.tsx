@@ -413,27 +413,27 @@ export default function ExpenseMonthlyEditor({
             <TableBody>
               <TableRow>
                 <TableCell>{t('sales_row')}</TableCell>
-                <TableCell align="right">{data.monthlySales.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{Math.round(data.monthlySales).toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('cost_row')}</TableCell>
-                <TableCell align="right">{data.monthlyCost.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{Math.round(data.monthlyCost).toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('fixed_total_row')}</TableCell>
-                <TableCell align="right">{data.fixedTotal.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{Math.round(data.fixedTotal).toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('variable_total_row')}</TableCell>
-                <TableCell align="right">{data.variableTotal.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{Math.round(data.variableTotal).toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('labor_cost_section')}</TableCell>
-                <TableCell align="right">{data.laborTotal.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{Math.round(data.laborTotal).toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('expense_total_row')}</TableCell>
-                <TableCell align="right">{data.totalExpense.toLocaleString()} 円</TableCell>
+                <TableCell align="right">{Math.round(data.totalExpense).toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow sx={{ backgroundColor: 'grey.50' }}>
                 <TableCell><Typography fontWeight="bold">{t('operating_profit')}</Typography></TableCell>
@@ -442,7 +442,7 @@ export default function ExpenseMonthlyEditor({
                     fontWeight="bold"
                     color={data.operatingProfit >= 0 ? 'success.main' : 'error.main'}
                   >
-                    {data.operatingProfit.toLocaleString()} 円
+                    {Math.round(data.operatingProfit).toLocaleString()} 円
                   </Typography>
                 </TableCell>
               </TableRow>

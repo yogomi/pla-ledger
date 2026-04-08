@@ -53,7 +53,7 @@ export default function CashFlowMonthlyView({
           </Typography>
         )}
       </TableCell>
-      <TableCell align="right">{value.toLocaleString()}</TableCell>
+      <TableCell align="right">{Math.round(value).toLocaleString()}</TableCell>
     </TableRow>
   );
 
@@ -89,7 +89,7 @@ export default function CashFlowMonthlyView({
                 </TableCell>
                 <TableCell align="right">
                   <Typography fontWeight="bold">
-                    {data.operating.subtotal.toLocaleString()}
+                    {Math.round(data.operating.subtotal).toLocaleString()}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -122,7 +122,7 @@ export default function CashFlowMonthlyView({
                 </TableCell>
                 <TableCell align="right">
                   <Typography fontWeight="bold">
-                    {data.investing.subtotal.toLocaleString()}
+                    {Math.round(data.investing.subtotal).toLocaleString()}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -156,7 +156,7 @@ export default function CashFlowMonthlyView({
                 </TableCell>
                 <TableCell align="right">
                   <Typography fontWeight="bold">
-                    {data.financing.subtotal.toLocaleString()}
+                    {Math.round(data.financing.subtotal).toLocaleString()}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -176,13 +176,13 @@ export default function CashFlowMonthlyView({
                   fontWeight="bold"
                   color={data.summary.netCashChange >= 0 ? 'success.main' : 'error.main'}
                 >
-                  {data.summary.netCashChange.toLocaleString()}
+                  {Math.round(data.summary.netCashChange).toLocaleString()}
                 </Typography>
               </TableCell>
             </TableRow>
             <TableRow>
               <TableCell>{t('cash_beginning')}</TableCell>
-              <TableCell align="right">{data.summary.cashBeginning.toLocaleString()}</TableCell>
+              <TableCell align="right">{Math.round(data.summary.cashBeginning).toLocaleString()}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell>
@@ -190,7 +190,7 @@ export default function CashFlowMonthlyView({
               </TableCell>
               <TableCell align="right">
                 <Typography fontWeight="bold">
-                  {data.summary.cashEnding.toLocaleString()}
+                  {Math.round(data.summary.cashEnding).toLocaleString()}
                 </Typography>
               </TableCell>
             </TableRow>

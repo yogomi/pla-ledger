@@ -164,7 +164,7 @@ export default function ProfitLossLongtermTable({
                         fontWeight={row.bold ? 'bold' : 'normal'}
                         color={color}
                       >
-                        {typeof val === 'string' ? val : val.toLocaleString()}
+                        {typeof val === 'string' ? val : Math.round(val).toLocaleString()}
                       </Typography>
                     </TableCell>
                   );
