@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Accordion,
@@ -306,8 +306,28 @@ export default function SimulationViewContainer({
 }: SimulationViewContainerProps) {
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
-  const [viewMode, setViewMode] = useState<'monthly' | 'yearly' | 'longterm'>('monthly');
-  const [longtermYears, setLongtermYears] = useState(5);
+  const [viewMode, setViewMode] = useState<'monthly' | 'yearly' | 'longterm'>(() => {
+    const cached = localStorage.getItem(`sim_viewMode_${projectId}`);
+    if (cached === 'monthly' || cached === 'yearly' || cached === 'longterm') return cached;
+    return 'yearly';
+  });
+  const [longtermYears, setLongtermYears] = useState(() => {
+    const cached = localStorage.getItem(`sim_longtermYears_${projectId}`);
+    if (cached) {
+      const n = Number(cached);
+      if (n >= 1 && n <= 30) return n;
+    }
+    return 5;
+  });
+
+  /** viewMode / longtermYears が変化するたびにプロジェクト別キャッシュへ保存する */
+  useEffect(() => {
+    localStorage.setItem(`sim_viewMode_${projectId}`, viewMode);
+  }, [projectId, viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem(`sim_longtermYears_${projectId}`, String(longtermYears));
+  }, [projectId, longtermYears]);
 
   const year = yearMonth.split('-')[0];
 
