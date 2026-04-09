@@ -549,5 +549,4 @@ export {
   fetchStartupCostTotals,
   fetchStartupCostMap,
 };
-export type { StartupCostTotals };
 export default router;
