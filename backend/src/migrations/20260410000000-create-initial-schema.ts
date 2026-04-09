@@ -1,11 +1,14 @@
 import { QueryInterface, DataTypes } from 'sequelize';
 
 /**
- * 初期スキーママイグレーション。
+ * 統合初期スキーママイグレーション。
  *
- * アプリケーションで使用するすべてのテーブルを作成する。
+ * アプリケーションで使用するすべてのテーブルを最終状態で作成する。
  * up: テーブルを作成順（親→子）に作成する。
  * down: テーブルを逆順に削除し、PostgreSQL の ENUM 型もクリーンアップする。
+ *
+ * 注意: project_id と year_month を持つテーブルでは、
+ * 各カラムに個別の unique: true を付けず、複合ユニークインデックスのみを addIndex で設定する。
  */
 
 /** @type {import('sequelize-cli').Migration} */
@@ -96,6 +99,12 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       type: DataTypes.DECIMAL(5, 2),
       allowNull: false,
       defaultValue: 15.0,
+    },
+    initial_cash_balance: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+      defaultValue: 0,
+      comment: '事業開始時（2025年1月）の初期現金残高',
     },
     created_at: {
       type: DataTypes.DATE,
@@ -444,6 +453,7 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
   await queryInterface.addIndex('sales_simulation_items', ['project_id']);
 
   // ========== sales_simulation_snapshots ==========
+  // 注意: project_id と year_month には個別の unique を付けず、複合ユニークインデックスのみ設定する。
   await queryInterface.createTable('sales_simulation_snapshots', {
     id: {
       type: DataTypes.UUID,
@@ -467,16 +477,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       allowNull: false,
       defaultValue: [],
     },
-    monthly_total: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    monthly_cost: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -487,9 +487,11 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     },
   });
 
-  await queryInterface.addIndex('sales_simulation_snapshots', ['project_id', 'year_month'], {
-    unique: true,
-  });
+  await queryInterface.addIndex(
+    'sales_simulation_snapshots',
+    ['project_id', 'year_month'],
+    { unique: true },
+  );
 
   // ========== fixed_expenses ==========
   await queryInterface.createTable('fixed_expenses', {
@@ -536,6 +538,7 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
   await queryInterface.addIndex('fixed_expenses', ['project_id', 'year_month']);
 
   // ========== fixed_expense_months ==========
+  // 注意: project_id と year_month には個別の unique を付けず、複合ユニークインデックスのみ設定する。
   await queryInterface.createTable('fixed_expense_months', {
     id: {
       type: DataTypes.UUID,
@@ -560,9 +563,11 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     },
   });
 
-  await queryInterface.addIndex('fixed_expense_months', ['project_id', 'year_month'], {
-    unique: true,
-  });
+  await queryInterface.addIndex(
+    'fixed_expense_months',
+    ['project_id', 'year_month'],
+    { unique: true },
+  );
 
   // ========== variable_expenses ==========
   await queryInterface.createTable('variable_expenses', {
@@ -724,6 +729,7 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
   await queryInterface.addIndex('loan_repayments', ['project_id']);
 
   // ========== labor_costs ==========
+  // 注意: monthly_total は自動計算のためDBに保存しない。
   await queryInterface.createTable('labor_costs', {
     id: {
       type: DataTypes.UUID,
@@ -778,11 +784,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       type: DataTypes.DECIMAL(15, 2),
       defaultValue: null,
     },
-    monthly_total: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
     display_order: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -809,6 +810,7 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
   await queryInterface.addIndex('labor_costs', ['project_id', 'year_month']);
 
   // ========== labor_cost_months ==========
+  // 注意: project_id と year_month には個別の unique を付けず、複合ユニークインデックスのみ設定する。
   await queryInterface.createTable('labor_cost_months', {
     id: {
       type: DataTypes.UUID,
@@ -833,11 +835,15 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     },
   });
 
-  await queryInterface.addIndex('labor_cost_months', ['project_id', 'year_month'], {
-    unique: true,
-  });
+  await queryInterface.addIndex(
+    'labor_cost_months',
+    ['project_id', 'year_month'],
+    { unique: true },
+  );
 
   // ========== cash_flow_monthly ==========
+  // 注意: 自動計算カラムは保存しない。project_id と year_month には個別の unique を付けず、
+  // 複合ユニークインデックスのみ設定する。
   await queryInterface.createTable('cash_flow_monthly', {
     id: {
       type: DataTypes.UUID,
@@ -856,21 +862,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       type: DataTypes.STRING(7),
       allowNull: false,
     },
-    profit_before_tax: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    depreciation: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    interest_expense: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
     accounts_receivable_change: {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
@@ -887,11 +878,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       defaultValue: 0,
     },
     other_operating: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    operating_cf_subtotal: {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
       defaultValue: 0,
@@ -916,21 +902,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       allowNull: false,
       defaultValue: 0,
     },
-    investing_cf_subtotal: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    borrowing_proceeds: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    loan_repayment: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
     capital_increase: {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
@@ -942,26 +913,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       defaultValue: 0,
     },
     other_financing: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    financing_cf_subtotal: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    net_cash_change: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    cash_beginning: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    cash_ending: {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
       defaultValue: 0,
@@ -989,14 +940,146 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     },
   });
 
-  await queryInterface.addIndex('cash_flow_monthly', ['project_id', 'year_month'], {
-    unique: true,
+  await queryInterface.addIndex(
+    'cash_flow_monthly',
+    ['project_id', 'year_month'],
+    { unique: true },
+  );
+
+  // ========== fixed_assets ==========
+  await queryInterface.createTable('fixed_assets', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+      allowNull: false,
+    },
+    project_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: { model: 'projects', key: 'id' },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    },
+    asset_name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    asset_category: {
+      type: DataTypes.ENUM('building', 'equipment', 'vehicle', 'intangible', 'other'),
+      allowNull: false,
+    },
+    purchase_date: {
+      type: DataTypes.STRING(10),
+      allowNull: false,
+    },
+    purchase_amount: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+    },
+    useful_life: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    salvage_value: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    depreciation_method: {
+      type: DataTypes.ENUM('straight_line', 'diminishing'),
+      allowNull: false,
+    },
+    start_depreciation_date: {
+      type: DataTypes.STRING(10),
+      allowNull: false,
+    },
+    end_depreciation_date: {
+      type: DataTypes.STRING(10),
+      allowNull: false,
+    },
+    monthly_depreciation: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    notes: {
+      type: DataTypes.TEXT,
+      defaultValue: null,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
   });
+
+  await queryInterface.addIndex('fixed_assets', ['project_id']);
+
+  // ========== fixed_asset_depreciation_schedules ==========
+  // 注意: fixed_asset_id と year_month には個別の unique を付けず、複合ユニークインデックスのみ設定する。
+  await queryInterface.createTable('fixed_asset_depreciation_schedules', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+      allowNull: false,
+    },
+    fixed_asset_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: { model: 'fixed_assets', key: 'id' },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    },
+    year_month: {
+      type: DataTypes.STRING(7),
+      allowNull: false,
+    },
+    monthly_depreciation: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    accumulated_depreciation: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    book_value: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+  });
+
+  await queryInterface.addIndex(
+    'fixed_asset_depreciation_schedules',
+    ['fixed_asset_id', 'year_month'],
+    { unique: true },
+  );
+  await queryInterface.addIndex(
+    'fixed_asset_depreciation_schedules',
+    ['fixed_asset_id'],
+  );
 }
 
 /** @type {import('sequelize-cli').Migration} */
 export async function down(queryInterface: QueryInterface): Promise<void> {
   // テーブルを作成の逆順に削除する
+  await queryInterface.dropTable('fixed_asset_depreciation_schedules');
+  await queryInterface.dropTable('fixed_assets');
   await queryInterface.dropTable('cash_flow_monthly');
   await queryInterface.dropTable('labor_cost_months');
   await queryInterface.dropTable('labor_costs');
@@ -1022,10 +1105,20 @@ export async function down(queryInterface: QueryInterface): Promise<void> {
   if (dialect === 'postgres') {
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_projects_visibility";');
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_permissions_role";');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_access_requests_request_type";');
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_access_requests_request_type";',
+    );
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_access_requests_status";');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_loans_deferred_interest_policy";');
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_loans_deferred_interest_policy";',
+    );
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_loans_repayment_method";');
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_labor_costs_type";');
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_fixed_assets_asset_category";',
+    );
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_fixed_assets_depreciation_method";',
+    );
   }
 }
