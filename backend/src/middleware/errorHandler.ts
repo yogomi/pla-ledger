@@ -71,6 +71,14 @@ export function globalErrorHandler(
     err instanceof ConnectionError ||
     err instanceof TimeoutError
   ) {
+    // 元の SQL エラー詳細をログに残す（原因調査のため）
+    logger.error('Sequelize error detail', {
+      name: err.name,
+      message: err.message,
+      sql: (err as SequelizeDatabaseError).sql ?? null,
+      path: req.path,
+      method: req.method,
+    });
     error = handleSequelizeError(err as SequelizeDatabaseError);
   }
 
