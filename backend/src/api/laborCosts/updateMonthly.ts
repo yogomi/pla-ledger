@@ -137,7 +137,6 @@ router.put('/:yearMonth', authenticate, async (req: AuthRequest, res: Response) 
   if (laborCosts.length > 0) {
     await LaborCost.bulkCreate(
       laborCosts.map((item, idx) => {
-        const monthlyTotal = calcMonthlyTotal(item, socialInsuranceRate);
         const base = {
           project_id: projectId,
           year_month: yearMonth,
@@ -145,7 +144,6 @@ router.put('/:yearMonth', authenticate, async (req: AuthRequest, res: Response) 
           display_order: item.displayOrder ?? idx,
           note_ja: item.noteJa ?? null,
           note_en: item.noteEn ?? null,
-          monthly_total: monthlyTotal,
           monthly_salary: null as number | null,
           employee_count: null as number | null,
           bonus_months: null as number | null,

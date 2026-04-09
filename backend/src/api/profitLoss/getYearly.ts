@@ -10,6 +10,7 @@ import { formatZodError } from '../../utils/zodError';
 import { YearQuerySchema } from '../../schemas/salesSimulation';
 import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesSimulationHelper';
 import { calculateMonthlyDepreciation } from '../../utils/depreciationCalculator';
+import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
 
 /** 月次集計データの型 */
 interface MonthData {
@@ -34,12 +35,14 @@ interface MonthData {
  * @param projectId - プロジェクトID
  * @param yearMonth - 対象年月 (YYYY-MM)
  * @param interestExpenseMap - 年月→利息支払額のマップ（一括取得済み）
+ * @param socialInsuranceRate - 社会保険料率（%）
  * @returns 月次損益データ
  */
 async function buildMonthData(
   projectId: string,
   yearMonth: string,
   interestExpenseMap: Map<string, number>,
+  socialInsuranceRate: number,
 ): Promise<MonthData> {
   let snapshot: SalesSimulationSnapshot | null = await SalesSimulationSnapshot.findOne({
     where: { project_id: projectId, year_month: yearMonth },
@@ -116,7 +119,10 @@ async function buildMonthData(
 
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const laborTotal = laborCosts.reduce((sum, lc) => sum + Number(lc.monthly_total), 0);
+  const laborTotal = laborCosts.reduce(
+    (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
+    0,
+  );
   const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
   const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal + depreciation;
   const operatingProfit = monthlySales - totalExpense;
@@ -249,6 +255,7 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
   }
 
   const { year } = parsed.data;
+  const socialInsuranceRate = Number(project.social_insurance_rate);
 
   // 年間の利息支払額を一括取得してマップに持つ（N+1クエリ回避）
   const yearlyRepayments = await LoanRepayment.findAll({
@@ -269,7 +276,7 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
   const months: MonthData[] = [];
   for (let m = 1; m <= 12; m++) {
     const yearMonth = `${year}-${String(m).padStart(2, '0')}`;
-    const monthData = await buildMonthData(projectId, yearMonth, interestExpenseMap);
+    const monthData = await buildMonthData(projectId, yearMonth, interestExpenseMap, socialInsuranceRate);
     months.push(monthData);
   }
 

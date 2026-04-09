@@ -108,16 +108,12 @@ router.put('/:yearMonth', authenticate, async (req: AuthRequest, res: Response) 
   if (existing) {
     await existing.update({
       items_snapshot: normalizedItems,
-      monthly_total: monthlyTotal,
-      monthly_cost: monthlyCost,
     });
   } else {
     await SalesSimulationSnapshot.create({
       project_id: projectId,
       year_month: yearMonth,
       items_snapshot: normalizedItems,
-      monthly_total: monthlyTotal,
-      monthly_cost: monthlyCost,
     });
   }
 

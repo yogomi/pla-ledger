@@ -11,6 +11,7 @@ import { YearMonthSchema } from '../../schemas/salesSimulation';
 import { z } from 'zod';
 import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesSimulationHelper';
 import { calculateMonthlyDepreciation } from '../../utils/depreciationCalculator';
+import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -91,7 +92,12 @@ async function fetchProfitAndInterest(
 
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const laborTotal = laborCosts.reduce((sum, lc) => sum + Number(lc.monthly_total), 0);
+  const project = await Project.findByPk(projectId, { attributes: ['social_insurance_rate'] });
+  const socialInsuranceRate = Number(project?.social_insurance_rate ?? 0);
+  const laborTotal = laborCosts.reduce(
+    (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
+    0,
+  );
   // 減価償却費は営業利益の計算に含める（損益計算書と一致させるため）
   const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
   const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal + depreciation;
@@ -141,33 +147,97 @@ async function fetchBorrowingData(
 }
 
 /**
- * 前月のcash_endingを今月のcash_beginningとして取得する。
+ * 2025-01 から指定月までの現金残高を順次計算する。
+ * プロジェクトの initial_cash_balance を起点として、各月の net_cash_change を累積する。
+ * 保存済みレコードは一括取得してマップ化し、N+1クエリを防ぐ。
  * @param projectId - プロジェクトID
- * @param yearMonth - 対象年月 (YYYY-MM)
- * @returns 前月の期末残高。前月レコードが存在しない場合は 0
+ * @param targetYearMonth - 対象年月 (YYYY-MM)
+ * @returns 対象月の期首残高（cashBeginning）と期末残高（cashEnding）
  */
-async function fetchPrevCashEnding(projectId: string, yearMonth: string): Promise<number> {
-  const [year, month] = yearMonth.split('-').map(Number);
-  const prevDate = new Date(year, month - 2, 1);
-  const prevYearMonth =
-    `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-
-  const prev = await CashFlowMonthly.findOne({
-    where: { project_id: projectId, year_month: prevYearMonth },
-    attributes: ['cash_ending'],
+async function calculateCashBalanceUpToMonth(
+  projectId: string,
+  targetYearMonth: string,
+): Promise<{ cashBeginning: number; cashEnding: number }> {
+  const project = await Project.findByPk(projectId, {
+    attributes: ['initial_cash_balance'],
   });
-  return prev ? Number(prev.cash_ending) : 0;
+  if (!project) {
+    throw new Error('Project not found');
+  }
+
+  const [targetYear, targetMonth] = targetYearMonth.split('-').map(Number);
+
+  // 2025-01 から targetYearMonth までの保存済みレコードを一括取得してマップ化する
+  const savedRecords = await CashFlowMonthly.findAll({
+    where: {
+      project_id: projectId,
+      year_month: { [Op.between]: ['2025-01', targetYearMonth] },
+    },
+    order: [['year_month', 'ASC']],
+  });
+  const savedRecordsMap = new Map(savedRecords.map(r => [r.year_month, r]));
+
+  let runningBalance = Number(project.initial_cash_balance);
+  let cashBeginning = runningBalance;
+
+  // 2025-01 から targetYearMonth まで月ごとに累積する
+  for (let y = 2025; y <= targetYear; y++) {
+    const lastMonth = y === targetYear ? targetMonth : 12;
+    for (let m = 1; m <= lastMonth; m++) {
+      const yearMonth = `${y}-${String(m).padStart(2, '0')}`;
+
+      if (yearMonth === targetYearMonth) {
+        cashBeginning = runningBalance;
+      }
+
+      let netCashChange: number;
+      if (savedRecordsMap.has(yearMonth)) {
+        // 保存済み月：手動入力値はDBから取得し、自動連携項目はライブ再計算する
+        const savedRecord = savedRecordsMap.get(yearMonth)!;
+        const { profitBeforeTax, depreciation } =
+          await fetchProfitAndInterest(projectId, yearMonth);
+        const { borrowingProceeds, loanRepaymentAmount } =
+          await fetchBorrowingData(projectId, yearMonth);
+        netCashChange =
+          profitBeforeTax + depreciation
+          + Number(savedRecord.accounts_receivable_change)
+          + Number(savedRecord.inventory_change)
+          + Number(savedRecord.accounts_payable_change)
+          + Number(savedRecord.other_operating)
+          + Number(savedRecord.capex_acquisition)
+          + Number(savedRecord.asset_sale)
+          + Number(savedRecord.intangible_acquisition)
+          + Number(savedRecord.other_investing)
+          + borrowingProceeds + loanRepaymentAmount
+          + Number(savedRecord.capital_increase)
+          + Number(savedRecord.dividend_payment)
+          + Number(savedRecord.other_financing);
+      } else {
+        // 未保存月は自動連携データから計算（手動調整項目はゼロ）
+        const { profitBeforeTax, depreciation } =
+          await fetchProfitAndInterest(projectId, yearMonth);
+        const { borrowingProceeds, loanRepaymentAmount } =
+          await fetchBorrowingData(projectId, yearMonth);
+        netCashChange = profitBeforeTax + depreciation + borrowingProceeds + loanRepaymentAmount;
+      }
+
+      runningBalance += netCashChange;
+    }
+  }
+
+  return { cashBeginning, cashEnding: runningBalance };
 }
 
 /**
  * @api {GET} /api/projects/:projectId/cash-flow/monthly/:yearMonth 月次キャッシュフロー取得
  * @description
  *   - 指定月のキャッシュフローデータを取得
+ *   - 期首残高・期末残高は 2025-01 からの累積計算で算出（DB保存なし）
  *   - データが存在しない場合は全項目ゼロで返す（自動継承なし）
  *   - 損益計算表・借入金管理からの自動連携データを含める
  *
  * @request
- *   - params: projectId (UUID), yearMonth (YYYY-MM形式)
+ *   - params: projectId (UUID), yearMonth (YYYY-MM形式、2025-01以降)
  *   - 認証必須（authenticateミドルウェア）
  *
  * @response
@@ -192,7 +262,7 @@ async function fetchPrevCashEnding(projectId: string, yearMonth: string): Promis
  *   }
  *
  * @author yogomi
- * @date 2026-03-21
+ * @date 2026-04-08
  */
 const router = Router({ mergeParams: true });
 
@@ -236,19 +306,21 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     await fetchProfitAndInterest(projectId, yearMonth);
   const { borrowingProceeds, loanRepaymentAmount } = await fetchBorrowingData(projectId, yearMonth);
 
-  let record = await CashFlowMonthly.findOne({
+  // 期首残高・期末残高を 2025-01 からの累積計算で算出
+  const { cashBeginning, cashEnding } =
+    await calculateCashBalanceUpToMonth(projectId, yearMonth);
+
+  const record = await CashFlowMonthly.findOne({
     where: { project_id: projectId, year_month: yearMonth },
   });
 
   if (!record) {
     // 未保存月はゼロ初期値で返す（自動継承なし）
-    const cashBeginning = await fetchPrevCashEnding(projectId, yearMonth);
     // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算
     const operatingCfSubtotal = profitBeforeTax + depreciation;
     const investingCfSubtotal = 0;
     const financingCfSubtotal = borrowingProceeds + loanRepaymentAmount;
     const netCashChange = operatingCfSubtotal + investingCfSubtotal + financingCfSubtotal;
-    const cashEnding = cashBeginning + netCashChange;
 
     return res.json({
       success: true,
@@ -308,7 +380,6 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   const capitalIncrease = Number(record.capital_increase);
   const dividendPayment = Number(record.dividend_payment);
   const otherFinancing = Number(record.other_financing);
-  const cashBeginning = Number(record.cash_beginning);
 
   // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算し、運転資本増減を調整する
   const operatingCfSubtotal =
@@ -319,7 +390,6 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   const financingCfSubtotal =
     borrowingProceeds + loanRepaymentAmount + capitalIncrease + dividendPayment + otherFinancing;
   const netCashChange = operatingCfSubtotal + investingCfSubtotal + financingCfSubtotal;
-  const cashEnding = cashBeginning + netCashChange;
 
   res.json({
     success: true,
@@ -366,5 +436,5 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   });
 });
 
-export { fetchProfitAndInterest, fetchBorrowingData, fetchPrevCashEnding };
+export { fetchProfitAndInterest, fetchBorrowingData, calculateCashBalanceUpToMonth };
 export default router;

@@ -84,7 +84,6 @@ export interface CashFlowInputData {
   capitalIncrease: number;
   dividendPayment: number;
   otherFinancing: number;
-  cashBeginning?: number;
   noteJa?: string;
   noteEn?: string;
 }

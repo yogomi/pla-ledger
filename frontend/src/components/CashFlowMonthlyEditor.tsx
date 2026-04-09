@@ -32,7 +32,6 @@ const DEFAULT_FORM: CashFlowInputData = {
   capitalIncrease: 0,
   dividendPayment: 0,
   otherFinancing: 0,
-  cashBeginning: 0,
   noteJa: '',
   noteEn: '',
 };
@@ -72,7 +71,6 @@ export default function CashFlowMonthlyEditor({
         capitalIncrease: data.financing.capitalIncrease,
         dividendPayment: data.financing.dividendPayment,
         otherFinancing: data.financing.otherFinancing,
-        cashBeginning: data.summary.cashBeginning,
         noteJa: data.notes.ja ?? '',
         noteEn: data.notes.en ?? '',
       });
@@ -109,8 +107,9 @@ export default function CashFlowMonthlyEditor({
       + formData.otherFinancing;
 
     const netCashChange = operatingSubtotal + investingSubtotal + financingSubtotal;
-    const cashBeginning = formData.cashBeginning ?? 0;
-    const cashEnding = cashBeginning + netCashChange;
+    // 期首残高・期末残高はサーバー側で累積計算するため、APIデータを使用する
+    const cashBeginning = data?.summary.cashBeginning ?? 0;
+    const cashEnding = data?.summary.cashEnding ?? cashBeginning + netCashChange;
 
     return { operatingSubtotal, investingSubtotal, financingSubtotal, netCashChange, cashEnding };
   }, [formData, data]);
@@ -349,18 +348,6 @@ export default function CashFlowMonthlyEditor({
           </Box>
         </AccordionDetails>
       </Accordion>
-
-      {/* 期首残高 */}
-      <Box mt={2}>
-        <TextField
-          label={t('cash_beginning')}
-          type="number"
-          value={formData.cashBeginning ?? 0}
-          onChange={e => handleChange('cashBeginning', e.target.value)}
-          size="small"
-          sx={{ mr: 2 }}
-        />
-      </Box>
 
       {/* サマリー */}
       <Box mt={2} p={2} border={1} borderColor="divider" borderRadius={1}>
