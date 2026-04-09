@@ -582,6 +582,7 @@ export default function ProjectViewPage() {
                   ? Number(project.initial_cash_balance) : 0}
                 currency={editCurrency}
                 isOwner={isOwner}
+                plannedOpeningDate={project.planned_opening_date ?? null}
                 onUpdate={async (newBalance) => {
                   await api.patch(`/projects/${id}/initial-cash-balance`, {
                     initialCashBalance: newBalance,
