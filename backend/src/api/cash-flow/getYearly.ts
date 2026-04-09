@@ -6,7 +6,12 @@ import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearSchema } from '../../schemas/salesSimulation';
-import { fetchProfitAndInterest, fetchBorrowingData, fetchStartupCostTotals } from './getMonthly';
+import {
+  fetchProfitAndInterest,
+  fetchBorrowingData,
+  fetchStartupCostMap,
+  StartupCostTotals,
+} from './getMonthly';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -124,6 +129,10 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
     prevRecords.map(r => [r.year_month, r]),
   );
 
+  // スタートアップコストを一括取得してマップ化する（N+1クエリを防ぐ）
+  const startupCostMap = await fetchStartupCostMap(projectId, startYearMonth, `${targetYear}-12`);
+  const ZERO_TOTALS: StartupCostTotals = { capex: 0, intangible: 0, expense: 0, initialInventory: 0 };
+
   // startYearMonth から対象年の 12 月まで残高を累積計算する
   let runningBalance = Number(project.initial_cash_balance);
   let periodCashBeginning = runningBalance;
@@ -139,7 +148,7 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
       let investingCF: number;
       let financingCF: number;
 
-      const startupTotals = await fetchStartupCostTotals(projectId, yearMonth);
+      const startupTotals = startupCostMap.get(yearMonth) ?? { ...ZERO_TOTALS };
       const r = y === targetYear ? recordMap.get(yearMonth) : undefined;
 
       if (r) {

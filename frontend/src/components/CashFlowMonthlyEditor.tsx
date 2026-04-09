@@ -360,14 +360,10 @@ export default function CashFlowMonthlyEditor({
       </Box>
 
       {/* スタートアップコスト内訳（いずれかの値が0でない場合のみ表示） */}
-      {data?.startupCostBreakdown && (
-        data.startupCostBreakdown.capex !== 0 ||
-        data.startupCostBreakdown.intangible !== 0 ||
-        data.startupCostBreakdown.expense !== 0 ||
-        data.startupCostBreakdown.initialInventory !== 0
-      ) && (
+      {data?.startupCostBreakdown &&
+        Object.values(data.startupCostBreakdown).some(v => v !== 0) && (
         <Box mt={2} p={2} border={1} borderColor="info.light" borderRadius={1}
-          bgcolor="info.50" sx={{ backgroundColor: '#e8f4fd' }}>
+          sx={{ backgroundColor: '#e8f4fd' }}>
           <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
             {t('startup_cost_breakdown')}
           </Typography>

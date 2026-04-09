@@ -147,6 +147,60 @@ async function fetchBorrowingData(
   return { borrowingProceeds, loanRepaymentAmount: -loanRepaymentAmount };
 }
 
+/** スタートアップコスト集計結果の型 */
+export interface StartupCostTotals {
+  capex: number;
+  intangible: number;
+  expense: number;
+  initialInventory: number;
+}
+
+/** スタートアップコストがゼロの初期値 */
+const ZERO_TOTALS: StartupCostTotals = {
+  capex: 0, intangible: 0, expense: 0, initialInventory: 0,
+};
+
+/**
+ * 指定期間のスタートアップコストを一括取得し、年月をキーとするマップを返す。
+ * N+1クエリを避けるため、ループ前に呼び出して使用する。
+ * @param projectId - プロジェクトID
+ * @param startYearMonth - 取得開始年月 (YYYY-MM)
+ * @param endYearMonth - 取得終了年月 (YYYY-MM)
+ * @returns 年月 → cost_typeごとの合計（マイナス値）のマップ
+ */
+async function fetchStartupCostMap(
+  projectId: string,
+  startYearMonth: string,
+  endYearMonth: string,
+): Promise<Map<string, StartupCostTotals>> {
+  const costs = await StartupCost.findAll({
+    where: {
+      project_id: projectId,
+      allocation_month: { [Op.between]: [startYearMonth, endYearMonth] },
+    },
+  });
+
+  const map = new Map<string, StartupCostTotals>();
+  for (const cost of costs) {
+    const ym = cost.allocation_month;
+    if (!map.has(ym)) {
+      map.set(ym, { capex: 0, intangible: 0, expense: 0, initialInventory: 0 });
+    }
+    const entry = map.get(ym)!;
+    const amount = Number(cost.quantity) * Number(cost.unit_price);
+    if (cost.cost_type === 'capex') {
+      entry.capex -= amount;
+    } else if (cost.cost_type === 'intangible') {
+      entry.intangible -= amount;
+    } else if (cost.cost_type === 'expense') {
+      entry.expense -= amount;
+    } else if (cost.cost_type === 'initial_inventory') {
+      entry.initialInventory -= amount;
+    }
+  }
+  return map;
+}
+
 /**
  * 指定月のスタートアップコストを集計して返す。
  * @param projectId - プロジェクトID
@@ -156,30 +210,9 @@ async function fetchBorrowingData(
 async function fetchStartupCostTotals(
   projectId: string,
   yearMonth: string,
-): Promise<{
-  capex: number;
-  intangible: number;
-  expense: number;
-  initialInventory: number;
-}> {
-  const costs = await StartupCost.findAll({
-    where: { project_id: projectId, allocation_month: yearMonth },
-  });
-
-  const totals = { capex: 0, intangible: 0, expense: 0, initialInventory: 0 };
-  for (const cost of costs) {
-    const amount = Number(cost.quantity) * Number(cost.unit_price);
-    if (cost.cost_type === 'capex') {
-      totals.capex -= amount;
-    } else if (cost.cost_type === 'intangible') {
-      totals.intangible -= amount;
-    } else if (cost.cost_type === 'expense') {
-      totals.expense -= amount;
-    } else if (cost.cost_type === 'initial_inventory') {
-      totals.initialInventory -= amount;
-    }
-  }
-  return totals;
+): Promise<StartupCostTotals> {
+  const map = await fetchStartupCostMap(projectId, yearMonth, yearMonth);
+  return map.get(yearMonth) ?? { ...ZERO_TOTALS };
 }
 
 /**
@@ -216,6 +249,9 @@ async function calculateCashBalanceUpToMonth(
   });
   const savedRecordsMap = new Map(savedRecords.map(r => [r.year_month, r]));
 
+  // スタートアップコストを一括取得してマップ化する（N+1クエリを防ぐ）
+  const startupCostMap = await fetchStartupCostMap(projectId, startYearMonth, targetYearMonth);
+
   let runningBalance = Number(project.initial_cash_balance);
   let cashBeginning = runningBalance;
 
@@ -230,7 +266,7 @@ async function calculateCashBalanceUpToMonth(
         cashBeginning = runningBalance;
       }
 
-      const startupTotals = await fetchStartupCostTotals(projectId, yearMonth);
+      const startupTotals = startupCostMap.get(yearMonth) ?? { ...ZERO_TOTALS };
       // スタートアップコスト由来の各合計
       const startupOperating = startupTotals.expense + startupTotals.initialInventory;
       const startupInvesting = startupTotals.capex + startupTotals.intangible;
@@ -506,5 +542,12 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   });
 });
 
-export { fetchProfitAndInterest, fetchBorrowingData, calculateCashBalanceUpToMonth, fetchStartupCostTotals };
+export {
+  fetchProfitAndInterest,
+  fetchBorrowingData,
+  calculateCashBalanceUpToMonth,
+  fetchStartupCostTotals,
+  fetchStartupCostMap,
+};
+export type { StartupCostTotals };
 export default router;
