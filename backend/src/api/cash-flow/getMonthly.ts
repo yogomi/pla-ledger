@@ -169,7 +169,10 @@ async function calculateCashBalanceUpToMonth(
 
   // 2025-01 から targetYearMonth までの保存済みレコードを一括取得してマップ化する
   const savedRecords = await CashFlowMonthly.findAll({
-    where: { project_id: projectId },
+    where: {
+      project_id: projectId,
+      year_month: { [Op.between]: ['2025-01', targetYearMonth] },
+    },
     order: [['year_month', 'ASC']],
   });
   const savedRecordsMap = new Map(savedRecords.map(r => [r.year_month, r]));
