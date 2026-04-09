@@ -151,6 +151,7 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   const netCashChange = operatingCfSubtotal + investingCfSubtotal + financingCfSubtotal;
 
   // DB保存（cash_beginning と cash_ending は保存しない）
+  // conflictFields を指定することで、(project_id, year_month) のユニーク制約で upsert する
   const [record] = await CashFlowMonthly.upsert({
     project_id: projectId,
     year_month: yearMonth,
@@ -177,6 +178,8 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     is_inherited: false,
     note_ja: noteJa ?? null,
     note_en: noteEn ?? null,
+  }, {
+    conflictFields: ['project_id', 'year_month'],
   });
 
   // 期首残高・期末残高を 2025-01 からの累積計算で算出（レスポンス用）
