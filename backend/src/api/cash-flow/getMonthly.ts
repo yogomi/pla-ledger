@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import {
   Project, CashFlowMonthly, LoanRepayment, Loan,
   SalesSimulationSnapshot, FixedExpense, VariableExpense, LaborCost, LaborCostMonth, FixedExpenseMonth,
+  StartupCost,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
@@ -147,6 +148,41 @@ async function fetchBorrowingData(
 }
 
 /**
+ * 指定月のスタートアップコストを集計して返す。
+ * @param projectId - プロジェクトID
+ * @param yearMonth - 対象年月 (YYYY-MM)
+ * @returns cost_typeごとの合計（マイナス値）
+ */
+async function fetchStartupCostTotals(
+  projectId: string,
+  yearMonth: string,
+): Promise<{
+  capex: number;
+  intangible: number;
+  expense: number;
+  initialInventory: number;
+}> {
+  const costs = await StartupCost.findAll({
+    where: { project_id: projectId, allocation_month: yearMonth },
+  });
+
+  const totals = { capex: 0, intangible: 0, expense: 0, initialInventory: 0 };
+  for (const cost of costs) {
+    const amount = Number(cost.quantity) * Number(cost.unit_price);
+    if (cost.cost_type === 'capex') {
+      totals.capex -= amount;
+    } else if (cost.cost_type === 'intangible') {
+      totals.intangible -= amount;
+    } else if (cost.cost_type === 'expense') {
+      totals.expense -= amount;
+    } else if (cost.cost_type === 'initial_inventory') {
+      totals.initialInventory -= amount;
+    }
+  }
+  return totals;
+}
+
+/**
  * 2025-01 から指定月までの現金残高を順次計算する。
  * プロジェクトの initial_cash_balance を起点として、各月の net_cash_change を累積する。
  * 保存済みレコードは一括取得してマップ化し、N+1クエリを防ぐ。
@@ -159,19 +195,22 @@ async function calculateCashBalanceUpToMonth(
   targetYearMonth: string,
 ): Promise<{ cashBeginning: number; cashEnding: number }> {
   const project = await Project.findByPk(projectId, {
-    attributes: ['initial_cash_balance'],
+    attributes: ['initial_cash_balance', 'planned_opening_date'],
   });
   if (!project) {
     throw new Error('Project not found');
   }
 
+  // 開業予定日（未設定の場合は 2025-01 をデフォルト使用）
+  const startYearMonth = project.planned_opening_date ?? '2025-01';
+  const [startYear, startMonth] = startYearMonth.split('-').map(Number);
   const [targetYear, targetMonth] = targetYearMonth.split('-').map(Number);
 
-  // 2025-01 から targetYearMonth までの保存済みレコードを一括取得してマップ化する
+  // startYearMonth から targetYearMonth までの保存済みレコードを一括取得してマップ化する
   const savedRecords = await CashFlowMonthly.findAll({
     where: {
       project_id: projectId,
-      year_month: { [Op.between]: ['2025-01', targetYearMonth] },
+      year_month: { [Op.between]: [startYearMonth, targetYearMonth] },
     },
     order: [['year_month', 'ASC']],
   });
@@ -180,15 +219,21 @@ async function calculateCashBalanceUpToMonth(
   let runningBalance = Number(project.initial_cash_balance);
   let cashBeginning = runningBalance;
 
-  // 2025-01 から targetYearMonth まで月ごとに累積する
-  for (let y = 2025; y <= targetYear; y++) {
+  // startYearMonth から targetYearMonth まで月ごとに累積する
+  for (let y = startYear; y <= targetYear; y++) {
+    const firstMonth = y === startYear ? startMonth : 1;
     const lastMonth = y === targetYear ? targetMonth : 12;
-    for (let m = 1; m <= lastMonth; m++) {
+    for (let m = firstMonth; m <= lastMonth; m++) {
       const yearMonth = `${y}-${String(m).padStart(2, '0')}`;
 
       if (yearMonth === targetYearMonth) {
         cashBeginning = runningBalance;
       }
+
+      const startupTotals = await fetchStartupCostTotals(projectId, yearMonth);
+      // スタートアップコスト由来の各合計
+      const startupOperating = startupTotals.expense + startupTotals.initialInventory;
+      const startupInvesting = startupTotals.capex + startupTotals.intangible;
 
       let netCashChange: number;
       if (savedRecordsMap.has(yearMonth)) {
@@ -201,12 +246,12 @@ async function calculateCashBalanceUpToMonth(
         netCashChange =
           profitBeforeTax + depreciation
           + Number(savedRecord.accounts_receivable_change)
-          + Number(savedRecord.inventory_change)
+          + Number(savedRecord.inventory_change) + startupTotals.initialInventory
           + Number(savedRecord.accounts_payable_change)
-          + Number(savedRecord.other_operating)
-          + Number(savedRecord.capex_acquisition)
+          + Number(savedRecord.other_operating) + startupTotals.expense
+          + Number(savedRecord.capex_acquisition) + startupTotals.capex
           + Number(savedRecord.asset_sale)
-          + Number(savedRecord.intangible_acquisition)
+          + Number(savedRecord.intangible_acquisition) + startupTotals.intangible
           + Number(savedRecord.other_investing)
           + borrowingProceeds + loanRepaymentAmount
           + Number(savedRecord.capital_increase)
@@ -218,7 +263,9 @@ async function calculateCashBalanceUpToMonth(
           await fetchProfitAndInterest(projectId, yearMonth);
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
-        netCashChange = profitBeforeTax + depreciation + borrowingProceeds + loanRepaymentAmount;
+        netCashChange =
+          profitBeforeTax + depreciation + borrowingProceeds + loanRepaymentAmount
+          + startupOperating + startupInvesting;
       }
 
       runningBalance += netCashChange;
@@ -306,7 +353,10 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     await fetchProfitAndInterest(projectId, yearMonth);
   const { borrowingProceeds, loanRepaymentAmount } = await fetchBorrowingData(projectId, yearMonth);
 
-  // 期首残高・期末残高を 2025-01 からの累積計算で算出
+  // スタートアップコストを取得
+  const startupTotals = await fetchStartupCostTotals(projectId, yearMonth);
+
+  // 期首残高・期末残高を 開業予定日（または2025-01）からの累積計算で算出
   const { cashBeginning, cashEnding } =
     await calculateCashBalanceUpToMonth(projectId, yearMonth);
 
@@ -317,8 +367,9 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   if (!record) {
     // 未保存月はゼロ初期値で返す（自動継承なし）
     // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算
-    const operatingCfSubtotal = profitBeforeTax + depreciation;
-    const investingCfSubtotal = 0;
+    const operatingCfSubtotal =
+      profitBeforeTax + depreciation + startupTotals.expense + startupTotals.initialInventory;
+    const investingCfSubtotal = startupTotals.capex + startupTotals.intangible;
     const financingCfSubtotal = borrowingProceeds + loanRepaymentAmount;
     const netCashChange = operatingCfSubtotal + investingCfSubtotal + financingCfSubtotal;
 
@@ -363,6 +414,12 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
           ja: null,
           en: null,
         },
+        startupCostBreakdown: {
+          capex: startupTotals.capex,
+          intangible: startupTotals.intangible,
+          expense: startupTotals.expense,
+          initialInventory: startupTotals.initialInventory,
+        },
       },
     });
   }
@@ -382,11 +439,18 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   const otherFinancing = Number(record.other_financing);
 
   // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算し、運転資本増減を調整する
+  // スタートアップコストは inventoryChange/otherOperating/capexAcquisition/intangibleAcquisition に加算
   const operatingCfSubtotal =
     profitBeforeTax + depreciation
-    + accountsReceivableChange + inventoryChange + accountsPayableChange + otherOperating;
+    + accountsReceivableChange
+    + inventoryChange + startupTotals.initialInventory
+    + accountsPayableChange
+    + otherOperating + startupTotals.expense;
   const investingCfSubtotal =
-    capexAcquisition + assetSale + intangibleAcquisition + otherInvesting;
+    capexAcquisition + startupTotals.capex
+    + assetSale
+    + intangibleAcquisition + startupTotals.intangible
+    + otherInvesting;
   const financingCfSubtotal =
     borrowingProceeds + loanRepaymentAmount + capitalIncrease + dividendPayment + otherFinancing;
   const netCashChange = operatingCfSubtotal + investingCfSubtotal + financingCfSubtotal;
@@ -432,9 +496,15 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
         ja: record.note_ja,
         en: record.note_en,
       },
+      startupCostBreakdown: {
+        capex: startupTotals.capex,
+        intangible: startupTotals.intangible,
+        expense: startupTotals.expense,
+        initialInventory: startupTotals.initialInventory,
+      },
     },
   });
 });
 
-export { fetchProfitAndInterest, fetchBorrowingData, calculateCashBalanceUpToMonth };
+export { fetchProfitAndInterest, fetchBorrowingData, calculateCashBalanceUpToMonth, fetchStartupCostTotals };
 export default router;

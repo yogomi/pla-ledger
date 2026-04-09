@@ -6,7 +6,7 @@ import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearSchema } from '../../schemas/salesSimulation';
-import { fetchProfitAndInterest, fetchBorrowingData } from './getMonthly';
+import { fetchProfitAndInterest, fetchBorrowingData, fetchStartupCostTotals } from './getMonthly';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -70,7 +70,7 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
   const { projectId, year } = parsed.data;
 
   const project = await Project.findByPk(projectId, {
-    attributes: ['initial_cash_balance'],
+    attributes: ['initial_cash_balance', 'planned_opening_date'],
   });
   if (!project) {
     res.status(404).json({
@@ -95,6 +95,10 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
 
   const targetYear = Number(year);
 
+  // 開業予定日（未設定の場合は 2025-01 をデフォルト使用）
+  const startYearMonth = project.planned_opening_date ?? '2025-01';
+  const [startYear, startMonth] = startYearMonth.split('-').map(Number);
+
   // 対象年のレコードをあらかじめ一括取得してマップ化
   const records = await CashFlowMonthly.findAll({
     where: {
@@ -107,11 +111,11 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
 
   // 対象年より前の月については、保存済みレコードを一括取得してマップ化する
   const prevYearEnd = `${targetYear - 1}-12`;
-  const prevRecords = targetYear > 2025
+  const prevRecords = targetYear > startYear
     ? await CashFlowMonthly.findAll({
         where: {
           project_id: projectId,
-          year_month: { [Op.between]: ['2025-01', prevYearEnd] },
+          year_month: { [Op.between]: [startYearMonth, prevYearEnd] },
         },
         order: [['year_month', 'ASC']],
       })
@@ -120,13 +124,14 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
     prevRecords.map(r => [r.year_month, r]),
   );
 
-  // 2025-01 から対象年の 12 月まで残高を累積計算する
+  // startYearMonth から対象年の 12 月まで残高を累積計算する
   let runningBalance = Number(project.initial_cash_balance);
   let periodCashBeginning = runningBalance;
   const months = [];
 
-  for (let y = 2025; y <= targetYear; y++) {
-    for (let m = 1; m <= 12; m++) {
+  for (let y = startYear; y <= targetYear; y++) {
+    const firstMonth = y === startYear ? startMonth : 1;
+    for (let m = firstMonth; m <= 12; m++) {
       const yearMonth = `${y}-${String(m).padStart(2, '0')}`;
       const cashBeginning = runningBalance;
 
@@ -134,6 +139,7 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
       let investingCF: number;
       let financingCF: number;
 
+      const startupTotals = await fetchStartupCostTotals(projectId, yearMonth);
       const r = y === targetYear ? recordMap.get(yearMonth) : undefined;
 
       if (r) {
@@ -146,13 +152,13 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
         operatingCF =
           profitBeforeTax + depreciation
           + Number(r.accounts_receivable_change)
-          + Number(r.inventory_change)
+          + Number(r.inventory_change) + startupTotals.initialInventory
           + Number(r.accounts_payable_change)
-          + Number(r.other_operating);
+          + Number(r.other_operating) + startupTotals.expense;
         investingCF =
-          Number(r.capex_acquisition)
+          Number(r.capex_acquisition) + startupTotals.capex
           + Number(r.asset_sale)
-          + Number(r.intangible_acquisition)
+          + Number(r.intangible_acquisition) + startupTotals.intangible
           + Number(r.other_investing);
         financingCF =
           borrowingProceeds + loanRepaymentAmount
@@ -170,13 +176,13 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
         operatingCF =
           profitBeforeTax + depreciation
           + Number(prevRecord.accounts_receivable_change)
-          + Number(prevRecord.inventory_change)
+          + Number(prevRecord.inventory_change) + startupTotals.initialInventory
           + Number(prevRecord.accounts_payable_change)
-          + Number(prevRecord.other_operating);
+          + Number(prevRecord.other_operating) + startupTotals.expense;
         investingCF =
-          Number(prevRecord.capex_acquisition)
+          Number(prevRecord.capex_acquisition) + startupTotals.capex
           + Number(prevRecord.asset_sale)
-          + Number(prevRecord.intangible_acquisition)
+          + Number(prevRecord.intangible_acquisition) + startupTotals.intangible
           + Number(prevRecord.other_investing);
         financingCF =
           borrowingProceeds + loanRepaymentAmount
@@ -190,8 +196,10 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
 
-        operatingCF = profitBeforeTax + depreciation;
-        investingCF = 0;
+        operatingCF =
+          profitBeforeTax + depreciation
+          + startupTotals.expense + startupTotals.initialInventory;
+        investingCF = startupTotals.capex + startupTotals.intangible;
         financingCF = borrowingProceeds + loanRepaymentAmount;
       }
 
@@ -200,8 +208,8 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
       runningBalance = cashEnding;
 
       if (y === targetYear) {
-        if (m === 1) {
-          // 対象年の期首残高
+        if (months.length === 0) {
+          // 対象年の最初の月の期首残高を記録
           periodCashBeginning = cashBeginning;
         }
         months.push({ yearMonth, operatingCF, investingCF, financingCF, netCashChange, cashEnding });

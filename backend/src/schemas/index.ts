@@ -21,6 +21,7 @@ export const ProjectCreateSchema = z.object({
   tags: z.array(z.string()).optional(),
   sections: z.array(z.object({ type: z.string(), content: z.any() })).optional(),
   social_insurance_rate: z.number().min(0).max(100).optional(),
+  planned_opening_date: z.string().regex(/^\d{4}-\d{2}$/).nullable().optional(),
 });
 
 export const ProjectUpdateSchema = ProjectCreateSchema.partial();
@@ -67,6 +68,7 @@ const ProjectDataSchema = z.object({
   tags: z.array(z.string()),
   published_at: z.string().nullable(),
   social_insurance_rate: z.number(),
+  planned_opening_date: z.string().nullable().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
 });
@@ -283,6 +285,19 @@ const CommentDataSchema = z.object({
   created_at: z.string().optional(),
 });
 
+const StartupCostDataSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  description: z.string(),
+  quantity: z.number(),
+  unit_price: z.number(),
+  cost_type: z.enum(['capex', 'intangible', 'expense', 'initial_inventory']),
+  allocation_month: z.string(),
+  display_order: z.number(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
 /** エクスポートデータ全体のスキーマ */
 export const ProjectExportSchema = z.object({
   version: z.string(),
@@ -304,6 +319,7 @@ export const ProjectExportSchema = z.object({
   fixedAssetDepreciationSchedules: z.array(FixedAssetDepreciationScheduleDataSchema).optional().default([]),
   attachments: z.array(AttachmentDataSchema).optional().default([]),
   comments: z.array(CommentDataSchema),
+  startupCosts: z.array(StartupCostDataSchema).optional().default([]),
 });
 
 /** インポートリクエストのスキーマ */

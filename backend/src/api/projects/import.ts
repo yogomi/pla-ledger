@@ -7,7 +7,7 @@ import {
   FixedExpense, FixedExpenseMonth, VariableExpense,
   Loan, LoanRepayment, LaborCost, LaborCostMonth,
   CashFlowMonthly, Comment, ActivityLog,
-  FixedAsset, FixedAssetDepreciationSchedule,
+  FixedAsset, FixedAssetDepreciationSchedule, StartupCost,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { ProjectImportSchema } from '../../schemas';
@@ -144,6 +144,7 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       tags: exportData.project.tags,
       published_at: exportData.project.visibility === 'public' ? new Date() : null,
       social_insurance_rate: exportData.project.social_insurance_rate,
+      planned_opening_date: exportData.project.planned_opening_date ?? null,
     }, { transaction });
 
     // オーナー権限付与
@@ -359,6 +360,19 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
         section_id: null,
         author_id: userId,
         body: c.body,
+      }, { transaction })));
+    }
+
+    // スタートアップコスト作成
+    if ((exportData.startupCosts ?? []).length > 0) {
+      await Promise.all((exportData.startupCosts ?? []).map(sc => StartupCost.create({
+        project_id: newProjectId,
+        description: sc.description,
+        quantity: sc.quantity,
+        unit_price: sc.unit_price,
+        cost_type: sc.cost_type,
+        allocation_month: sc.allocation_month,
+        display_order: sc.display_order,
       }, { transaction })));
     }
 

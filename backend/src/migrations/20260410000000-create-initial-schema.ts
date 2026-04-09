@@ -104,7 +104,12 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
       defaultValue: 0,
-      comment: '事業開始時（2025年1月）の初期現金残高',
+      comment: '事業開始時（開業予定日）の初期現金残高',
+    },
+    planned_opening_date: {
+      type: DataTypes.STRING(7),
+      allowNull: true,
+      comment: '開業予定日（YYYY-MM形式）。未設定の場合は2025-01をデフォルト使用',
     },
     created_at: {
       type: DataTypes.DATE,
@@ -1073,11 +1078,72 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     'fixed_asset_depreciation_schedules',
     ['fixed_asset_id'],
   );
+
+  // ========== startup_costs ==========
+  await queryInterface.createTable('startup_costs', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+      allowNull: false,
+    },
+    project_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: { model: 'projects', key: 'id' },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    },
+    description: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      comment: '項目名',
+    },
+    quantity: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 1,
+      comment: '数量',
+    },
+    unit_price: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+      defaultValue: 0,
+      comment: '単価',
+    },
+    cost_type: {
+      type: DataTypes.ENUM('capex', 'intangible', 'expense', 'initial_inventory'),
+      allowNull: false,
+      comment: '費目区分: capex=設備投資, intangible=無形資産, expense=初期費用, initial_inventory=初期在庫',
+    },
+    allocation_month: {
+      type: DataTypes.STRING(7),
+      allowNull: false,
+      comment: '反映月（YYYY-MM形式）',
+    },
+    display_order: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: '表示順序',
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+  });
+
+  await queryInterface.addIndex('startup_costs', ['project_id', 'allocation_month']);
 }
 
 /** @type {import('sequelize-cli').Migration} */
 export async function down(queryInterface: QueryInterface): Promise<void> {
   // テーブルを作成の逆順に削除する
+  await queryInterface.dropTable('startup_costs');
   await queryInterface.dropTable('fixed_asset_depreciation_schedules');
   await queryInterface.dropTable('fixed_assets');
   await queryInterface.dropTable('cash_flow_monthly');
@@ -1119,6 +1185,9 @@ export async function down(queryInterface: QueryInterface): Promise<void> {
     );
     await queryInterface.sequelize.query(
       'DROP TYPE IF EXISTS "enum_fixed_assets_depreciation_method";',
+    );
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_startup_costs_cost_type";',
     );
   }
 }

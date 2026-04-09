@@ -70,12 +70,20 @@ interface ProjectAttributes {
   published_at: Date | null;
   social_insurance_rate: number;
   initial_cash_balance: number;
+  planned_opening_date: string | null;
   created_at?: Date;
   updated_at?: Date;
 }
 type ProjectCreation = Optional<
   ProjectAttributes,
-  'id' | 'summary' | 'stage' | 'tags' | 'published_at' | 'social_insurance_rate' | 'initial_cash_balance'
+  | 'id'
+  | 'summary'
+  | 'stage'
+  | 'tags'
+  | 'published_at'
+  | 'social_insurance_rate'
+  | 'initial_cash_balance'
+  | 'planned_opening_date'
 >;
 
 export class Project
@@ -92,6 +100,7 @@ export class Project
   declare published_at: Date | null;
   declare social_insurance_rate: number;
   declare initial_cash_balance: number;
+  declare planned_opening_date: string | null;
 }
 
 Project.init({
@@ -113,7 +122,12 @@ Project.init({
     type: DataTypes.DECIMAL(15, 2),
     allowNull: false,
     defaultValue: 0,
-    comment: '事業開始時（2025年1月）の初期現金残高',
+    comment: '事業開始時（開業予定日）の初期現金残高',
+  },
+  planned_opening_date: {
+    type: DataTypes.STRING(7),
+    allowNull: true,
+    comment: '開業予定日（YYYY-MM形式）。未設定の場合は2025-01をデフォルト使用',
   },
 }, { sequelize, tableName: 'projects', underscored: true });
 
@@ -1011,6 +1025,61 @@ CashFlowMonthly.init({
 
 Project.hasMany(CashFlowMonthly, { foreignKey: 'project_id', as: 'cashFlows' });
 CashFlowMonthly.belongsTo(Project, { foreignKey: 'project_id' });
+
+// ========== StartupCost ==========
+export type CostType = 'capex' | 'intangible' | 'expense' | 'initial_inventory';
+
+interface StartupCostAttributes {
+  id: string;
+  project_id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  cost_type: CostType;
+  allocation_month: string;
+  display_order: number;
+  created_at?: Date;
+  updated_at?: Date;
+}
+type StartupCostCreation = Optional<
+  StartupCostAttributes,
+  'id' | 'display_order'
+>;
+
+export class StartupCost
+  extends Model<StartupCostAttributes, StartupCostCreation>
+  implements StartupCostAttributes {
+  declare id: string;
+  declare project_id: string;
+  declare description: string;
+  declare quantity: number;
+  declare unit_price: number;
+  declare cost_type: CostType;
+  declare allocation_month: string;
+  declare display_order: number;
+}
+
+StartupCost.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  project_id: { type: DataTypes.UUID, allowNull: false },
+  description: { type: DataTypes.STRING(255), allowNull: false },
+  quantity: { type: DataTypes.DECIMAL(10, 2), allowNull: false, defaultValue: 1 },
+  unit_price: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
+  cost_type: {
+    type: DataTypes.ENUM('capex', 'intangible', 'expense', 'initial_inventory'),
+    allowNull: false,
+  },
+  allocation_month: { type: DataTypes.STRING(7), allowNull: false },
+  display_order: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+}, {
+  sequelize,
+  tableName: 'startup_costs',
+  underscored: true,
+  indexes: [{ fields: ['project_id', 'allocation_month'] }],
+});
+
+Project.hasMany(StartupCost, { foreignKey: 'project_id', as: 'startupCosts' });
+StartupCost.belongsTo(Project, { foreignKey: 'project_id' });
 
 Project.hasMany(FixedAsset, { foreignKey: 'project_id', as: 'fixedAssets' });
 FixedAsset.belongsTo(Project, { foreignKey: 'project_id' });
