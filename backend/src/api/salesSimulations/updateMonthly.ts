@@ -101,21 +101,13 @@ router.put('/:yearMonth', authenticate, async (req: AuthRequest, res: Response) 
     description: item.description ?? null,
   }));
 
-  const existing = await SalesSimulationSnapshot.findOne({
-    where: { project_id: projectId, year_month: yearMonth },
+  await SalesSimulationSnapshot.upsert({
+    project_id: projectId,
+    year_month: yearMonth,
+    items_snapshot: normalizedItems,
+  }, {
+    conflictFields: ['project_id', 'year_month'],
   });
-
-  if (existing) {
-    await existing.update({
-      items_snapshot: normalizedItems,
-    });
-  } else {
-    await SalesSimulationSnapshot.create({
-      project_id: projectId,
-      year_month: yearMonth,
-      items_snapshot: normalizedItems,
-    });
-  }
 
   res.json({
     success: true,
