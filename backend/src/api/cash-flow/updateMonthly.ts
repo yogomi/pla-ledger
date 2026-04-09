@@ -151,10 +151,8 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   const netCashChange = operatingCfSubtotal + investingCfSubtotal + financingCfSubtotal;
 
   // DB保存（cash_beginning と cash_ending は保存しない）
-  // conflictFields を指定することで、(project_id, year_month) のユニーク制約で upsert する
-  const [record] = await CashFlowMonthly.upsert({
-    project_id: projectId,
-    year_month: yearMonth,
+  // upsert の conflictFields 挙動に依存せず、findOne + update/create で確実に保存する
+  const values = {
     profit_before_tax: profitBeforeTax,
     depreciation,
     interest_expense: interestExpense,
@@ -178,9 +176,23 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     is_inherited: false,
     note_ja: noteJa ?? null,
     note_en: noteEn ?? null,
-  }, {
-    conflictFields: ['project_id', 'year_month'],
+  };
+
+  const existing = await CashFlowMonthly.findOne({
+    where: { project_id: projectId, year_month: yearMonth },
   });
+
+  let record: CashFlowMonthly;
+  if (existing) {
+    await existing.update(values);
+    record = existing;
+  } else {
+    record = await CashFlowMonthly.create({
+      project_id: projectId,
+      year_month: yearMonth,
+      ...values,
+    });
+  }
 
   // 期首残高・期末残高を 2025-01 からの累積計算で算出（レスポンス用）
   const { cashBeginning, cashEnding } =
