@@ -207,8 +207,6 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
           year_month: s.year_month,
           items_snapshot: remappedSnapshot as unknown as
             import('../../models').SalesSimulationSnapshot['items_snapshot'],
-          monthly_total: s.monthly_total,
-          monthly_cost: s.monthly_cost,
         }, { transaction });
       }));
     }
@@ -286,7 +284,6 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
         days_per_month: lc.days_per_month,
         part_time_count: lc.part_time_count,
         owner_salary: lc.owner_salary,
-        monthly_total: lc.monthly_total,
         display_order: lc.display_order,
         note_ja: lc.note_ja,
         note_en: lc.note_en,
@@ -306,26 +303,17 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       await Promise.all(exportData.cashFlows.map(cf => CashFlowMonthly.create({
         project_id: newProjectId,
         year_month: cf.year_month,
-        profit_before_tax: cf.profit_before_tax,
-        depreciation: cf.depreciation,
-        interest_expense: cf.interest_expense,
         accounts_receivable_change: cf.accounts_receivable_change,
         inventory_change: cf.inventory_change,
         accounts_payable_change: cf.accounts_payable_change,
         other_operating: cf.other_operating,
-        operating_cf_subtotal: cf.operating_cf_subtotal,
         capex_acquisition: cf.capex_acquisition,
         asset_sale: cf.asset_sale,
         intangible_acquisition: cf.intangible_acquisition,
         other_investing: cf.other_investing,
-        investing_cf_subtotal: cf.investing_cf_subtotal,
-        borrowing_proceeds: cf.borrowing_proceeds,
-        loan_repayment: cf.loan_repayment,
         capital_increase: cf.capital_increase,
         dividend_payment: cf.dividend_payment,
         other_financing: cf.other_financing,
-        financing_cf_subtotal: cf.financing_cf_subtotal,
-        net_cash_change: cf.net_cash_change,
         is_inherited: cf.is_inherited,
         note_ja: cf.note_ja,
         note_en: cf.note_en,

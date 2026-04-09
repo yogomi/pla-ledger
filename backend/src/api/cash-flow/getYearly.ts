@@ -105,7 +105,7 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
   });
   const recordMap = new Map(records.map(r => [r.year_month, r]));
 
-  // 対象年より前の月については、保存済み net_cash_change を一括取得してマップ化する
+  // 対象年より前の月については、保存済みレコードを一括取得してマップ化する
   const prevYearEnd = `${targetYear - 1}-12`;
   const prevRecords = targetYear > 2025
     ? await CashFlowMonthly.findAll({
@@ -113,10 +113,12 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
           project_id: projectId,
           year_month: { [Op.between]: ['2025-01', prevYearEnd] },
         },
-        attributes: ['year_month', 'net_cash_change'],
+        order: [['year_month', 'ASC']],
       })
     : [];
-  const prevSavedMap = new Map(prevRecords.map(r => [r.year_month, Number(r.net_cash_change)]));
+  const prevSavedMap = new Map<string, CashFlowMonthly>(
+    prevRecords.map(r => [r.year_month, r]),
+  );
 
   // 2025-01 から対象年の 12 月まで残高を累積計算する
   let runningBalance = Number(project.initial_cash_balance);
@@ -158,11 +160,29 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
           + Number(r.dividend_payment)
           + Number(r.other_financing);
       } else if (y < targetYear && prevSavedMap.has(yearMonth)) {
-        // 対象年より前の保存済み月：DB の net_cash_change をそのまま使用する
-        const netChange = prevSavedMap.get(yearMonth)!;
-        operatingCF = netChange;
-        investingCF = 0;
-        financingCF = 0;
+        // 対象年より前の保存済み月：手動入力値はDBから取得し、自動連携項目はライブ再計算する
+        const prevRecord = prevSavedMap.get(yearMonth)!;
+        const { profitBeforeTax, depreciation } =
+          await fetchProfitAndInterest(projectId, yearMonth);
+        const { borrowingProceeds, loanRepaymentAmount } =
+          await fetchBorrowingData(projectId, yearMonth);
+
+        operatingCF =
+          profitBeforeTax + depreciation
+          + Number(prevRecord.accounts_receivable_change)
+          + Number(prevRecord.inventory_change)
+          + Number(prevRecord.accounts_payable_change)
+          + Number(prevRecord.other_operating);
+        investingCF =
+          Number(prevRecord.capex_acquisition)
+          + Number(prevRecord.asset_sale)
+          + Number(prevRecord.intangible_acquisition)
+          + Number(prevRecord.other_investing);
+        financingCF =
+          borrowingProceeds + loanRepaymentAmount
+          + Number(prevRecord.capital_increase)
+          + Number(prevRecord.dividend_payment)
+          + Number(prevRecord.other_financing);
       } else {
         // 未保存月：自動連携データのみで計算する
         const { profitBeforeTax, depreciation } =

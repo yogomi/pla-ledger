@@ -11,6 +11,7 @@ import { YearMonthSchema } from '../../schemas/salesSimulation';
 import { z } from 'zod';
 import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesSimulationHelper';
 import { calculateMonthlyDepreciation } from '../../utils/depreciationCalculator';
+import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -91,7 +92,12 @@ async function fetchProfitAndInterest(
 
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const laborTotal = laborCosts.reduce((sum, lc) => sum + Number(lc.monthly_total), 0);
+  const project = await Project.findByPk(projectId, { attributes: ['social_insurance_rate'] });
+  const socialInsuranceRate = Number(project?.social_insurance_rate ?? 0);
+  const laborTotal = laborCosts.reduce(
+    (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
+    0,
+  );
   // 減価償却費は営業利益の計算に含める（損益計算書と一致させるため）
   const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
   const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal + depreciation;
@@ -164,10 +170,9 @@ async function calculateCashBalanceUpToMonth(
   // 2025-01 から targetYearMonth までの保存済みレコードを一括取得してマップ化する
   const savedRecords = await CashFlowMonthly.findAll({
     where: { project_id: projectId },
-    attributes: ['year_month', 'net_cash_change'],
     order: [['year_month', 'ASC']],
   });
-  const savedMap = new Map(savedRecords.map(r => [r.year_month, Number(r.net_cash_change)]));
+  const savedRecordsMap = new Map(savedRecords.map(r => [r.year_month, r]));
 
   let runningBalance = Number(project.initial_cash_balance);
   let cashBeginning = runningBalance;
@@ -183,8 +188,27 @@ async function calculateCashBalanceUpToMonth(
       }
 
       let netCashChange: number;
-      if (savedMap.has(yearMonth)) {
-        netCashChange = savedMap.get(yearMonth)!;
+      if (savedRecordsMap.has(yearMonth)) {
+        // 保存済み月：手動入力値はDBから取得し、自動連携項目はライブ再計算する
+        const savedRecord = savedRecordsMap.get(yearMonth)!;
+        const { profitBeforeTax, depreciation } =
+          await fetchProfitAndInterest(projectId, yearMonth);
+        const { borrowingProceeds, loanRepaymentAmount } =
+          await fetchBorrowingData(projectId, yearMonth);
+        netCashChange =
+          profitBeforeTax + depreciation
+          + Number(savedRecord.accounts_receivable_change)
+          + Number(savedRecord.inventory_change)
+          + Number(savedRecord.accounts_payable_change)
+          + Number(savedRecord.other_operating)
+          + Number(savedRecord.capex_acquisition)
+          + Number(savedRecord.asset_sale)
+          + Number(savedRecord.intangible_acquisition)
+          + Number(savedRecord.other_investing)
+          + borrowingProceeds + loanRepaymentAmount
+          + Number(savedRecord.capital_increase)
+          + Number(savedRecord.dividend_payment)
+          + Number(savedRecord.other_financing);
       } else {
         // 未保存月は自動連携データから計算（手動調整項目はゼロ）
         const { profitBeforeTax, depreciation } =

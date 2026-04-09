@@ -9,6 +9,7 @@ import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearMonthQuerySchema } from '../../schemas/salesSimulation';
 import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesSimulationHelper';
+import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
 
 /**
  * @api {GET} /api/projects/:projectId/expense-simulations/monthly 月次経費シミュレーション取得
@@ -99,6 +100,7 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
   }
 
   const { yearMonth } = parsed.data;
+  const socialInsuranceRate = Number(project.social_insurance_rate);
 
   // 売上スナップショット取得（継承を含む）
   let snapshot: SalesSimulationSnapshot | null = await SalesSimulationSnapshot.findOne({
@@ -176,7 +178,10 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
 
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const laborTotal = laborCosts.reduce((sum, lc) => sum + Number(lc.monthly_total), 0);
+  const laborTotal = laborCosts.reduce(
+    (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
+    0,
+  );
   const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal;
   const operatingProfit = monthlySales - totalExpense;
 

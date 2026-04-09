@@ -8,6 +8,7 @@ import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearQuerySchema } from '../../schemas/salesSimulation';
+import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
 
 /**
  * @api {GET} /api/projects/:projectId/expense-simulations/yearly 年次経費シミュレーション取得
@@ -112,6 +113,7 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
   }
 
   const { year } = parsed.data;
+  const socialInsuranceRate = Number(project.social_insurance_rate);
 
   // カテゴリ別集計マップ: categoryName -> { yearMonth: amount }
   const fixedMap = new Map<string, Map<string, number>>();
@@ -195,7 +197,10 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
       variableMap.get(name)!.set(yearMonth, prev + Number(e.amount));
     }
 
-    const laborTotal = laborCosts.reduce((sum, lc) => sum + Number(lc.monthly_total), 0);
+    const laborTotal = laborCosts.reduce(
+      (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
+      0,
+    );
     laborMonthMap.set(yearMonth, laborTotal);
 
     const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);

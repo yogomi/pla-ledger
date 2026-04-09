@@ -5,6 +5,7 @@ import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearMonthQuerySchema } from '../../schemas/salesSimulation';
+import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
 
 /**
  * @api {GET} /api/projects/:projectId/labor-costs/monthly 月次人件費取得
@@ -123,7 +124,10 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
     }
   }
 
-  const monthlyTotal = laborCosts.reduce((sum, lc) => sum + Number(lc.monthly_total), 0);
+  const monthlyTotal = laborCosts.reduce(
+    (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
+    0,
+  );
 
   res.json({
     success: true,
@@ -144,7 +148,7 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
         daysPerMonth: lc.days_per_month,
         partTimeCount: lc.part_time_count !== null ? Number(lc.part_time_count) : null,
         ownerSalary: lc.owner_salary !== null ? Number(lc.owner_salary) : null,
-        monthlyTotal: Number(lc.monthly_total),
+        monthlyTotal: calcLaborMonthlyTotal(lc, socialInsuranceRate),
         displayOrder: lc.display_order,
         noteJa: lc.note_ja,
         noteEn: lc.note_en,
