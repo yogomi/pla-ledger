@@ -68,6 +68,7 @@ const ProjectDataSchema = z.object({
   tags: z.array(z.string()),
   published_at: z.string().nullable(),
   social_insurance_rate: z.number(),
+  initial_cash_balance: z.number(),
   planned_opening_date: z.string().nullable().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
