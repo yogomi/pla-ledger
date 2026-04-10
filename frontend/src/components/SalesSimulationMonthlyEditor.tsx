@@ -16,6 +16,8 @@ import {
   TableHead,
   TableRow,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -23,7 +25,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useFieldArray, useForm, Controller } from 'react-hook-form';
+import { useFieldArray, useForm, Controller, useWatch, Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
   useSalesSimulationMonthly,
@@ -35,7 +37,7 @@ import {
   useDeleteSalesItem,
   useDeleteSalesSimulationMonthly,
 } from '../hooks/useSalesSimulation';
-import { ItemInputData } from '../types/SalesSimulation';
+import { ItemInputData, ItemSnapshotData } from '../types/SalesSimulation';
 
 interface SalesSimulationMonthlyEditorProps {
   projectId: string;
@@ -44,6 +46,200 @@ interface SalesSimulationMonthlyEditorProps {
 
 interface FormValues {
   items: ItemInputData[];
+}
+
+interface ItemRowProps {
+  idx: number;
+  fieldId: string;
+  originalItem: ItemSnapshotData | undefined;
+  control: Control<FormValues>;
+  onDelete: (itemId: string, itemName: string) => void;
+}
+
+/**
+ * 商品行コンポーネント。useWatch で入力値を監視し、月間売上・原価をリアルタイム計算して表示する。
+ */
+function ItemRow({ idx, fieldId, originalItem, control, onDelete }: ItemRowProps) {
+  const { t } = useTranslation();
+  const calculationType = useWatch({ control, name: `items.${idx}.calculationType` });
+  const unitPrice = useWatch({ control, name: `items.${idx}.unitPrice` }) ?? 0;
+  const quantity = useWatch({ control, name: `items.${idx}.quantity` }) ?? 0;
+  const operatingDays = useWatch({ control, name: `items.${idx}.operatingDays` }) ?? 0;
+  const costRate = useWatch({ control, name: `items.${idx}.costRate` }) ?? 0;
+  const monthlyQuantity = useWatch({ control, name: `items.${idx}.monthlyQuantity` }) ?? 0;
+
+  const isDaily = calculationType !== 'monthly';
+
+  const monthlySales = isDaily
+    ? unitPrice * quantity * operatingDays
+    : unitPrice * monthlyQuantity;
+  const monthlyCost = monthlySales * (costRate / 100);
+
+  return (
+    <TableRow key={fieldId}>
+      <TableCell>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Controller
+            name={`items.${idx}.itemName`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                variant="outlined"
+                sx={{ minWidth: '140px' }}
+              />
+            )}
+          />
+          {originalItem?.isInherited && (
+            <Chip label={t('inherited_chip')} size="small" color="default" />
+          )}
+        </Box>
+      </TableCell>
+      <TableCell align="right">
+        <Controller
+          name={`items.${idx}.unitPrice`}
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              size="small"
+              type="number"
+              variant="outlined"
+              inputProps={{ min: 0 }}
+              sx={{ maxWidth: '100px' }}
+              onChange={e => field.onChange(Number(e.target.value))}
+            />
+          )}
+        />
+      </TableCell>
+      <TableCell align="center">
+        <Controller
+          name={`items.${idx}.calculationType`}
+          control={control}
+          render={({ field }) => (
+            <ToggleButtonGroup
+              value={field.value}
+              exclusive
+              onChange={(_e, val) => {
+                if (val !== null) field.onChange(val);
+              }}
+              size="small"
+              aria-label={t('calc_type')}
+            >
+              <ToggleButton value="daily" aria-label={t('calc_type_daily')}>
+                {t('calc_type_daily')}
+              </ToggleButton>
+              <ToggleButton value="monthly" aria-label={t('calc_type_monthly')}>
+                {t('calc_type_monthly')}
+              </ToggleButton>
+            </ToggleButtonGroup>
+          )}
+        />
+      </TableCell>
+      <TableCell align="right">
+        {isDaily ? (
+          <Controller
+            name={`items.${idx}.quantity`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                type="number"
+                variant="outlined"
+                inputProps={{ min: 0 }}
+                sx={{ maxWidth: '80px' }}
+                onChange={e => field.onChange(Number(e.target.value))}
+              />
+            )}
+          />
+        ) : (
+          <Typography variant="body2" color="text.secondary">—</Typography>
+        )}
+      </TableCell>
+      <TableCell align="right">
+        {isDaily ? (
+          <Controller
+            name={`items.${idx}.operatingDays`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                type="number"
+                variant="outlined"
+                inputProps={{ min: 0 }}
+                sx={{ maxWidth: '80px' }}
+                onChange={e => field.onChange(Number(e.target.value))}
+              />
+            )}
+          />
+        ) : (
+          <Typography variant="body2" color="text.secondary">—</Typography>
+        )}
+      </TableCell>
+      <TableCell align="right">
+        {!isDaily ? (
+          <Controller
+            name={`items.${idx}.monthlyQuantity`}
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                size="small"
+                type="number"
+                variant="outlined"
+                inputProps={{ min: 0 }}
+                sx={{ maxWidth: '90px' }}
+                onChange={e => field.onChange(Number(e.target.value))}
+              />
+            )}
+          />
+        ) : (
+          <Typography variant="body2" color="text.secondary">—</Typography>
+        )}
+      </TableCell>
+      <TableCell align="right">
+        <Controller
+          name={`items.${idx}.costRate`}
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              size="small"
+              type="number"
+              variant="outlined"
+              inputProps={{ min: 0, max: 100, step: 0.1 }}
+              sx={{ maxWidth: '80px' }}
+              onChange={e => field.onChange(Number(e.target.value))}
+            />
+          )}
+        />
+      </TableCell>
+      <TableCell align="right">
+        {Math.round(monthlySales).toLocaleString()}
+      </TableCell>
+      <TableCell align="right">
+        {Math.round(monthlyCost).toLocaleString()}
+      </TableCell>
+      <TableCell align="center">
+        <Tooltip title={t('delete_item')}>
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => onDelete(
+              originalItem?.itemId ?? '',
+              originalItem?.itemName ?? '',
+            )}
+            aria-label={t('delete_item')}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </TableCell>
+    </TableRow>
+  );
 }
 
 /**
@@ -74,6 +270,7 @@ export default function SalesSimulationMonthlyEditor({
 
   const { control, handleSubmit, reset } = useForm<FormValues>({ defaultValues: { items: [] } });
   const { fields } = useFieldArray({ control, name: 'items' });
+  const watchedItems = useWatch({ control, name: 'items' }) ?? [];
 
   useEffect(() => {
     if (data) {
@@ -90,6 +287,8 @@ export default function SalesSimulationMonthlyEditor({
           operatingDays: item.operatingDays,
           costRate: item.costRate,
           description: item.description,
+          calculationType: item.calculationType ?? 'daily',
+          monthlyQuantity: item.monthlyQuantity ?? 0,
         })),
       );
       reset({ items: flat });
@@ -250,8 +449,10 @@ export default function SalesSimulationMonthlyEditor({
                   <TableRow sx={{ backgroundColor: 'grey.100' }}>
                     <TableCell>{t('item_name')}</TableCell>
                     <TableCell align="right">{t('unit_price')}</TableCell>
+                    <TableCell align="center">{t('calc_type')}</TableCell>
                     <TableCell align="right">{t('quantity')}</TableCell>
                     <TableCell align="right">{t('operating_days')}</TableCell>
+                    <TableCell align="right">{t('monthly_quantity')}</TableCell>
                     <TableCell align="right">{t('cost_rate')}</TableCell>
                     <TableCell align="right">{t('monthly_sales_col')}</TableCell>
                     <TableCell align="right">{t('monthly_cost_col')}</TableCell>
@@ -264,123 +465,19 @@ export default function SalesSimulationMonthlyEditor({
                       it => it.itemId === fields[idx]?.itemId,
                     );
                     return (
-                      <TableRow key={fields[idx]?.id ?? idx}>
-                        <TableCell>
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Controller
-                              name={`items.${idx}.itemName`}
-                              control={control}
-                              render={({ field }) => (
-                                <TextField
-                                  {...field}
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{ minWidth: '140px' }}
-                                />
-                              )}
-                            />
-                            {originalItem?.isInherited && (
-                              <Chip label={t('inherited_chip')} size="small" color="default" />
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell align="right">
-                          <Controller
-                            name={`items.${idx}.unitPrice`}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                type="number"
-                                variant="outlined"
-                                inputProps={{ min: 0 }}
-                                sx={{ maxWidth: '100px' }}
-                                onChange={e => field.onChange(Number(e.target.value))}
-                              />
-                            )}
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          <Controller
-                            name={`items.${idx}.quantity`}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                type="number"
-                                variant="outlined"
-                                inputProps={{ min: 0 }}
-                                sx={{ maxWidth: '80px' }}
-                                onChange={e => field.onChange(Number(e.target.value))}
-                              />
-                            )}
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          <Controller
-                            name={`items.${idx}.operatingDays`}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                type="number"
-                                variant="outlined"
-                                inputProps={{ min: 0 }}
-                                sx={{ maxWidth: '80px' }}
-                                onChange={e => field.onChange(Number(e.target.value))}
-                              />
-                            )}
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          <Controller
-                            name={`items.${idx}.costRate`}
-                            control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                type="number"
-                                variant="outlined"
-                                inputProps={{ min: 0, max: 100, step: 0.1 }}
-                                sx={{ maxWidth: '80px' }}
-                                onChange={e => field.onChange(Number(e.target.value))}
-                              />
-                            )}
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          {originalItem?.monthlySales.toLocaleString() ?? '-'}
-                        </TableCell>
-                        <TableCell align="right">
-                          {originalItem?.monthlyCost.toLocaleString() ?? '-'}
-                        </TableCell>
-                        <TableCell align="center">
-                          <Tooltip title={t('delete_item')}>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() =>
-                                handleDeleteItem(
-                                  fields[idx]?.itemId ?? '',
-                                  fields[idx]?.itemName ?? '',
-                                )
-                              }
-                              aria-label={t('delete_item')}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
+                      <ItemRow
+                        key={fields[idx]?.id ?? idx}
+                        idx={idx}
+                        fieldId={fields[idx]?.id ?? String(idx)}
+                        originalItem={originalItem}
+                        control={control}
+                        onDelete={handleDeleteItem}
+                      />
                     );
                   })}
                   {/* 新規品目追加行 */}
                   <TableRow>
-                    <TableCell colSpan={8}>
+                    <TableCell colSpan={10}>
                       <Box display="flex" alignItems="center" gap={1} p={0.5}>
                         <TextField
                           size="small"
@@ -479,12 +576,27 @@ export default function SalesSimulationMonthlyEditor({
       <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
-            <Typography variant="body2" color="text.secondary">
-              {t('monthly_sales_total', { amount: data.monthlyTotal.toLocaleString() })}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('monthly_cost_total', { amount: data.monthlyCost.toLocaleString() })}
-            </Typography>
+            {(() => {
+              let totalSales = 0;
+              let totalCost = 0;
+              for (const item of watchedItems) {
+                const sales = item.calculationType === 'monthly'
+                  ? (item.unitPrice ?? 0) * (item.monthlyQuantity ?? 0)
+                  : (item.unitPrice ?? 0) * (item.quantity ?? 0) * (item.operatingDays ?? 0);
+                totalSales += sales;
+                totalCost += sales * ((item.costRate ?? 0) / 100);
+              }
+              return (
+                <>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('monthly_sales_total', { amount: Math.round(totalSales).toLocaleString() })}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('monthly_cost_total', { amount: Math.round(totalCost).toLocaleString() })}
+                  </Typography>
+                </>
+              );
+            })()}
           </Box>
           <Box display="flex" gap={1}>
             {!data.isInherited && (

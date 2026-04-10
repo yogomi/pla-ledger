@@ -92,8 +92,10 @@ function SalesSimulationMonthlyView({
                   <TableRow sx={{ backgroundColor: 'grey.100' }}>
                     <TableCell>{t('item_name')}</TableCell>
                     <TableCell align="right">{t('unit_price')}</TableCell>
+                    <TableCell align="center">{t('calc_type')}</TableCell>
                     <TableCell align="right">{t('quantity')}</TableCell>
                     <TableCell align="right">{t('operating_days')}</TableCell>
+                    <TableCell align="right">{t('monthly_quantity')}</TableCell>
                     <TableCell align="right">{t('cost_rate')}</TableCell>
                     <TableCell align="right">{t('monthly_sales_col')}</TableCell>
                     <TableCell align="right">{t('monthly_cost_col')}</TableCell>
@@ -102,7 +104,7 @@ function SalesSimulationMonthlyView({
                 <TableBody>
                   {cat.items.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} align="center">
+                      <TableCell colSpan={9} align="center">
                         <Typography variant="body2" color="text.secondary">
                           {t('no_items')}
                         </Typography>
@@ -113,8 +115,24 @@ function SalesSimulationMonthlyView({
                     <TableRow key={item.itemId}>
                       <TableCell>{item.itemName}</TableCell>
                       <TableCell align="right">{Math.round(item.unitPrice).toLocaleString()}</TableCell>
-                      <TableCell align="right">{Math.round(item.quantity).toLocaleString()}</TableCell>
-                      <TableCell align="right">{Math.round(item.operatingDays).toLocaleString()}</TableCell>
+                      <TableCell align="center">
+                        {t(item.calculationType === 'monthly' ? 'calc_type_monthly' : 'calc_type_daily')}
+                      </TableCell>
+                      <TableCell align="right">
+                        {item.calculationType === 'daily'
+                          ? Math.round(item.quantity).toLocaleString()
+                          : '—'}
+                      </TableCell>
+                      <TableCell align="right">
+                        {item.calculationType === 'daily'
+                          ? Math.round(item.operatingDays).toLocaleString()
+                          : '—'}
+                      </TableCell>
+                      <TableCell align="right">
+                        {item.calculationType === 'monthly'
+                          ? Math.round(item.monthlyQuantity ?? 0).toLocaleString()
+                          : '—'}
+                      </TableCell>
                       <TableCell align="right">{item.costRate.toFixed(1)}</TableCell>
                       <TableCell align="right">{Math.round(item.monthlySales).toLocaleString()}</TableCell>
                       <TableCell align="right">{Math.round(item.monthlyCost).toLocaleString()}</TableCell>

@@ -154,6 +154,8 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
         let quantity = Number(item.quantity);
         let operatingDays = Number(item.operating_days);
         let costRate = Number(item.cost_rate);
+        let calculationType: 'daily' | 'monthly' = item.calculation_type ?? 'daily';
+        let monthlyQuantity = Number(item.monthly_quantity ?? 0);
 
         if (snapshot) {
           const snapItem = snapshot.items_snapshot.find(s => s.itemId === item.id);
@@ -162,10 +164,14 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
             quantity = snapItem.quantity;
             operatingDays = snapItem.operatingDays;
             costRate = snapItem.costRate;
+            calculationType = snapItem.calculationType ?? 'daily';
+            monthlyQuantity = snapItem.monthlyQuantity ?? 0;
           }
         }
 
-        const { sales, cost } = calculateItemMetrics({ unitPrice, quantity, operatingDays, costRate });
+        const { sales, cost } = calculateItemMetrics(
+          { unitPrice, quantity, operatingDays, costRate, calculationType, monthlyQuantity },
+        );
         catSales += sales;
         catCost += cost;
       }

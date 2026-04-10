@@ -14,6 +14,8 @@ const CreateItemSchema = z.object({
   operatingDays: z.number().min(0).optional(),
   costRate: z.number().min(0).max(100).optional(),
   description: z.string().nullable().optional(),
+  calculationType: z.enum(['daily', 'monthly']).optional(),
+  monthlyQuantity: z.number().min(0).optional(),
 });
 
 /**
@@ -87,7 +89,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   }
 
   const { categoryId, itemName, itemOrder, unitPrice, quantity, operatingDays, costRate,
-    description } = parsed.data;
+    description, calculationType, monthlyQuantity } = parsed.data;
 
   // カテゴリの存在確認（同じプロジェクト配下のみ）
   const category = await SalesSimulationCategory.findOne({
@@ -113,6 +115,8 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     operating_days: operatingDays ?? 0,
     cost_rate: costRate ?? 0,
     description: description ?? null,
+    calculation_type: calculationType ?? 'daily',
+    monthly_quantity: monthlyQuantity ?? 0,
   });
 
   res.status(201).json({

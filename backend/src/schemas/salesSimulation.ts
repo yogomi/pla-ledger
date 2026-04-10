@@ -42,6 +42,8 @@ export const ItemSnapshotSchema = z.object({
   operatingDays: z.number().min(0),
   costRate: z.number().min(0).max(100),
   description: z.string().nullable().optional(),
+  calculationType: z.enum(['daily', 'monthly']).default('daily'),
+  monthlyQuantity: z.number().min(0).default(0),
 });
 
 /** 月次売上シミュレーション更新リクエストボディ */

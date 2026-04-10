@@ -10,6 +10,8 @@ export interface ItemSnapshotData {
   operatingDays: number;
   costRate: number;
   description: string | null;
+  calculationType: 'daily' | 'monthly';
+  monthlyQuantity: number;
   monthlySales: number;
   monthlyCost: number;
   isInherited: boolean;
@@ -106,6 +108,8 @@ export interface ItemInputData {
   operatingDays: number;
   costRate: number;
   description: string | null;
+  calculationType: 'daily' | 'monthly';
+  monthlyQuantity: number;
 }
 
 /** 経費項目の入力データ */
