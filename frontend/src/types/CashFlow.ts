@@ -36,6 +36,14 @@ export interface CashFlowSummary {
   cashEnding: number;
 }
 
+/** スタートアップコスト内訳（マイナス値） */
+export interface StartupCostBreakdown {
+  capex: number;
+  intangible: number;
+  expense: number;
+  initialInventory: number;
+}
+
 /** 月次キャッシュフローデータ */
 export interface CashFlowMonthlyData {
   yearMonth: string;
@@ -48,6 +56,7 @@ export interface CashFlowMonthlyData {
     ja: string | null;
     en: string | null;
   };
+  startupCostBreakdown: StartupCostBreakdown;
 }
 
 /** 年次キャッシュフローデータ */

@@ -5,7 +5,7 @@ import {
   FixedExpense, FixedExpenseMonth, VariableExpense,
   Loan, LoanRepayment, LaborCost, LaborCostMonth,
   CashFlowMonthly, Comment,
-  FixedAsset, FixedAssetDepreciationSchedule,
+  FixedAsset, FixedAssetDepreciationSchedule, StartupCost,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from './utils';
@@ -102,6 +102,7 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
     cashFlows,
     comments,
     fixedAssets,
+    startupCosts,
   ] = await Promise.all([
     ProjectSection.findAll({ where: { project_id: id } }),
     SalesSimulationCategory.findAll({ where: { project_id: id } }),
@@ -117,6 +118,10 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
     CashFlowMonthly.findAll({ where: { project_id: id } }),
     Comment.findAll({ where: { project_id: id } }),
     FixedAsset.findAll({ where: { project_id: id } }),
+    StartupCost.findAll({
+      where: { project_id: id },
+      order: [['display_order', 'ASC'], ['created_at', 'ASC']],
+    }),
   ]);
 
   // 固定資産に紐づく償却スケジュールを取得
@@ -150,6 +155,7 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
       fixedAssets: fixedAssets.map(r => r.toJSON()),
       fixedAssetDepreciationSchedules: fixedAssetDepreciationSchedules.map(r => r.toJSON()),
       comments: comments.map(r => r.toJSON()),
+      startupCosts: startupCosts.map(r => r.toJSON()),
     },
   });
 });

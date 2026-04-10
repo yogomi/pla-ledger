@@ -19,6 +19,7 @@ import StartupCostTable, { StartupCostItem } from '../components/StartupCostTabl
 import SimulationViewContainer from '../components/SimulationViewContainer';
 import SimulationSheetContainer from '../components/SimulationSheetContainer';
 import ProjectInitialCashBalance from '../components/ProjectInitialCashBalance';
+import { getStartupCosts, updateStartupCosts } from '../api/startupCosts';
 
 interface Comment { id: string; author_id: string; body: string; created_at: string; }
 interface Version {
@@ -34,6 +35,7 @@ interface Project {
   owner_id: string; sections: Section[];
   social_insurance_rate: number | null;
   initial_cash_balance: number | null;
+  planned_opening_date: string | null;
 }
 interface AccessRequest {
   id: string; requester_id: string; request_type: string; message: string | null;
@@ -53,6 +55,7 @@ const editSchema = z.object({
   stage: z.string().optional(),
   tags: z.string().optional(),
   social_insurance_rate: z.number().min(0).max(100).optional(),
+  planned_opening_date: z.string().optional(),
 });
 type EditFormData = z.infer<typeof editSchema>;
 
@@ -97,6 +100,7 @@ export default function ProjectViewPage() {
 
   // 編集フォーム
   const [editError, setEditError] = useState('');
+  const [editSuccess, setEditSuccess] = useState(false);
   const [exportError, setExportError] = useState('');
   const [editCurrency, setEditCurrency] = useState('JPY');
   const [startupCostItems, setStartupCostItems] = useState<StartupCostItem[]>([]);
@@ -112,6 +116,7 @@ export default function ProjectViewPage() {
   });
   const watchedCurrency = watchEdit('currency', 'JPY');
   useEffect(() => { setEditCurrency(watchedCurrency); }, [watchedCurrency]);
+  const watchedPlannedOpeningDate = watchEdit('planned_opening_date');
 
   // アクセス管理
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
@@ -127,13 +132,15 @@ export default function ProjectViewPage() {
       api.get(`/projects/${id}`),
       api.get(`/projects/${id}/comments`),
       api.get(`/projects/${id}/versions`),
-    ]).then(([pRes, cRes, vRes]) => {
+      getStartupCosts(id!),
+    ]).then(([pRes, cRes, vRes, startupCosts]) => {
       const p = pRes.data.data.project;
       setProject(p);
       setOwner(pRes.data.data.owner);
       setRole(pRes.data.data.role);
       setComments(cRes.data.data.comments);
       setVersions(vRes.data.data.versions);
+      setStartupCostItems(startupCosts);
 
       // 編集フォームに既存データを反映
       resetEditForm({
@@ -144,15 +151,9 @@ export default function ProjectViewPage() {
         stage: p.stage || '',
         tags: Array.isArray(p.tags) ? p.tags.join(', ') : '',
         social_insurance_rate: p.social_insurance_rate != null ? Number(p.social_insurance_rate) : 15,
+        planned_opening_date: p.planned_opening_date ?? '',
       });
       setEditCurrency(p.currency || 'JPY');
-      const financeSection = (p.sections ?? []).find(
-        (s: Section) => s.type === 'finances',
-      );
-      if (financeSection?.content?.startup_costs) {
-        const sc = financeSection.content.startup_costs as { items?: StartupCostItem[] };
-        setStartupCostItems(sc.items ?? []);
-      }
     }).catch(() => setError('Failed to load project')).finally(() => setLoading(false));
   }, [id]);
 
@@ -215,14 +216,9 @@ export default function ProjectViewPage() {
 
   const handleEditSave = async (data: EditFormData) => {
     setEditError('');
+    setEditSuccess(false);
     try {
       const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
-      const sections = [
-        {
-          type: 'finances',
-          content: { startup_costs: { items: startupCostItems } },
-        },
-      ];
       await api.put(`/projects/${id}`, {
         title: data.title,
         summary: data.summary || undefined,
@@ -230,11 +226,22 @@ export default function ProjectViewPage() {
         currency: data.currency,
         stage: data.stage || null,
         tags,
-        sections,
         social_insurance_rate: data.social_insurance_rate,
+        planned_opening_date: data.planned_opening_date || null,
       });
-      // 保存後はプロジェクトタブに戻る
-      setSearchParams({ tab: 'project' }, { replace: true });
+      // スタートアップコストを新APIで一括保存
+      await updateStartupCosts(
+        id!,
+        startupCostItems.map((item, index) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          cost_type: item.cost_type,
+          allocation_month: item.allocation_month,
+          display_order: index,
+        })),
+      );
+      setEditSuccess(true);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
         ?.response?.data?.message || 'Failed to update project';
@@ -577,6 +584,7 @@ export default function ProjectViewPage() {
                   ? Number(project.initial_cash_balance) : 0}
                 currency={editCurrency}
                 isOwner={isOwner}
+                plannedOpeningDate={watchedPlannedOpeningDate || project.planned_opening_date || null}
                 onUpdate={async (newBalance) => {
                   await api.patch(`/projects/${id}/initial-cash-balance`, {
                     initialCashBalance: newBalance,
@@ -587,14 +595,34 @@ export default function ProjectViewPage() {
 
               <Divider sx={{ my: 3 }} />
 
+              <Typography variant="h6" mb={2}>{t('planned_opening_date')}</Typography>
+              <Controller
+                name="planned_opening_date"
+                control={editControl}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label={t('planned_opening_date')}
+                    type="month"
+                    margin="normal"
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ width: 240 }}
+                    helperText={t('planned_opening_date_hint')}
+                  />
+                )}
+              />
+
+              <Divider sx={{ my: 3 }} />
+
               <Typography variant="h6" mb={2}>{t('startup_costs_section')}</Typography>
               <StartupCostTable
                 items={startupCostItems}
                 currency={editCurrency}
+                plannedOpeningDate={watchedPlannedOpeningDate || project.planned_opening_date || null}
                 onItemsChange={setStartupCostItems}
               />
 
-              <Box mt={3} display="flex" gap={2}>
+              <Box mt={3} display="flex" gap={2} alignItems="center">
                 <Button type="submit" variant="contained" disabled={editSubmitting}>
                   {editSubmitting ? t('loading') : t('save')}
                 </Button>
@@ -604,6 +632,7 @@ export default function ProjectViewPage() {
                 >
                   {t('cancel')}
                 </Button>
+                {editSuccess && <Alert severity="success" sx={{ py: 0 }}>{t('save_success')}</Alert>}
               </Box>
             </Box>
           </Paper>
