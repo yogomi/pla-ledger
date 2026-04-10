@@ -158,7 +158,20 @@ export default function LoanYearlyView({ projectId, year, currency }: LoanYearly
     loans.forEach(loan => {
       const schedule = scheduleMap.get(loan.id) ?? [];
       const row = schedule.find(r => r.yearMonth === ym);
-      entry[loan.lenderName] = row ? row.remainingBalance : 0;
+      if (row) {
+        // スケジュールに含まれる月：スケジュールの残高を使用
+        entry[loan.lenderName] = row.remainingBalance;
+      } else {
+        // スケジュールに含まれない月：借入日と比較
+        const loanYearMonth = loan.loanDate.substring(0, 7); // "YYYY-MM-DD" → "YYYY-MM"
+        if (ym >= loanYearMonth) {
+          // 借入日以降でスケジュール開始前：元本額を表示
+          entry[loan.lenderName] = loan.principalAmount;
+        } else {
+          // 借入日より前：残高なし
+          entry[loan.lenderName] = 0;
+        }
+      }
     });
     return entry;
   });
