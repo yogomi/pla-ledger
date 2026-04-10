@@ -100,6 +100,7 @@ export default function ProjectViewPage() {
 
   // 編集フォーム
   const [editError, setEditError] = useState('');
+  const [editSuccess, setEditSuccess] = useState(false);
   const [exportError, setExportError] = useState('');
   const [editCurrency, setEditCurrency] = useState('JPY');
   const [startupCostItems, setStartupCostItems] = useState<StartupCostItem[]>([]);
@@ -214,6 +215,7 @@ export default function ProjectViewPage() {
 
   const handleEditSave = async (data: EditFormData) => {
     setEditError('');
+    setEditSuccess(false);
     try {
       const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
       await api.put(`/projects/${id}`, {
@@ -238,8 +240,7 @@ export default function ProjectViewPage() {
           display_order: index,
         })),
       );
-      // 保存後はプロジェクトタブに戻る
-      setSearchParams({ tab: 'project' }, { replace: true });
+      setEditSuccess(true);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
         ?.response?.data?.message || 'Failed to update project';
@@ -483,6 +484,7 @@ export default function ProjectViewPage() {
       {activeTab === 'edit' && canEdit && (
         <Box>
           {editError && <Alert severity="error" sx={{ mb: 2 }}>{editError}</Alert>}
+          {editSuccess && <Alert severity="success" sx={{ mb: 2 }}>{t('save_success')}</Alert>}
           <Paper elevation={2} sx={{ p: 3 }}>
             <Box component="form" onSubmit={handleEditSubmit(handleEditSave)}>
               <Controller name="title" control={editControl} render={({ field }) => (
