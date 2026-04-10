@@ -116,6 +116,7 @@ export default function ProjectViewPage() {
   });
   const watchedCurrency = watchEdit('currency', 'JPY');
   useEffect(() => { setEditCurrency(watchedCurrency); }, [watchedCurrency]);
+  const watchedPlannedOpeningDate = watchEdit('planned_opening_date');
 
   // アクセス管理
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
@@ -484,7 +485,6 @@ export default function ProjectViewPage() {
       {activeTab === 'edit' && canEdit && (
         <Box>
           {editError && <Alert severity="error" sx={{ mb: 2 }}>{editError}</Alert>}
-          {editSuccess && <Alert severity="success" sx={{ mb: 2 }}>{t('save_success')}</Alert>}
           <Paper elevation={2} sx={{ p: 3 }}>
             <Box component="form" onSubmit={handleEditSubmit(handleEditSave)}>
               <Controller name="title" control={editControl} render={({ field }) => (
@@ -584,7 +584,7 @@ export default function ProjectViewPage() {
                   ? Number(project.initial_cash_balance) : 0}
                 currency={editCurrency}
                 isOwner={isOwner}
-                plannedOpeningDate={project.planned_opening_date ?? null}
+                plannedOpeningDate={watchedPlannedOpeningDate || project.planned_opening_date || null}
                 onUpdate={async (newBalance) => {
                   await api.patch(`/projects/${id}/initial-cash-balance`, {
                     initialCashBalance: newBalance,
@@ -618,10 +618,11 @@ export default function ProjectViewPage() {
               <StartupCostTable
                 items={startupCostItems}
                 currency={editCurrency}
+                plannedOpeningDate={watchedPlannedOpeningDate || project.planned_opening_date || null}
                 onItemsChange={setStartupCostItems}
               />
 
-              <Box mt={3} display="flex" gap={2}>
+              <Box mt={3} display="flex" gap={2} alignItems="center">
                 <Button type="submit" variant="contained" disabled={editSubmitting}>
                   {editSubmitting ? t('loading') : t('save')}
                 </Button>
@@ -631,6 +632,7 @@ export default function ProjectViewPage() {
                 >
                   {t('cancel')}
                 </Button>
+                {editSuccess && <Alert severity="success" sx={{ py: 0 }}>{t('save_success')}</Alert>}
               </Box>
             </Box>
           </Paper>

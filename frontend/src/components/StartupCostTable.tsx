@@ -23,11 +23,14 @@ interface StartupCostTableProps {
   items: StartupCostItem[];
   currency: string;
   readOnly?: boolean;
+  /** 開業予定日（YYYY-MM形式）。新規行追加時の反映月デフォルト値として使用する */
+  plannedOpeningDate?: string | null;
   onItemsChange?: (items: StartupCostItem[]) => void;
 }
 
-/** デフォルトの反映月（現在の年月） */
-function defaultAllocationMonth(): string {
+/** デフォルトの反映月（引数があればその月、なければ現在の年月） */
+function defaultAllocationMonth(plannedOpeningDate?: string | null): string {
+  if (plannedOpeningDate) return plannedOpeningDate;
   const now = new Date();
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -42,6 +45,7 @@ export default function StartupCostTable({
   items,
   currency,
   readOnly = false,
+  plannedOpeningDate,
   onItemsChange,
 }: StartupCostTableProps) {
   const { t } = useTranslation();
@@ -57,7 +61,7 @@ export default function StartupCostTable({
         quantity: 1,
         unit_price: 0,
         cost_type: 'expense',
-        allocation_month: defaultAllocationMonth(),
+        allocation_month: defaultAllocationMonth(plannedOpeningDate),
       },
     ]);
   };
