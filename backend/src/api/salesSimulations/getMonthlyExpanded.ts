@@ -150,6 +150,8 @@ router.get('/monthly-expanded', authenticate, async (req: AuthRequest, res: Resp
       let operatingDays = Number(item.operating_days);
       let costRate = Number(item.cost_rate);
       let description = item.description;
+      let calculationType: 'daily' | 'monthly' = item.calculation_type ?? 'daily';
+      let monthlyQuantity = Number(item.monthly_quantity ?? 0);
       let itemIsInherited = false;
 
       if (snapshot) {
@@ -162,11 +164,15 @@ router.get('/monthly-expanded', authenticate, async (req: AuthRequest, res: Resp
           operatingDays = snapItem.operatingDays;
           costRate = snapItem.costRate;
           description = snapItem.description ?? null;
+          calculationType = snapItem.calculationType ?? 'daily';
+          monthlyQuantity = snapItem.monthlyQuantity ?? 0;
           itemIsInherited = isInherited;
         }
       }
 
-      const { sales, cost } = calculateItemMetrics({ unitPrice, quantity, operatingDays, costRate });
+      const { sales, cost } = calculateItemMetrics(
+        { unitPrice, quantity, operatingDays, costRate, calculationType, monthlyQuantity },
+      );
       monthlyTotal += sales;
       monthlyCost += cost;
 
@@ -179,6 +185,8 @@ router.get('/monthly-expanded', authenticate, async (req: AuthRequest, res: Resp
         operatingDays,
         costRate,
         description,
+        calculationType,
+        monthlyQuantity,
         monthlySales: sales,
         monthlyCost: cost,
         isInherited: itemIsInherited,

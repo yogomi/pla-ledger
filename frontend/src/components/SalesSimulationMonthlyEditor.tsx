@@ -16,6 +16,8 @@ import {
   TableHead,
   TableRow,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -90,6 +92,8 @@ export default function SalesSimulationMonthlyEditor({
           operatingDays: item.operatingDays,
           costRate: item.costRate,
           description: item.description,
+          calculationType: item.calculationType ?? 'daily',
+          monthlyQuantity: item.monthlyQuantity ?? 0,
         })),
       );
       reset({ items: flat });
@@ -250,8 +254,10 @@ export default function SalesSimulationMonthlyEditor({
                   <TableRow sx={{ backgroundColor: 'grey.100' }}>
                     <TableCell>{t('item_name')}</TableCell>
                     <TableCell align="right">{t('unit_price')}</TableCell>
+                    <TableCell align="center">{t('calc_type')}</TableCell>
                     <TableCell align="right">{t('quantity')}</TableCell>
                     <TableCell align="right">{t('operating_days')}</TableCell>
+                    <TableCell align="right">{t('monthly_quantity')}</TableCell>
                     <TableCell align="right">{t('cost_rate')}</TableCell>
                     <TableCell align="right">{t('monthly_sales_col')}</TableCell>
                     <TableCell align="right">{t('monthly_cost_col')}</TableCell>
@@ -301,37 +307,108 @@ export default function SalesSimulationMonthlyEditor({
                             )}
                           />
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align="center">
                           <Controller
-                            name={`items.${idx}.quantity`}
+                            name={`items.${idx}.calculationType`}
                             control={control}
                             render={({ field }) => (
-                              <TextField
-                                {...field}
+                              <ToggleButtonGroup
+                                value={field.value}
+                                exclusive
+                                onChange={(_e, val) => {
+                                  if (val !== null) field.onChange(val);
+                                }}
                                 size="small"
-                                type="number"
-                                variant="outlined"
-                                inputProps={{ min: 0 }}
-                                sx={{ maxWidth: '80px' }}
-                                onChange={e => field.onChange(Number(e.target.value))}
-                              />
+                                aria-label={t('calc_type')}
+                              >
+                                <ToggleButton value="daily" aria-label={t('calc_type_daily')}>
+                                  {t('calc_type_daily')}
+                                </ToggleButton>
+                                <ToggleButton value="monthly" aria-label={t('calc_type_monthly')}>
+                                  {t('calc_type_monthly')}
+                                </ToggleButton>
+                              </ToggleButtonGroup>
                             )}
                           />
                         </TableCell>
                         <TableCell align="right">
                           <Controller
-                            name={`items.${idx}.operatingDays`}
+                            name={`items.${idx}.calculationType`}
                             control={control}
-                            render={({ field }) => (
-                              <TextField
-                                {...field}
-                                size="small"
-                                type="number"
-                                variant="outlined"
-                                inputProps={{ min: 0 }}
-                                sx={{ maxWidth: '80px' }}
-                                onChange={e => field.onChange(Number(e.target.value))}
-                              />
+                            render={({ field: typeField }) => (
+                              typeField.value === 'daily' ? (
+                                <Controller
+                                  name={`items.${idx}.quantity`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <TextField
+                                      {...field}
+                                      size="small"
+                                      type="number"
+                                      variant="outlined"
+                                      inputProps={{ min: 0 }}
+                                      sx={{ maxWidth: '80px' }}
+                                      onChange={e => field.onChange(Number(e.target.value))}
+                                    />
+                                  )}
+                                />
+                              ) : (
+                                <Typography variant="body2" color="text.secondary">—</Typography>
+                              )
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Controller
+                            name={`items.${idx}.calculationType`}
+                            control={control}
+                            render={({ field: typeField }) => (
+                              typeField.value === 'daily' ? (
+                                <Controller
+                                  name={`items.${idx}.operatingDays`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <TextField
+                                      {...field}
+                                      size="small"
+                                      type="number"
+                                      variant="outlined"
+                                      inputProps={{ min: 0 }}
+                                      sx={{ maxWidth: '80px' }}
+                                      onChange={e => field.onChange(Number(e.target.value))}
+                                    />
+                                  )}
+                                />
+                              ) : (
+                                <Typography variant="body2" color="text.secondary">—</Typography>
+                              )
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Controller
+                            name={`items.${idx}.calculationType`}
+                            control={control}
+                            render={({ field: typeField }) => (
+                              typeField.value === 'monthly' ? (
+                                <Controller
+                                  name={`items.${idx}.monthlyQuantity`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <TextField
+                                      {...field}
+                                      size="small"
+                                      type="number"
+                                      variant="outlined"
+                                      inputProps={{ min: 0 }}
+                                      sx={{ maxWidth: '90px' }}
+                                      onChange={e => field.onChange(Number(e.target.value))}
+                                    />
+                                  )}
+                                />
+                              ) : (
+                                <Typography variant="body2" color="text.secondary">—</Typography>
+                              )
                             )}
                           />
                         </TableCell>
@@ -380,7 +457,7 @@ export default function SalesSimulationMonthlyEditor({
                   })}
                   {/* 新規品目追加行 */}
                   <TableRow>
-                    <TableCell colSpan={8}>
+                    <TableCell colSpan={10}>
                       <Box display="flex" alignItems="center" gap={1} p={0.5}>
                         <TextField
                           size="small"

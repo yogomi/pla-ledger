@@ -363,12 +363,22 @@ interface SalesSimulationItemAttributes {
   operating_days: number;
   cost_rate: number;
   description: string | null;
+  calculation_type: 'daily' | 'monthly';
+  monthly_quantity: number;
   created_at?: Date;
   updated_at?: Date;
 }
 type SalesSimulationItemCreation = Optional<
   SalesSimulationItemAttributes,
-  'id' | 'item_order' | 'unit_price' | 'quantity' | 'operating_days' | 'cost_rate' | 'description'
+  | 'id'
+  | 'item_order'
+  | 'unit_price'
+  | 'quantity'
+  | 'operating_days'
+  | 'cost_rate'
+  | 'description'
+  | 'calculation_type'
+  | 'monthly_quantity'
 >;
 
 export class SalesSimulationItem
@@ -384,6 +394,8 @@ export class SalesSimulationItem
   declare operating_days: number;
   declare cost_rate: number;
   declare description: string | null;
+  declare calculation_type: 'daily' | 'monthly';
+  declare monthly_quantity: number;
 }
 
 SalesSimulationItem.init({
@@ -397,6 +409,8 @@ SalesSimulationItem.init({
   operating_days: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
   cost_rate: { type: DataTypes.DECIMAL(5, 2), defaultValue: 0 },
   description: { type: DataTypes.TEXT, defaultValue: null },
+  calculation_type: { type: DataTypes.STRING(10), defaultValue: 'daily' },
+  monthly_quantity: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
 }, { sequelize, tableName: 'sales_simulation_items', underscored: true });
 
 // ========== SalesSimulationSnapshot ==========
@@ -412,6 +426,8 @@ interface ItemSnapshotData {
   operatingDays: number;
   costRate: number;
   description: string | null | undefined;
+  calculationType: 'daily' | 'monthly';
+  monthlyQuantity: number;
 }
 
 interface SalesSimulationSnapshotAttributes {

@@ -2,7 +2,7 @@ import { SalesSimulationSnapshot } from '../models';
 
 /**
  * 商品行の売上・原価を計算する
- * @param item - 単価・数量・稼働日数・原価率を持つオブジェクト
+ * @param item - 単価・数量・稼働日数・原価率・計算方式・月間販売個数を持つオブジェクト
  * @returns 売上合計と原価合計
  */
 export function calculateItemMetrics(item: {
@@ -10,8 +10,15 @@ export function calculateItemMetrics(item: {
   quantity: number;
   operatingDays: number;
   costRate: number;
+  calculationType: 'daily' | 'monthly';
+  monthlyQuantity: number;
 }): { sales: number; cost: number } {
-  const sales = item.unitPrice * item.quantity * item.operatingDays;
+  let sales: number;
+  if (item.calculationType === 'monthly') {
+    sales = item.unitPrice * item.monthlyQuantity;
+  } else {
+    sales = item.unitPrice * item.quantity * item.operatingDays;
+  }
   const cost = sales * (item.costRate / 100);
   return { sales, cost };
 }
@@ -22,7 +29,14 @@ export function calculateItemMetrics(item: {
  * @returns 月間合計売上と月間合計原価
  */
 export function calculateSnapshotTotals(
-  items: Array<{ unitPrice: number; quantity: number; operatingDays: number; costRate: number }>,
+  items: Array<{
+    unitPrice: number;
+    quantity: number;
+    operatingDays: number;
+    costRate: number;
+    calculationType: 'daily' | 'monthly';
+    monthlyQuantity: number;
+  }>,
 ): { monthlyTotal: number; monthlyCost: number } {
   let monthlyTotal = 0;
   let monthlyCost = 0;
