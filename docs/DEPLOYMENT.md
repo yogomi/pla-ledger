@@ -102,7 +102,7 @@ chmod +x deploy.sh
 ### 6. データベースマイグレーション
 
 ```bash
-docker-compose exec backend npx sequelize-cli db:migrate
+docker compose exec backend npx sequelize-cli db:migrate
 ```
 
 ---
@@ -124,13 +124,13 @@ main ブランチへのプッシュで自動デプロイが実行される。
 
 ```bash
 # コンテナ状態確認
-docker-compose ps
+docker compose ps
 
 # バックエンドログ確認
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # PostgreSQL ログ確認
-docker-compose logs -f postgres
+docker compose logs -f postgres
 
 # ヘルスチェック
 curl http://localhost/api/health
@@ -152,7 +152,7 @@ curl http://localhost/api/health
 
 ```bash
 # PostgreSQL バックアップ例
-docker-compose exec postgres pg_dump -U plaledger plaledger > backup-$(date +%Y%m%d-%H%M%S).sql
+docker compose exec postgres pg_dump -U plaledger plaledger > backup-$(date +%Y%m%d-%H%M%S).sql
 ```
 
 ---
@@ -176,20 +176,20 @@ docker-compose exec postgres pg_dump -U plaledger plaledger > backup-$(date +%Y%
 
 ```bash
 # ログを確認する
-docker-compose logs backend
+docker compose logs backend
 
 # コンテナを再起動する
-docker-compose restart backend
+docker compose restart backend
 ```
 
 ### データベース接続エラーの場合
 
 ```bash
 # PostgreSQL コンテナの状態を確認する
-docker-compose ps postgres
+docker compose ps postgres
 
 # 接続テスト
-docker-compose exec postgres psql -U plaledger -c "SELECT 1;"
+docker compose exec postgres psql -U plaledger -c "SELECT 1;"
 ```
 
 ### デプロイのロールバック
