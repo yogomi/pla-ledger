@@ -57,12 +57,23 @@ interface ItemRowProps {
 }
 
 /**
- * 商品行コンポーネント。useWatch で計算方式を監視し、フィールドを条件分岐で表示する。
+ * 商品行コンポーネント。useWatch で入力値を監視し、月間売上・原価をリアルタイム計算して表示する。
  */
 function ItemRow({ idx, fieldId, originalItem, control, onDelete }: ItemRowProps) {
   const { t } = useTranslation();
   const calculationType = useWatch({ control, name: `items.${idx}.calculationType` });
+  const unitPrice = useWatch({ control, name: `items.${idx}.unitPrice` }) ?? 0;
+  const quantity = useWatch({ control, name: `items.${idx}.quantity` }) ?? 0;
+  const operatingDays = useWatch({ control, name: `items.${idx}.operatingDays` }) ?? 0;
+  const costRate = useWatch({ control, name: `items.${idx}.costRate` }) ?? 0;
+  const monthlyQuantity = useWatch({ control, name: `items.${idx}.monthlyQuantity` }) ?? 0;
+
   const isDaily = calculationType !== 'monthly';
+
+  const monthlySales = isDaily
+    ? unitPrice * quantity * operatingDays
+    : unitPrice * monthlyQuantity;
+  const monthlyCost = monthlySales * (costRate / 100);
 
   return (
     <TableRow key={fieldId}>
@@ -207,10 +218,10 @@ function ItemRow({ idx, fieldId, originalItem, control, onDelete }: ItemRowProps
         />
       </TableCell>
       <TableCell align="right">
-        {originalItem?.monthlySales.toLocaleString() ?? '-'}
+        {Math.round(monthlySales).toLocaleString()}
       </TableCell>
       <TableCell align="right">
-        {originalItem?.monthlyCost.toLocaleString() ?? '-'}
+        {Math.round(monthlyCost).toLocaleString()}
       </TableCell>
       <TableCell align="center">
         <Tooltip title={t('delete_item')}>
@@ -259,6 +270,7 @@ export default function SalesSimulationMonthlyEditor({
 
   const { control, handleSubmit, reset } = useForm<FormValues>({ defaultValues: { items: [] } });
   const { fields } = useFieldArray({ control, name: 'items' });
+  const watchedItems = useWatch({ control, name: 'items' }) ?? [];
 
   useEffect(() => {
     if (data) {
@@ -564,12 +576,27 @@ export default function SalesSimulationMonthlyEditor({
       <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box>
-            <Typography variant="body2" color="text.secondary">
-              {t('monthly_sales_total', { amount: data.monthlyTotal.toLocaleString() })}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t('monthly_cost_total', { amount: data.monthlyCost.toLocaleString() })}
-            </Typography>
+            {(() => {
+              let totalSales = 0;
+              let totalCost = 0;
+              for (const item of watchedItems) {
+                const sales = item.calculationType === 'monthly'
+                  ? (item.unitPrice ?? 0) * (item.monthlyQuantity ?? 0)
+                  : (item.unitPrice ?? 0) * (item.quantity ?? 0) * (item.operatingDays ?? 0);
+                totalSales += sales;
+                totalCost += sales * ((item.costRate ?? 0) / 100);
+              }
+              return (
+                <>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('monthly_sales_total', { amount: Math.round(totalSales).toLocaleString() })}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('monthly_cost_total', { amount: Math.round(totalCost).toLocaleString() })}
+                  </Typography>
+                </>
+              );
+            })()}
           </Box>
           <Box display="flex" gap={1}>
             {!data.isInherited && (
