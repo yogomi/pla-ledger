@@ -120,8 +120,9 @@ export default function FinancialSummaryCards({
           item
           xs={12}
           sm={6}
-          // 5カード時は均等に2.4列（12/5）、4カード時は3列（12/4）
-          md={loans !== undefined ? (2.4 as number) : 3}
+          // 5カード時はsxでflex幅を20%に指定、4カード時は3列（12/4）
+          md={loans !== undefined ? undefined : 3}
+          sx={loans !== undefined ? { flexBasis: '20%', maxWidth: '20%' } : undefined}
           key={card.label}
         >
           <Card elevation={2} sx={{ height: '100%' }}>
