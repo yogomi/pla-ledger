@@ -41,3 +41,24 @@ export async function getCashFlowYearly(
   const res = await api.get(`/projects/${projectId}/cash-flow/yearly/${year}`);
   return res.data.data as CashFlowYearlyData;
 }
+
+/** タイムラインエントリ */
+export interface TimelineEntry {
+  yearMonth: string;
+  noteJa: string | null;
+  noteEn: string | null;
+}
+
+/**
+ * タイムラインデータを一括取得する。
+ * 基準月前後24ヶ月の範囲でコメントが存在する月のみを返す。
+ * @param projectId プロジェクトID
+ * @param base 基準年月 (YYYY-MM)
+ */
+export async function getCashFlowTimeline(
+  projectId: string,
+  base: string,
+): Promise<TimelineEntry[]> {
+  const res = await api.get(`/projects/${projectId}/cash-flow/timeline`, { params: { base } });
+  return (res.data.data as { entries: TimelineEntry[] }).entries;
+}
