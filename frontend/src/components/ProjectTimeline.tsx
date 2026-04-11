@@ -62,10 +62,7 @@ export default function ProjectTimeline({
 
   const isLoading = enabled && results.some(r => r.isLoading);
   // 全クエリが失敗した場合のみエラーとみなす（部分的な失敗は無視する）
-  const hasError =
-    enabled &&
-    results.every(r => r.isError) &&
-    results.some(r => r.isError);
+  const hasError = enabled && results.every(r => r.isError);
 
   /** ロケールに応じてコメントを取得する */
   const getNote = (notes: { ja: string | null; en: string | null }): string | null => {

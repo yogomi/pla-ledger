@@ -116,7 +116,14 @@ export default function FinancialSummaryCards({
   return (
     <Grid container spacing={2} mb={3}>
       {cards.map(card => (
-        <Grid item xs={12} sm={6} md={loans !== undefined ? 2.4 as number : 3} key={card.label}>
+        <Grid
+          item
+          xs={12}
+          sm={6}
+          // 5カード時は均等に2.4列（12/5）、4カード時は3列（12/4）
+          md={loans !== undefined ? (2.4 as number) : 3}
+          key={card.label}
+        >
           <Card elevation={2} sx={{ height: '100%' }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={1.5}>
