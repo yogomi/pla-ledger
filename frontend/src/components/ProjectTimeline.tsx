@@ -26,7 +26,10 @@ function generateMonthRange(baseYearMonth: string, before: number, after: number
 interface ProjectTimelineProps {
   /** プロジェクトID */
   projectId: string;
-  /** 開業予定日 (YYYY-MM)。未設定の場合は '2025-01' を使用。 */
+  /**
+   * 開業予定日 (YYYY-MM)。
+   * 未設定の場合はバックエンドと同じデフォルト値 '2025-01' を使用する。
+   */
   plannedOpeningDate: string | null;
 }
 
