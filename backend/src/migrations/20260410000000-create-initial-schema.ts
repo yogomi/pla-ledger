@@ -444,6 +444,16 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       type: DataTypes.TEXT,
       defaultValue: null,
     },
+    calculation_type: {
+      type: DataTypes.STRING(10),
+      allowNull: false,
+      defaultValue: 'daily',
+    },
+    monthly_quantity: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+      defaultValue: 0,
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,

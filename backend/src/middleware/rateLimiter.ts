@@ -19,10 +19,10 @@ export const authRateLimiter = rateLimit({
 
 /**
  * General API rate limiter for all authenticated/public endpoints.
- * Limits to 200 requests per 15 minutes per IP.
+ * Limits to 200 requests per 3 seconds per IP.
  */
 export const apiRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 3 * 1000,
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
