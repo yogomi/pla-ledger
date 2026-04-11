@@ -31,6 +31,11 @@ interface ProjectTimelineProps {
    * 未設定の場合はバックエンドと同じデフォルト値 '2025-01' を使用する。
    */
   plannedOpeningDate: string | null;
+  /**
+   * クエリを実行するか否か。
+   * CF APIは認証が必要なため、ユーザーがロールを持つ場合のみ true にする。
+   */
+  enabled?: boolean;
 }
 
 /**
@@ -38,7 +43,11 @@ interface ProjectTimelineProps {
  * 開業予定日を基準に前後24ヶ月分のデータを並列取得し、
  * コメントが存在する月のみを時系列順に表示する。
  */
-export default function ProjectTimeline({ projectId, plannedOpeningDate }: ProjectTimelineProps) {
+export default function ProjectTimeline({
+  projectId,
+  plannedOpeningDate,
+  enabled = true,
+}: ProjectTimelineProps) {
   const { t, i18n } = useTranslation();
   const base = plannedOpeningDate ?? '2025-01';
   const months = generateMonthRange(base, 24, 24);
@@ -47,12 +56,16 @@ export default function ProjectTimeline({ projectId, plannedOpeningDate }: Proje
     queries: months.map(yearMonth => ({
       queryKey: ['cashFlow', projectId, yearMonth],
       queryFn: () => getCashFlowMonthly(projectId, yearMonth),
-      enabled: Boolean(projectId),
+      enabled: Boolean(projectId) && enabled,
     })),
   });
 
-  const isLoading = results.some(r => r.isLoading);
-  const hasError = results.some(r => r.isError);
+  const isLoading = enabled && results.some(r => r.isLoading);
+  // 全クエリが失敗した場合のみエラーとみなす（部分的な失敗は無視する）
+  const hasError =
+    enabled &&
+    results.every(r => r.isError) &&
+    results.some(r => r.isError);
 
   /** ロケールに応じてコメントを取得する */
   const getNote = (notes: { ja: string | null; en: string | null }): string | null => {
@@ -86,6 +99,14 @@ export default function ProjectTimeline({ projectId, plannedOpeningDate }: Proje
         <CircularProgress size={20} />
         <Typography variant="body2" color="text.secondary">{t('loading')}</Typography>
       </Box>
+    );
+  }
+
+  if (!enabled) {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        {t('sign_in_to_view_timeline')}
+      </Typography>
     );
   }
 

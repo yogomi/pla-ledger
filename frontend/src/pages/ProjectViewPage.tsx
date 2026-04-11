@@ -22,6 +22,7 @@ import ProjectInitialCashBalance from '../components/ProjectInitialCashBalance';
 import FinancialSummaryCards from '../components/FinancialSummaryCards';
 import ProjectTimeline from '../components/ProjectTimeline';
 import { getStartupCosts, updateStartupCosts } from '../api/startupCosts';
+import { useLoans } from '../hooks/useLoan';
 
 interface Comment { id: string; author_id: string; body: string; created_at: string; }
 interface Version {
@@ -106,6 +107,9 @@ export default function ProjectViewPage() {
   const [exportError, setExportError] = useState('');
   const [editCurrency, setEditCurrency] = useState('JPY');
   const [startupCostItems, setStartupCostItems] = useState<StartupCostItem[]>([]);
+
+  /** 借入一覧（ロールがある場合のみ取得） */
+  const { data: loanData } = useLoans(id ?? '');
   const {
     control: editControl,
     handleSubmit: handleEditSubmit,
@@ -374,17 +378,28 @@ export default function ProjectViewPage() {
             initialCashBalance={project.initial_cash_balance}
             plannedOpeningDate={project.planned_opening_date}
             currency={project.currency}
+            loans={role ? (loanData?.loans ?? []) : undefined}
           />
           <Divider sx={{ mb: 2 }} />
           <Tabs value={innerTabValue} onChange={(_, v) => setInnerTabValue(v)} sx={{ mb: 2 }}>
-            <Tab label={t('sections')} />
-            <Tab label={t('timeline')} />
+            <Tab label={t('plan_overview')} />
             <Tab label={t('comments')} />
             <Tab label={t('versions')} />
           </Tabs>
 
           {innerTabValue === 0 && (
             <Grid container spacing={2}>
+              {/* 事業タイムライン（キャッシュフローコメント時系列） */}
+              <Grid item xs={12}>
+                <Paper elevation={1} sx={{ p: 2 }}>
+                  <Typography variant="h6" mb={2}>{t('timeline')}</Typography>
+                  <ProjectTimeline
+                    projectId={id!}
+                    plannedOpeningDate={project.planned_opening_date}
+                    enabled={Boolean(role)}
+                  />
+                </Paper>
+              </Grid>
               {financeSection && (
                 <Grid item xs={12}>
                   <Paper elevation={1} sx={{ p: 2 }}>
@@ -404,18 +419,7 @@ export default function ProjectViewPage() {
             </Grid>
           )}
 
-          {/* キャッシュフローコメント時系列タブ */}
           {innerTabValue === 1 && (
-            <Paper elevation={1} sx={{ p: 2 }}>
-              <Typography variant="h6" mb={2}>{t('timeline')}</Typography>
-              <ProjectTimeline
-                projectId={id!}
-                plannedOpeningDate={project.planned_opening_date}
-              />
-            </Paper>
-          )}
-
-          {innerTabValue === 2 && (
             <Box>
               <List>
                 {comments.map(c => (
@@ -454,7 +458,7 @@ export default function ProjectViewPage() {
             </Box>
           )}
 
-          {innerTabValue === 3 && (
+          {innerTabValue === 2 && (
             <List>
               {versions.map(v => (
                 <ListItem key={v.id} divider>

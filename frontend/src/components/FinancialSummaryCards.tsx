@@ -10,8 +10,10 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import CreditScoreIcon from '@mui/icons-material/CreditScore';
 import { useTranslation } from 'react-i18next';
 import { StartupCostItem } from './StartupCostTable';
+import { Loan } from '../types/Loan';
 
 interface FinancialSummaryCardsProps {
   /** スタートアップコスト一覧 */
@@ -22,17 +24,20 @@ interface FinancialSummaryCardsProps {
   plannedOpeningDate: string | null;
   /** 通貨コード (例: JPY, USD) */
   currency: string;
+  /** 借入一覧（ロールがある場合のみ渡す） */
+  loans?: Loan[];
 }
 
 /**
  * プロジェクトの財務サマリーをカード形式で表示するコンポーネント。
- * スタートアップコスト総額・初期現金残高・開業予定日・通貨を一覧表示する。
+ * スタートアップコスト総額・初期現金残高・開業予定日・通貨・初期借入計画を一覧表示する。
  */
 export default function FinancialSummaryCards({
   startupCostItems,
   initialCashBalance,
   plannedOpeningDate,
   currency,
+  loans,
 }: FinancialSummaryCardsProps) {
   const { t, i18n } = useTranslation();
 
@@ -41,6 +46,26 @@ export default function FinancialSummaryCards({
     (sum, item) => sum + item.quantity * item.unit_price,
     0,
   );
+
+  /**
+   * 開業予定日前後24ヶ月内の借入総額を計算する。
+   * 開業予定日が未設定の場合は全借入を対象とする。
+   */
+  const totalLoanAmount = (() => {
+    if (!loans || loans.length === 0) return null;
+    if (!plannedOpeningDate) {
+      return loans.reduce((sum, l) => sum + l.principalAmount, 0);
+    }
+    const [baseY, baseM] = plannedOpeningDate.split('-').map(Number);
+    const baseMonthIndex = baseY * 12 + baseM;
+    const filtered = loans.filter(l => {
+      const loanYm = l.loanDate.substring(0, 7); // YYYY-MM
+      const [ly, lm] = loanYm.split('-').map(Number);
+      const diff = Math.abs(ly * 12 + lm - baseMonthIndex);
+      return diff <= 24;
+    });
+    return filtered.reduce((sum, l) => sum + l.principalAmount, 0);
+  })();
 
   /** 金額をロケールに合わせてフォーマット */
   const formatAmount = (amount: number): string => {
@@ -69,6 +94,13 @@ export default function FinancialSummaryCards({
       label: t('initial_cash_balance'),
       value: initialCashBalance != null ? formatAmount(initialCashBalance) : '-',
     },
+    ...(loans !== undefined
+      ? [{
+        icon: <CreditScoreIcon fontSize="large" color="secondary" />,
+        label: t('initial_borrowing_plan'),
+        value: totalLoanAmount !== null ? formatAmount(totalLoanAmount) : '-',
+      }]
+      : []),
     {
       icon: <CalendarMonthIcon fontSize="large" color="warning" />,
       label: t('planned_opening_date'),
@@ -84,7 +116,7 @@ export default function FinancialSummaryCards({
   return (
     <Grid container spacing={2} mb={3}>
       {cards.map(card => (
-        <Grid item xs={12} sm={6} md={3} key={card.label}>
+        <Grid item xs={12} sm={6} md={loans !== undefined ? 2.4 as number : 3} key={card.label}>
           <Card elevation={2} sx={{ height: '100%' }}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={1.5}>
