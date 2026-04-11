@@ -19,6 +19,8 @@ import StartupCostTable, { StartupCostItem } from '../components/StartupCostTabl
 import SimulationViewContainer from '../components/SimulationViewContainer';
 import SimulationSheetContainer from '../components/SimulationSheetContainer';
 import ProjectInitialCashBalance from '../components/ProjectInitialCashBalance';
+import FinancialSummaryCards from '../components/FinancialSummaryCards';
+import ProjectTimeline from '../components/ProjectTimeline';
 import { getStartupCosts, updateStartupCosts } from '../api/startupCosts';
 
 interface Comment { id: string; author_id: string; body: string; created_at: string; }
@@ -366,9 +368,17 @@ export default function ProjectViewPage() {
               {project.tags.map(tag => <Chip key={tag} label={tag} size="small" />)}
             </Box>
           )}
+          {/* 財務サマリーカード */}
+          <FinancialSummaryCards
+            startupCostItems={startupCostItems}
+            initialCashBalance={project.initial_cash_balance}
+            plannedOpeningDate={project.planned_opening_date}
+            currency={project.currency}
+          />
           <Divider sx={{ mb: 2 }} />
           <Tabs value={innerTabValue} onChange={(_, v) => setInnerTabValue(v)} sx={{ mb: 2 }}>
             <Tab label={t('sections')} />
+            <Tab label={t('timeline')} />
             <Tab label={t('comments')} />
             <Tab label={t('versions')} />
           </Tabs>
@@ -391,23 +401,21 @@ export default function ProjectViewPage() {
                   </Paper>
                 </Grid>
               )}
-              {project.sections?.filter(s => s.type !== 'finances').map(s => (
-                <Grid item xs={12} key={s.id}>
-                  <Paper elevation={1} sx={{ p: 2 }}>
-                    <Typography variant="h6" mb={1}>{t(s.type) || s.type}</Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: '0.8rem' }}
-                    >
-                      {JSON.stringify(s.content, null, 2)}
-                    </Typography>
-                  </Paper>
-                </Grid>
-              ))}
             </Grid>
           )}
 
+          {/* キャッシュフローコメント時系列タブ */}
           {innerTabValue === 1 && (
+            <Paper elevation={1} sx={{ p: 2 }}>
+              <Typography variant="h6" mb={2}>{t('timeline')}</Typography>
+              <ProjectTimeline
+                projectId={id!}
+                plannedOpeningDate={project.planned_opening_date}
+              />
+            </Paper>
+          )}
+
+          {innerTabValue === 2 && (
             <Box>
               <List>
                 {comments.map(c => (
@@ -446,7 +454,7 @@ export default function ProjectViewPage() {
             </Box>
           )}
 
-          {innerTabValue === 2 && (
+          {innerTabValue === 3 && (
             <List>
               {versions.map(v => (
                 <ListItem key={v.id} divider>
