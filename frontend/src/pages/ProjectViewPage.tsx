@@ -404,15 +404,7 @@ export default function ProjectViewPage() {
                 <Grid item xs={12}>
                   <Paper elevation={1} sx={{ p: 2 }}>
                     <Typography variant="h6" mb={2}>{t('startup_costs_section')}</Typography>
-                    {(() => {
-                      const sc = financeSection.content?.startup_costs as
-                        | { items?: StartupCostItem[] }
-                        | undefined;
-                      const items: StartupCostItem[] = sc?.items ?? [];
-                      return (
-                        <StartupCostTable items={items} currency={project.currency} readOnly />
-                      );
-                    })()}
+                    <StartupCostTable items={startupCostItems} currency={project.currency} readOnly />
                   </Paper>
                 </Grid>
               )}
