@@ -77,7 +77,8 @@ router.post('/', async (req, res: Response) => {
     // セキュリティ: トークンをURLクエリパラメータに含めるのはパスワードリセットの標準的な方式。
     // ブラウザ履歴やサーバーログに残る可能性があるため、必ずHTTPS環境で使用すること。
     const resetLink = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password/confirm?token=${token}`;
-    await EmailService.sendPasswordResetEmail(user.email, resetLink, user.locale as 'en' | 'ja');
+    const locale = (user.locale === 'ja' ? 'ja' : 'en') as 'en' | 'ja';
+    await EmailService.sendPasswordResetEmail(user.email, resetLink, locale);
   }
 
   // セキュリティ：メールアドレスの存在有無に関わらず同一レスポンスを返す
