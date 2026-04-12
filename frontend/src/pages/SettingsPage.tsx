@@ -135,9 +135,6 @@ export default function SettingsPage() {
                 fullWidth
                 margin="normal"
                 error={!!passwordErrors.currentPassword}
-                helperText={
-                  passwordErrors.currentPassword ? t('current_password_incorrect') : undefined
-                }
               />
             )}
           />
