@@ -120,22 +120,22 @@ export default function PublicProjectsPage() {
       <Box mt={8}>
         <Divider sx={{ mb: 4 }} />
         <Box sx={{ px: { xs: 1, sm: 2 }, maxWidth: 720 }}>
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+          <Typography variant="subtitle2" color="text.disabled" gutterBottom>
             {t('about_plaledger_title')}
           </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
+          <Typography variant="body2" color="text.disabled" paragraph>
             {t('about_plaledger_paragraph1')}
           </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
+          <Typography variant="body2" color="text.disabled" paragraph>
             {t('about_plaledger_paragraph2')}
           </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
+          <Typography variant="body2" color="text.disabled" paragraph>
             {t('about_plaledger_paragraph3')}
           </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
+          <Typography variant="body2" color="text.disabled" paragraph>
             {t('about_plaledger_paragraph4')}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+          <Typography variant="body2" color="text.disabled" sx={{ mb: 0.5 }}>
             <a
               href={t('ukrainian_culture_garden_url')}
               target="_blank"
@@ -144,9 +144,6 @@ export default function PublicProjectsPage() {
             >
               {t('ukrainian_culture_garden_url')}
             </a>
-          </Typography>
-          <Typography variant="body2" color="text.disabled" paragraph>
-            {t('about_plaledger_link_note')}
           </Typography>
           <Typography variant="body2" color="text.disabled">
             {t('about_plaledger_disclaimer')}

@@ -344,8 +344,6 @@ const en = {
       'If this program has been helpful to you and you are considering a donation or similar support,'
       + ' there is no need to send anything to the developer. Instead, any support directed toward'
       + ' "Ukrainian Culture Garden" would be greatly appreciated.',
-    about_plaledger_link_note:
-      '(Japanese users are directed to the /ja path; all other languages use the base URL)',
     about_plaledger_disclaimer:
       'We will do our best to maintain the service so that data is not lost, but we cannot'
       + ' guarantee data integrity. Furthermore, "Karinui" assumes no responsibility for any'
@@ -680,7 +678,7 @@ const ja = {
     no_fixed_assets: '固定資産が登録されていません。',
     go_to_fixed_assets: '固定資産管理へ',
     years_unit: '年',
-    about_plaledger_title: 'PlaLedgerについて',
+    about_plaledger_title: 'PlaLedgerが作られた経緯について',
     about_plaledger_paragraph1:
       'PlaLedgerは徳島県美馬市脇町で、文化と芸術の視点からウクライナを知ってもらいながら'
       + 'アートをもっと身近に楽しめる場を目指して作られるアートセンター'
@@ -694,7 +692,6 @@ const ja = {
     about_plaledger_paragraph4:
       'このプログラムが役に立ち寄付などをご検討いただける場合は'
       + '開発者への連絡は不要です。代わりに「ウクライナ文化の箱庭」への支援をいただけると助かります。',
-    about_plaledger_link_note: '（日本語以外の言語では /ja を省略）',
     about_plaledger_disclaimer:
       'データが消えないよう努めてメンテナンスしていきますがデータの保証はいたしません。'
       + 'このプログラムの使用により生じた損害に対して「カリヌイ」は責任を負いません。',
@@ -1050,8 +1047,6 @@ const uk = {
       'Якщо ця програма виявилася для вас корисною і ви розглядаєте можливість пожертвування,'
       + ' немає потреби надсилати щось розробнику.'
       + ' Натомість будь-яка підтримка «Саду Української Культури» буде дуже вдячна.',
-    about_plaledger_link_note:
-      '(Японські користувачі перенаправляються за шляхом /ja; усі інші мови використовують базову URL)',
     about_plaledger_disclaimer:
       'Ми докладатимемо всіх зусиль для підтримки сервісу, щоб дані не були втрачені,'
       + ' але ми не можемо гарантувати збереження даних.'
