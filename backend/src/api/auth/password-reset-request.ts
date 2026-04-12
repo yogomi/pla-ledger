@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { User, PasswordResetToken } from '../../models';
 import { PasswordResetRequestSchema } from '../../schemas';
 import { formatZodError } from '../../utils/zodError';
+import EmailService from '../../services/EmailService';
 
 /**
  * @api {POST} /api/auth/password-reset/request パスワードリセット申請
@@ -10,7 +11,7 @@ import { formatZodError } from '../../utils/zodError';
  *   - メールアドレスを受け取り、該当ユーザーが存在すればリセットトークンを生成してメールを送信する
  *   - セキュリティ上、メールアドレスの存在有無に関わらず同一レスポンスを返す
  *   - トークンは crypto.randomBytes(32).toString('hex') で生成し、有効期限は1時間
- *   - メール送信は現時点では console.log で簡易実装（後で実際のメール送信機能に置き換え可）
+ *   - メール送信はEmailServiceを使用してSMTPサーバー経由で送信する
  *   - レート制限：TODO: 同一IPから5分以内に3回まで（後で実装）
  *
  * @request
@@ -73,11 +74,10 @@ router.post('/', async (req, res: Response) => {
       used_at: null,
     });
 
-    // TODO: 実際のメール送信機能に置き換える
     // セキュリティ: トークンをURLクエリパラメータに含めるのはパスワードリセットの標準的な方式。
     // ブラウザ履歴やサーバーログに残る可能性があるため、必ずHTTPS環境で使用すること。
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/confirm?token=${token}`;
-    console.log(`[PasswordReset] Reset link for ${email}: ${resetLink}`);
+    const resetLink = `${process.env.APP_URL || 'http://localhost:3000'}/reset-password/confirm?token=${token}`;
+    await EmailService.sendPasswordResetEmail(user.email, resetLink, user.locale as 'en' | 'ja');
   }
 
   // セキュリティ：メールアドレスの存在有無に関わらず同一レスポンスを返す

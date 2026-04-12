@@ -57,6 +57,77 @@ Docker Compose を使用して AWS EC2 にデプロイする。詳細は [docs/D
 | `DB_PATH` | SQLite ファイルパス（開発） | `./data/pla-ledger.sqlite` |
 | `JWT_SECRET` | JWT 署名シークレット | 任意の長いランダム文字列 |
 | `CORS_ORIGIN` | CORS 許可オリジン（本番） | `https://yourdomain.com` |
+| `APP_URL` | アプリケーション URL（パスワードリセットリンク生成に使用） | `http://localhost:3000` |
+| `EMAIL_FROM` | メール送信元アドレス | `noreply@plaledger.com` |
+| `EMAIL_FROM_NAME` | メール送信元名 | `PlaLedger` |
+| `SMTP_HOST` | SMTP サーバーホスト | `localhost`（Mailhog）/ `smtp.gmail.com` |
+| `SMTP_PORT` | SMTP ポート番号 | `1025`（Mailhog）/ `587`（Gmail） |
+| `SMTP_SECURE` | SSL/TLS 使用 | `false` / `true` |
+| `SMTP_USER` | SMTP 認証ユーザー名 | Gmail アドレス等 |
+| `SMTP_PASS` | SMTP 認証パスワード | アプリパスワード等 |
+
+## 開発環境でのメール送信テスト
+
+### Mailhog を使用する方法（推奨）
+
+Mailhog はローカル開発用の SMTP サーバーで、送信されたメールをブラウザで確認できる。
+
+**1. Mailhog の起動（Docker 使用）**
+
+```bash
+docker run -d -p 1025:1025 -p 8025:8025 mailhog/mailhog
+```
+
+**2. 環境変数の設定**
+
+`.env` ファイルに以下を設定：
+
+```bash
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+APP_URL=http://localhost:3000
+```
+
+**3. メール確認**
+
+パスワードリセットリクエスト後、`http://localhost:8025` にアクセスして送信されたメールを確認する。
+
+### Gmail を使用する方法（本番環境想定）
+
+**1. Google アカウントで「アプリパスワード」を生成**
+
+- Google アカウント設定 > セキュリティ > 2 段階認証プロセスを有効化
+- 「アプリパスワード」を生成（アプリ：メール、デバイス：その他）
+- 生成された 16 桁のパスワードをメモ
+
+**2. 環境変数の設定**
+
+`.env` ファイルに以下を設定：
+
+```bash
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+EMAIL_FROM=your-email@gmail.com
+EMAIL_FROM_NAME=PlaLedger
+APP_URL=http://localhost:3000
+```
+
+**注意：**
+- `SMTP_USER` と `EMAIL_FROM` は同じ Gmail アドレスを使用
+- `SMTP_PASS` には生成したアプリパスワードを使用（通常のパスワードではない）
+- Gmail は 1 日の送信数に制限あり（無料アカウント：500 通/日）
+
+### 本番環境での推奨サービス
+
+- **SendGrid**: 無料枠あり、信頼性高い
+- **AWS SES**: AWS ユーザーに最適、低コスト
+- **Mailgun**: 開発者向け、API 充実
 
 ## データベースマイグレーション
 
