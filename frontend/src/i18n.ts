@@ -1114,11 +1114,22 @@ const uk = {
   },
 };
 
+/** ブラウザ言語設定またはlocalStorageからロケールを決定する */
+const getInitialLocale = (): 'en' | 'ja' | 'uk' => {
+  const stored = localStorage.getItem('locale');
+  if (stored === 'en' || stored === 'ja' || stored === 'uk') return stored;
+
+  const browserLang = navigator.language.toLowerCase();
+  if (browserLang.startsWith('ja')) return 'ja';
+  if (browserLang.startsWith('uk')) return 'uk';
+  return 'en';
+};
+
 i18n
   .use(initReactI18next)
   .init({
     resources: { en, ja, uk },
-    lng: localStorage.getItem('locale') || 'en',
+    lng: getInitialLocale(),
     fallbackLng: 'en',
     interpolation: { escapeValue: false },
   });
