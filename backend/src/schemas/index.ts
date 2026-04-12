@@ -21,6 +21,11 @@ export const PasswordResetConfirmSchema = z.object({
   newPassword: z.string().min(8),
 });
 
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
 export const ProjectCreateSchema = z.object({
   title: z.string().min(1),
   summary: z.string().optional(),

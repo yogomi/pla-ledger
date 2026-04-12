@@ -5,6 +5,7 @@ import meRouter from '../api/auth/me';
 import passwordResetRequestRouter from '../api/auth/password-reset-request';
 import passwordResetVerifyRouter from '../api/auth/password-reset-verify';
 import passwordResetConfirmRouter from '../api/auth/password-reset-confirm';
+import changePasswordRouter from '../api/auth/change-password';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/me', meRouter);
 router.use('/password-reset/request', passwordResetRequestRouter);
 router.use('/password-reset/verify', passwordResetVerifyRouter);
 router.use('/password-reset/confirm', passwordResetConfirmRouter);
+router.use('/change-password', changePasswordRouter);
 
 export default router;

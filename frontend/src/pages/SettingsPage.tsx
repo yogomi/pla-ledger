@@ -3,10 +3,25 @@ import {
   Box, Typography, Paper, TextField, Button, Alert, Select, MenuItem,
   FormControl, InputLabel, Divider,
 } from '@mui/material';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../app/AuthContext';
 import i18n from '../i18n';
 import api from '../utils/api';
+
+/** パスワード変更フォームのバリデーションスキーマ */
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+  confirmNewPassword: z.string().min(1),
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+  path: ['confirmNewPassword'],
+  message: 'passwords_must_match',
+});
+
+type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -15,6 +30,17 @@ export default function SettingsPage() {
   const [name, setName] = useState(user?.name || '');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const {
+    control,
+    handleSubmit,
+    reset: resetPasswordForm,
+    formState: { errors: passwordErrors, isSubmitting: isPasswordSubmitting },
+  } = useForm<ChangePasswordForm>({
+    resolver: zodResolver(changePasswordSchema),
+  });
 
   useEffect(() => {
     if (user) setName(user.name);
@@ -27,6 +53,27 @@ export default function SettingsPage() {
       setSuccess('Language updated');
     } catch {
       setError('Failed to update language');
+    }
+  };
+
+  const onChangePassword = async (data: ChangePasswordForm) => {
+    try {
+      setPasswordError('');
+      setPasswordSuccess('');
+      await api.post('/auth/change-password', {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+      setPasswordSuccess(t('password_changed_successfully'));
+      resetPasswordForm();
+    } catch (err: unknown) {
+      const resData = (err as { response?: { data?: { code?: string; message?: string } } })
+        ?.response?.data;
+      if (resData?.code === 'invalid_password') {
+        setPasswordError(t('current_password_incorrect'));
+      } else {
+        setPasswordError(resData?.message || t('error'));
+      }
     }
   };
 
@@ -64,6 +111,83 @@ export default function SettingsPage() {
 
       <Divider sx={{ my: 3 }} />
 
+      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" mb={2}>{t('password')}</Typography>
+        {passwordSuccess && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setPasswordSuccess('')}>
+            {passwordSuccess}
+          </Alert>
+        )}
+        {passwordError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setPasswordError('')}>
+            {passwordError}
+          </Alert>
+        )}
+        <Box component="form" onSubmit={handleSubmit(onChangePassword)}>
+          <Controller
+            name="currentPassword"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label={t('current_password')}
+                type="password"
+                fullWidth
+                margin="normal"
+                error={!!passwordErrors.currentPassword}
+                helperText={
+                  passwordErrors.currentPassword ? t('current_password_incorrect') : undefined
+                }
+              />
+            )}
+          />
+          <Controller
+            name="newPassword"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label={t('new_password')}
+                type="password"
+                fullWidth
+                margin="normal"
+                error={!!passwordErrors.newPassword}
+                helperText={
+                  passwordErrors.newPassword ? t('password_min_length') : undefined
+                }
+              />
+            )}
+          />
+          <Controller
+            name="confirmNewPassword"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label={t('confirm_new_password')}
+                type="password"
+                fullWidth
+                margin="normal"
+                error={!!passwordErrors.confirmNewPassword}
+                helperText={
+                  passwordErrors.confirmNewPassword ? t('passwords_must_match') : undefined
+                }
+              />
+            )}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{ mt: 1 }}
+            disabled={isPasswordSubmitting}
+          >
+            {isPasswordSubmitting ? t('loading') : t('change_password')}
+          </Button>
+        </Box>
+      </Paper>
+
+      <Divider sx={{ my: 3 }} />
+
       <Paper elevation={2} sx={{ p: 3 }}>
         <Typography variant="h6" mb={2}>{t('language')}</Typography>
         <FormControl sx={{ minWidth: 180 }}>
@@ -81,3 +205,4 @@ export default function SettingsPage() {
     </Box>
   );
 }
+
