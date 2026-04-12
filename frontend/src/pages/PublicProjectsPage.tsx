@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Grid, Card, CardContent, CardActionArea,
   Chip, CircularProgress, Alert, TextField, FormControl, InputLabel, Select, MenuItem, Button,
+  Divider,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
@@ -114,6 +115,41 @@ export default function PublicProjectsPage() {
           </Grid>
         )
       )}
+
+      {/* PlaLedgerについての説明セクション */}
+      <Box mt={8}>
+        <Divider sx={{ mb: 4 }} />
+        <Box sx={{ px: { xs: 1, sm: 2 }, maxWidth: 720 }}>
+          <Typography variant="subtitle2" color="text.disabled" gutterBottom>
+            {t('about_plaledger_title')}
+          </Typography>
+          <Typography variant="body2" color="text.disabled" paragraph>
+            {t('about_plaledger_paragraph1')}
+          </Typography>
+          <Typography variant="body2" color="text.disabled" paragraph>
+            {t('about_plaledger_paragraph2')}
+          </Typography>
+          <Typography variant="body2" color="text.disabled" paragraph>
+            {t('about_plaledger_paragraph3')}
+          </Typography>
+          <Typography variant="body2" color="text.disabled" paragraph>
+            {t('about_plaledger_paragraph4')}
+          </Typography>
+          <Typography variant="body2" color="text.disabled" sx={{ mb: 0.5 }}>
+            <a
+              href={t('ukrainian_culture_garden_url')}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'inherit' }}
+            >
+              {t('ukrainian_culture_garden_url')}
+            </a>
+          </Typography>
+          <Typography variant="body2" color="text.disabled">
+            {t('about_plaledger_disclaimer')}
+          </Typography>
+        </Box>
+      </Box>
     </Box>
   );
 }

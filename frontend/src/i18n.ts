@@ -328,6 +328,27 @@ const en = {
     no_fixed_assets: 'No fixed assets registered.',
     go_to_fixed_assets: 'Manage Fixed Assets',
     years_unit: 'yr',
+    about_plaledger_title: 'About PlaLedger',
+    about_plaledger_paragraph1:
+      'PlaLedger is a platform for creating, managing, and sharing business plans.'
+      + ' It was developed to compile the startup business plan for "Ukrainian Culture Garden"'
+      + ' (Ukuraina Bunka no Hakoniwa) — an art center being built in Wakamachi, Mima City,'
+      + ' Tokushima Prefecture, Japan, with the vision of helping people discover Ukrainian culture'
+      + ' through the lens of art and making art more accessible to everyone.',
+    about_plaledger_paragraph2:
+      'For the developer "Karinui," who supports "Ukrainian Culture Garden," it turned out to be'
+      + ' easier to build a web service for organizing a business income/expense plan than to create'
+      + ' a business plan document using spreadsheet software — and so this program came to be.',
+    about_plaledger_paragraph3: 'Anyone is free to use it.',
+    about_plaledger_paragraph4:
+      'If this program has been helpful to you and you are considering a donation or similar support,'
+      + ' there is no need to send anything to the developer. Instead, any support directed toward'
+      + ' "Ukrainian Culture Garden" would be greatly appreciated.',
+    about_plaledger_disclaimer:
+      'We will do our best to maintain the service so that data is not lost, but we cannot'
+      + ' guarantee data integrity. Furthermore, "Karinui" assumes no responsibility for any'
+      + ' damages arising from the use of this program.',
+    ukrainian_culture_garden_url: 'https://www.ukrainian-culture-garden.jp/',
   },
 };
 
@@ -657,6 +678,24 @@ const ja = {
     no_fixed_assets: '固定資産が登録されていません。',
     go_to_fixed_assets: '固定資産管理へ',
     years_unit: '年',
+    about_plaledger_title: 'PlaLedgerが作られた経緯について',
+    about_plaledger_paragraph1:
+      'PlaLedgerは徳島県美馬市脇町で、文化と芸術の視点からウクライナを知ってもらいながら'
+      + 'アートをもっと身近に楽しめる場を目指して作られるアートセンター'
+      + '「ウクライナ文化の箱庭」の事業計画をまとめるために開発された'
+      + 'ビジネスプランの作成・管理・共有プラットフォームです。',
+    about_plaledger_paragraph2:
+      '「ウクライナ文化の箱庭」に協賛する開発者「カリヌイ」は'
+      + '表計算ソフトで事業計画書を作るよりも'
+      + 'Webサービスとして作る方が早いと判断し、このプログラムを作りました。',
+    about_plaledger_paragraph3: 'どなたでも自由にご利用いただけます。',
+    about_plaledger_paragraph4:
+      'このプログラムが役に立ち寄付などをご検討いただける場合は'
+      + '開発者への連絡は不要です。代わりに「ウクライナ文化の箱庭」への支援をいただけると助かります。',
+    about_plaledger_disclaimer:
+      'データが消えないよう努めてメンテナンスしていきますがデータの保証はいたしません。'
+      + 'このプログラムの使用により生じた損害に対して「カリヌイ」は責任を負いません。',
+    ukrainian_culture_garden_url: 'https://www.ukrainian-culture-garden.jp/ja',
   },
 };
 
@@ -992,6 +1031,28 @@ const uk = {
     no_fixed_assets: 'Основні засоби не зареєстровані.',
     go_to_fixed_assets: 'Управління основними засобами',
     years_unit: 'р.',
+    about_plaledger_title: 'Про PlaLedger',
+    about_plaledger_paragraph1:
+      'PlaLedger — це платформа для створення, управління та обміну бізнес-планами.'
+      + ' Вона була розроблена для складання стартового бізнес-плану «Саду Української Культури»'
+      + ' (Ukrainian Culture Garden) — арт-центру, що будується у місті Вакамачі,'
+      + ' префектура Токусіма, Японія, з метою познайомити людей з культурою України'
+      + ' через мистецтво та зробити мистецтво більш доступним для всіх.',
+    about_plaledger_paragraph2:
+      'Для розробника «Karinui», який підтримує «Сад Української Культури», виявилося простіше'
+      + ' створити веб-сервіс для організації доходів та витрат бізнес-плану,'
+      + ' ніж складати документ бізнес-плану у електронних таблицях — так і з\'явилася ця програма.',
+    about_plaledger_paragraph3: 'Будь-хто може вільно ним користуватися.',
+    about_plaledger_paragraph4:
+      'Якщо ця програма виявилася для вас корисною і ви розглядаєте можливість пожертвування,'
+      + ' немає потреби надсилати щось розробнику.'
+      + ' Натомість будь-яка підтримка «Саду Української Культури» буде дуже вдячна.',
+    about_plaledger_disclaimer:
+      'Ми докладатимемо всіх зусиль для підтримки сервісу, щоб дані не були втрачені,'
+      + ' але ми не можемо гарантувати збереження даних.'
+      + ' Крім того, «Karinui» не несе відповідальності за будь-які збитки,'
+      + ' що виникли внаслідок використання цієї програми.',
+    ukrainian_culture_garden_url: 'https://www.ukrainian-culture-garden.jp/',
   },
 };
 

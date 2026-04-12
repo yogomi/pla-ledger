@@ -157,7 +157,7 @@ export default function Layout() {
         }}
       >
         <Typography variant="body2" color="text.secondary">
-          © 2024 PlaLedger
+          {i18n.language === 'ja' ? '© 2026 カリヌイ' : '© 2026 Karinui'}
         </Typography>
       </Box>
     </Box>
