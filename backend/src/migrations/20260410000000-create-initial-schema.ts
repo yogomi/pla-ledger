@@ -49,6 +49,43 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     },
   });
 
+  // ========== password_reset_tokens ==========
+  await queryInterface.createTable('password_reset_tokens', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+      allowNull: false,
+    },
+    user_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: { model: 'users', key: 'id' },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
+    },
+    token: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      unique: true,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    expires_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    used_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
+  });
+
+  await queryInterface.addIndex('password_reset_tokens', ['user_id']);
+
   // ========== projects ==========
   await queryInterface.createTable('projects', {
     id: {
@@ -1174,6 +1211,7 @@ export async function down(queryInterface: QueryInterface): Promise<void> {
   await queryInterface.dropTable('access_requests');
   await queryInterface.dropTable('permissions');
   await queryInterface.dropTable('projects');
+  await queryInterface.dropTable('password_reset_tokens');
   await queryInterface.dropTable('users');
 
   // PostgreSQL の ENUM 型をクリーンアップする（SQLite では不要）
