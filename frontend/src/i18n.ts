@@ -332,7 +332,7 @@ const en = {
     about_plaledger_paragraph1:
       'PlaLedger is a platform for creating, managing, and sharing business plans.'
       + ' It was developed to compile the startup business plan for "Ukrainian Culture Garden"'
-      + ' (Ukuraina Bunka no Hakoniwa) — an art center being built in Wakamachi, Mima City,'
+      + ' (Ukuraina Bunka no Hakoniwa) — an art center being built in Wakimachi, Mima City,'
       + ' Tokushima Prefecture, Japan, with the vision of helping people discover Ukrainian culture'
       + ' through the lens of art and making art more accessible to everyone.',
     about_plaledger_paragraph2:
@@ -1035,7 +1035,7 @@ const uk = {
     about_plaledger_paragraph1:
       'PlaLedger — це платформа для створення, управління та обміну бізнес-планами.'
       + ' Вона була розроблена для складання стартового бізнес-плану «Саду Української Культури»'
-      + ' (Ukrainian Culture Garden) — арт-центру, що будується у місті Вакамачі,'
+      + ' (Ukrainian Culture Garden) — арт-центру, що будується у місті Вакімачі,'
       + ' префектура Токусіма, Японія, з метою познайомити людей з культурою України'
       + ' через мистецтво та зробити мистецтво більш доступним для всіх.',
     about_plaledger_paragraph2:
