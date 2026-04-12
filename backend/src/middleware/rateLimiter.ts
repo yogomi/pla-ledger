@@ -2,10 +2,10 @@ import rateLimit from 'express-rate-limit';
 
 /**
  * Strict rate limiter for authentication endpoints (signup, login).
- * Limits to 10 requests per 15 minutes per IP.
+ * Limits to 10 requests per 3 minutes per IP.
  */
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 3 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
