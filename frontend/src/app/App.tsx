@@ -11,6 +11,8 @@ import ProjectViewPage from '../pages/ProjectViewPage';
 import PublicProjectsPage from '../pages/PublicProjectsPage';
 import SettingsPage from '../pages/SettingsPage';
 import SearchPage from '../pages/SearchPage';
+import ResetPasswordRequestPage from '../pages/ResetPasswordRequestPage';
+import ResetPasswordConfirmPage from '../pages/ResetPasswordConfirmPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -26,6 +28,8 @@ export default function App() {
     <Routes>
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/reset-password/request" element={<ResetPasswordRequestPage />} />
+      <Route path="/reset-password/confirm" element={<ResetPasswordConfirmPage />} />
       <Route path="/" element={<Layout />}>
         <Route index element={<PublicProjectsPage />} />
         <Route path="search" element={<SearchPage />} />

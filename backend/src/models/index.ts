@@ -1106,4 +1106,44 @@ FixedAsset.hasMany(FixedAssetDepreciationSchedule, {
 });
 FixedAssetDepreciationSchedule.belongsTo(FixedAsset, { foreignKey: 'fixed_asset_id' });
 
+// ========== PasswordResetToken ==========
+interface PasswordResetTokenAttributes {
+  id: string;
+  user_id: string;
+  token: string;
+  created_at: Date;
+  expires_at: Date;
+  used_at: Date | null;
+}
+type PasswordResetTokenCreation = Optional<PasswordResetTokenAttributes, 'id' | 'used_at'>;
+
+export class PasswordResetToken
+  extends Model<PasswordResetTokenAttributes, PasswordResetTokenCreation>
+  implements PasswordResetTokenAttributes {
+  declare id: string;
+  declare user_id: string;
+  declare token: string;
+  declare created_at: Date;
+  declare expires_at: Date;
+  declare used_at: Date | null;
+}
+
+PasswordResetToken.init({
+  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+  user_id: { type: DataTypes.UUID, allowNull: false },
+  token: { type: DataTypes.STRING(255), allowNull: false, unique: true },
+  created_at: { type: DataTypes.DATE, allowNull: false },
+  expires_at: { type: DataTypes.DATE, allowNull: false },
+  used_at: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
+}, {
+  sequelize,
+  tableName: 'password_reset_tokens',
+  underscored: true,
+  timestamps: false,
+  indexes: [{ fields: ['user_id'] }],
+});
+
+User.hasMany(PasswordResetToken, { foreignKey: 'user_id', as: 'passwordResetTokens' });
+PasswordResetToken.belongsTo(User, { foreignKey: 'user_id' });
+
 export default sequelize;
