@@ -74,6 +74,8 @@ router.post('/', async (req, res: Response) => {
     });
 
     // TODO: 実際のメール送信機能に置き換える
+    // セキュリティ: トークンをURLクエリパラメータに含めるのはパスワードリセットの標準的な方式。
+    // ブラウザ履歴やサーバーログに残る可能性があるため、必ずHTTPS環境で使用すること。
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/confirm?token=${token}`;
     console.log(`[PasswordReset] Reset link for ${email}: ${resetLink}`);
   }
