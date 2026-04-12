@@ -77,6 +77,9 @@ export default function SignInPage() {
         <Typography mt={2}>
           Don&apos;t have an account? <RouterLink to="/signup">{t('sign_up')}</RouterLink>
         </Typography>
+        <Typography variant="body2" align="center" sx={{ mt: 1 }}>
+          <RouterLink to="/reset-password/request">{t('forgot_password')}</RouterLink>
+        </Typography>
       </Box>
     </Container>
   );
