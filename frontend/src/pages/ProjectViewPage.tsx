@@ -16,6 +16,8 @@ import { z } from 'zod';
 import { useAuth } from '../app/AuthContext';
 import api from '../utils/api';
 import StartupCostTable, { StartupCostItem } from '../components/StartupCostTable';
+import StartupCostSummaryTable from '../components/StartupCostSummaryTable';
+import StartupCostDetailPanel from '../components/StartupCostDetailPanel';
 import SimulationViewContainer from '../components/SimulationViewContainer';
 import SimulationSheetContainer from '../components/SimulationSheetContainer';
 import ProjectInitialCashBalance from '../components/ProjectInitialCashBalance';
@@ -386,6 +388,7 @@ export default function ProjectViewPage() {
           <Divider sx={{ mb: 2 }} />
           <Tabs value={innerTabValue} onChange={(_, v) => setInnerTabValue(v)} sx={{ mb: 2 }}>
             <Tab label={t('plan_overview')} />
+            <Tab label={t('startup_costs_tab')} />
             <Tab label={t('comments')} />
             <Tab label={t('versions')} />
           </Tabs>
@@ -407,7 +410,10 @@ export default function ProjectViewPage() {
                 <Grid item xs={12}>
                   <Paper elevation={1} sx={{ p: 2 }}>
                     <Typography variant="h6" mb={2}>{t('startup_costs_section')}</Typography>
-                    <StartupCostTable items={startupCostItems} currency={project.currency} readOnly />
+                    <StartupCostSummaryTable
+                      items={startupCostItems}
+                      currency={project.currency}
+                    />
                   </Paper>
                 </Grid>
               )}
@@ -415,6 +421,12 @@ export default function ProjectViewPage() {
           )}
 
           {innerTabValue === 1 && (
+            <Box>
+              <StartupCostDetailPanel items={startupCostItems} currency={project.currency} />
+            </Box>
+          )}
+
+          {innerTabValue === 2 && (
             <Box>
               <List>
                 {comments.map(c => (
@@ -453,7 +465,7 @@ export default function ProjectViewPage() {
             </Box>
           )}
 
-          {innerTabValue === 2 && (
+          {innerTabValue === 3 && (
             <List>
               {versions.map(v => (
                 <ListItem key={v.id} divider>
