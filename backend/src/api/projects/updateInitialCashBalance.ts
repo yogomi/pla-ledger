@@ -16,7 +16,7 @@ const BodySchema = z.object({
 /**
  * @api {PATCH} /api/projects/:projectId/initial-cash-balance 初期現金残高更新
  * @description
- *   - プロジェクトの事業開始時（2025年1月）の初期現金残高を更新する
+ *   - プロジェクトの事業開始時（2024年1月）の初期現金残高を更新する
  *   - owner 権限が必要
  *   - この値を変更すると、全月のキャッシュフロー残高が再計算される
  *

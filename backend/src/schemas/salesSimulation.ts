@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 /** 事業開始年月（キャッシュフロー計算の起点） */
-const MIN_YEAR_MONTH = '2025-01';
+const MIN_YEAR_MONTH = '2024-01';
 
-/** yearMonth フォーマット: YYYY-MM（2025-01以降） */
+/** yearMonth フォーマット: YYYY-MM（2024-01以降） */
 export const YearMonthSchema = z.string()
   .regex(/^\d{4}-\d{2}$/, 'yearMonth must be YYYY-MM format')
   .refine(
@@ -11,12 +11,12 @@ export const YearMonthSchema = z.string()
     { message: `yearMonth must be ${MIN_YEAR_MONTH} or later` },
   );
 
-/** year フォーマット: YYYY（2025以降） */
+/** year フォーマット: YYYY（2024以降） */
 export const YearSchema = z.string()
   .regex(/^\d{4}$/, 'year must be YYYY format')
   .refine(
-    (val) => Number(val) >= 2025,
-    { message: 'year must be 2025 or later' },
+    (val) => Number(val) >= 2024,
+    { message: 'year must be 2024 or later' },
   );
 
 /** 月次 GET エンドポイント用クエリスキーマ */

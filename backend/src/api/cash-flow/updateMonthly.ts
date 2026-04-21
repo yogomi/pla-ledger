@@ -38,10 +38,10 @@ const UpdateCashFlowSchema = z.object({
  *   - 指定月のキャッシュフローデータを更新
  *   - 手入力項目のみを受け付け、自動連携項目はサーバー側で再計算
  *   - 小計・合計も自動計算
- *   - 期首残高・期末残高は DB に保存せず、2025-01 からの累積計算で算出する
+ *   - 期首残高・期末残高は DB に保存せず、2024-01 からの累積計算で算出する
  *
  * @request
- *   - params: projectId (UUID), yearMonth (YYYY-MM形式、2025-01以降)
+ *   - params: projectId (UUID), yearMonth (YYYY-MM形式、2024-01以降)
  *   - body: { accountsReceivableChange, inventoryChange, accountsPayableChange,
  *             otherOperating, capexAcquisition, assetSale, intangibleAcquisition, otherInvesting,
  *             capitalIncrease, dividendPayment, otherFinancing, noteJa?, noteEn? }
@@ -185,7 +185,7 @@ router.put('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     });
   }
 
-  // 期首残高・期末残高を 2025-01 からの累積計算で算出（レスポンス用）
+  // 期首残高・期末残高を 2024-01 からの累積計算で算出（レスポンス用）
   const { cashBeginning, cashEnding } =
     await calculateCashBalanceUpToMonth(projectId, yearMonth);
 
