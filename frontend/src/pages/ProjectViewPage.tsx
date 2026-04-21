@@ -104,7 +104,10 @@ export default function ProjectViewPage() {
   const [editErrorSnackOpen, setEditErrorSnackOpen] = useState(false);
   const [editSuccess, setEditSuccess] = useState(false);
   const [exportError, setExportError] = useState('');
-  const [editCurrency, setEditCurrency] = useState('JPY');
+  const [startupCostSaving, setStartupCostSaving] = useState(false);
+  const [startupCostSaveError, setStartupCostSaveError] = useState('');
+  const [startupCostSaveErrorSnackOpen, setStartupCostSaveErrorSnackOpen] = useState(false);
+  const [startupCostSaveSuccess, setStartupCostSaveSuccess] = useState(false);
   const [startupCostItems, setStartupCostItems] = useState<StartupCostItem[]>([]);
 
   /** 借入一覧（ロールがある場合のみ取得） */
@@ -113,15 +116,11 @@ export default function ProjectViewPage() {
     control: editControl,
     handleSubmit: handleEditSubmit,
     reset: resetEditForm,
-    watch: watchEdit,
     formState: { errors: editErrors, isSubmitting: editSubmitting },
   } = useForm<EditFormData>({
     resolver: zodResolver(editSchema),
     defaultValues: { visibility: 'private', currency: 'JPY', social_insurance_rate: 15 },
   });
-  const watchedCurrency = watchEdit('currency', 'JPY');
-  useEffect(() => { setEditCurrency(watchedCurrency); }, [watchedCurrency]);
-  const watchedPlannedOpeningDate = watchEdit('planned_opening_date');
 
   // アクセス管理
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
@@ -157,7 +156,6 @@ export default function ProjectViewPage() {
         social_insurance_rate: p.social_insurance_rate != null ? Number(p.social_insurance_rate) : 15,
         planned_opening_date: p.planned_opening_date ?? '',
       });
-      setEditCurrency(p.currency || 'JPY');
     }).catch(() => setError('Failed to load project')).finally(() => setLoading(false));
   }, [id]);
 
@@ -233,7 +231,21 @@ export default function ProjectViewPage() {
         social_insurance_rate: data.social_insurance_rate,
         planned_opening_date: data.planned_opening_date || null,
       });
-      // スタートアップコストを新APIで一括保存
+      setEditSuccess(true);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message || 'Failed to update project';
+      setEditError(msg);
+      setEditErrorSnackOpen(true);
+    }
+  };
+
+  const handleStartupCostSave = async () => {
+    setStartupCostSaving(true);
+    setStartupCostSaveError('');
+    setStartupCostSaveErrorSnackOpen(false);
+    setStartupCostSaveSuccess(false);
+    try {
       await updateStartupCosts(
         id!,
         startupCostItems.map((item, index) => ({
@@ -245,12 +257,14 @@ export default function ProjectViewPage() {
           display_order: index,
         })),
       );
-      setEditSuccess(true);
+      setStartupCostSaveSuccess(true);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })
-        ?.response?.data?.message || 'Failed to update project';
-      setEditError(msg);
-      setEditErrorSnackOpen(true);
+        ?.response?.data?.message || t('save_error');
+      setStartupCostSaveError(msg);
+      setStartupCostSaveErrorSnackOpen(true);
+    } finally {
+      setStartupCostSaving(false);
     }
   };
 
@@ -287,6 +301,7 @@ export default function ProjectViewPage() {
     { value: 'project', label: t('project_tab') },
     ...(role ? [{ value: 'simulation', label: t('simulation') }] : []),
     ...(canEdit ? [{ value: 'simulation-input', label: t('simulation_edit') }] : []),
+    ...(canEdit ? [{ value: 'startup-costs', label: t('startup_costs_input') }] : []),
     ...(canEdit ? [{ value: 'edit', label: t('edit_project') }] : []),
     ...(isOwner ? [{ value: 'access', label: t('access_management') }] : []),
   ];
@@ -492,6 +507,42 @@ export default function ProjectViewPage() {
         />
       )}
 
+      {/* ===== Startup Costs タブ ===== */}
+      {activeTab === 'startup-costs' && canEdit && (
+        <Box>
+          <Snackbar
+            open={startupCostSaveErrorSnackOpen && Boolean(startupCostSaveError)}
+            autoHideDuration={6000}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            onClose={() => setStartupCostSaveErrorSnackOpen(false)}
+          >
+            <Alert severity="error" onClose={() => setStartupCostSaveErrorSnackOpen(false)}>
+              {startupCostSaveError}
+            </Alert>
+          </Snackbar>
+          <Paper elevation={2} sx={{ p: 3 }}>
+            <StartupCostTable
+              items={startupCostItems}
+              currency={project.currency}
+              plannedOpeningDate={project.planned_opening_date}
+              onItemsChange={setStartupCostItems}
+            />
+            <Box mt={3} display="flex" gap={2} alignItems="center">
+              <Button
+                variant="contained"
+                onClick={handleStartupCostSave}
+                disabled={startupCostSaving}
+              >
+                {startupCostSaving ? t('loading') : t('save')}
+              </Button>
+              {startupCostSaveSuccess && (
+                <Alert severity="success" sx={{ py: 0 }}>{t('save_success')}</Alert>
+              )}
+            </Box>
+          </Paper>
+        </Box>
+      )}
+
       {/* ===== Edit タブ ===== */}
       {activeTab === 'edit' && canEdit && (
         <Box>
@@ -604,16 +655,6 @@ export default function ProjectViewPage() {
                     helperText={t('planned_opening_date_hint')}
                   />
                 )}
-              />
-
-              <Divider sx={{ my: 3 }} />
-
-              <Typography variant="h6" mb={2}>{t('startup_costs_section')}</Typography>
-              <StartupCostTable
-                items={startupCostItems}
-                currency={editCurrency}
-                plannedOpeningDate={watchedPlannedOpeningDate || project.planned_opening_date || null}
-                onItemsChange={setStartupCostItems}
               />
 
               <Box mt={3} display="flex" gap={2} alignItems="center">
