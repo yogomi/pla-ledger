@@ -1159,9 +1159,9 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       comment: '単価',
     },
     cost_type: {
-      type: DataTypes.ENUM('capex', 'intangible', 'expense', 'initial_inventory'),
+      type: DataTypes.ENUM('equipment', 'renovation', 'deposit', 'intangible', 'founding', 'marketing', 'consumables', 'initial_inventory', 'working_capital'),
       allowNull: false,
-      comment: '費目区分: capex=設備投資, intangible=無形資産, expense=初期費用, initial_inventory=初期在庫',
+      comment: '費目区分: equipment=設備・備品, renovation=内装・改装工事, deposit=敷金・保証金, intangible=無形資産・ライセンス, founding=創立費・法務費用, marketing=広告・マーケティング, consumables=消耗品, initial_inventory=初期在庫, working_capital=運転資金',
     },
     allocation_month: {
       type: DataTypes.STRING(7),

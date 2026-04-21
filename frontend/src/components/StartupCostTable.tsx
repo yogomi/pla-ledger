@@ -8,7 +8,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useTranslation } from 'react-i18next';
 
 /** スタートアップコストの費目区分 */
-export type CostType = 'capex' | 'intangible' | 'expense' | 'initial_inventory';
+export type CostType = 'equipment' | 'renovation' | 'deposit' | 'intangible' | 'founding' | 'marketing' | 'consumables' | 'initial_inventory' | 'working_capital';
 
 export interface StartupCostItem {
   id: string;
@@ -60,7 +60,7 @@ export default function StartupCostTable({
         description: '',
         quantity: 1,
         unit_price: 0,
-        cost_type: 'expense',
+        cost_type: 'founding',
         allocation_month: defaultAllocationMonth(plannedOpeningDate),
       },
     ]);
@@ -92,10 +92,15 @@ export default function StartupCostTable({
 
   const costTypeLabel = (ct: CostType): string => {
     const labels: Record<CostType, string> = {
-      capex: t('cost_type_capex'),
+      equipment: t('cost_type_equipment'),
+      renovation: t('cost_type_renovation'),
+      deposit: t('cost_type_deposit'),
       intangible: t('cost_type_intangible'),
-      expense: t('cost_type_expense'),
+      founding: t('cost_type_founding'),
+      marketing: t('cost_type_marketing'),
+      consumables: t('cost_type_consumables'),
       initial_inventory: t('cost_type_initial_inventory'),
+      working_capital: t('cost_type_working_capital'),
     };
     return labels[ct] ?? ct;
   };
@@ -150,14 +155,17 @@ export default function StartupCostTable({
                     size="small"
                     value={item.cost_type}
                     onChange={e => handleRowChange(item.id, 'cost_type', e.target.value)}
-                    sx={{ minWidth: '130px' }}
+                    sx={{ minWidth: '160px' }}
                   >
-                    <MenuItem value="capex">{t('cost_type_capex')}</MenuItem>
+                    <MenuItem value="equipment">{t('cost_type_equipment')}</MenuItem>
+                    <MenuItem value="renovation">{t('cost_type_renovation')}</MenuItem>
+                    <MenuItem value="deposit">{t('cost_type_deposit')}</MenuItem>
                     <MenuItem value="intangible">{t('cost_type_intangible')}</MenuItem>
-                    <MenuItem value="expense">{t('cost_type_expense')}</MenuItem>
-                    <MenuItem value="initial_inventory">
-                      {t('cost_type_initial_inventory')}
-                    </MenuItem>
+                    <MenuItem value="founding">{t('cost_type_founding')}</MenuItem>
+                    <MenuItem value="marketing">{t('cost_type_marketing')}</MenuItem>
+                    <MenuItem value="consumables">{t('cost_type_consumables')}</MenuItem>
+                    <MenuItem value="initial_inventory">{t('cost_type_initial_inventory')}</MenuItem>
+                    <MenuItem value="working_capital">{t('cost_type_working_capital')}</MenuItem>
                   </Select>
                 )}
               </TableCell>

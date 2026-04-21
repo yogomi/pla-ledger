@@ -57,6 +57,27 @@ export default function CashFlowMonthlyView({
     </TableRow>
   );
 
+  const renderStartupRow = (labelKey: string, value: number) => {
+    if (value === 0) return null;
+    return (
+      <TableRow key={labelKey} sx={{ backgroundColor: '#f0f7ff' }}>
+        <TableCell sx={{ pl: 3 }}>
+          <Typography variant="body2" color="info.main">
+            {t(labelKey)}
+            <Typography component="span" variant="caption" color="info.main" sx={{ ml: 0.5 }}>
+              ({t('startup_costs_section')})
+            </Typography>
+          </Typography>
+        </TableCell>
+        <TableCell align="right">
+          <Typography variant="body2" color="info.main">
+            {Math.round(value).toLocaleString()}
+          </Typography>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <Box>
 
@@ -83,6 +104,10 @@ export default function CashFlowMonthlyView({
               {renderRow(t('inventory_change'), data.operating.inventoryChange)}
               {renderRow(t('accounts_payable_change'), data.operating.accountsPayableChange)}
               {renderRow(t('other_operating'), data.operating.otherOperating)}
+              {renderStartupRow('cost_type_founding', data.startupCostBreakdown.founding)}
+              {renderStartupRow('cost_type_marketing', data.startupCostBreakdown.marketing)}
+              {renderStartupRow('cost_type_consumables', data.startupCostBreakdown.consumables)}
+              {renderStartupRow('cost_type_initial_inventory', data.startupCostBreakdown.initialInventory)}
               <TableRow sx={{ backgroundColor: 'grey.50' }}>
                 <TableCell>
                   <Typography fontWeight="bold">{t('subtotal')}</Typography>
@@ -116,6 +141,10 @@ export default function CashFlowMonthlyView({
               {renderRow(t('asset_sale'), data.investing.assetSale)}
               {renderRow(t('intangible_acquisition'), data.investing.intangibleAcquisition)}
               {renderRow(t('other_investing'), data.investing.otherInvesting)}
+              {renderStartupRow('cost_type_equipment', data.startupCostBreakdown.equipment)}
+              {renderStartupRow('cost_type_renovation', data.startupCostBreakdown.renovation)}
+              {renderStartupRow('cost_type_deposit', data.startupCostBreakdown.deposit)}
+              {renderStartupRow('cost_type_intangible', data.startupCostBreakdown.intangible)}
               <TableRow sx={{ backgroundColor: 'grey.50' }}>
                 <TableCell>
                   <Typography fontWeight="bold">{t('subtotal')}</Typography>

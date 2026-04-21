@@ -61,6 +61,22 @@ import { getProjectRole } from './utils';
  * @author yogomi
  * @date 2026-03-21
  */
+/**
+ * Sequelize の DECIMAL フィールドは文字列で返るため、数値文字列を number に変換する。
+ * UUID・日付・テキストフィールドには影響しない（数値のみの文字列にのみ適用）。
+ */
+function normalizeNumbers(obj: object): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value)) {
+      result[key] = Number(value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 const router = Router();
 
 router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) => {
@@ -139,23 +155,23 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
     data: {
       version: '1.0',
       exportedAt: new Date().toISOString(),
-      project: project.toJSON(),
+      project: normalizeNumbers(project.toJSON()),
       sections: sections.map(r => r.toJSON()),
-      salesCategories: salesCategories.map(r => r.toJSON()),
-      salesItems: salesItems.map(r => r.toJSON()),
+      salesCategories: salesCategories.map(r => normalizeNumbers(r.toJSON())),
+      salesItems: salesItems.map(r => normalizeNumbers(r.toJSON())),
       salesSnapshots: salesSnapshots.map(r => r.toJSON()),
-      fixedExpenses: fixedExpenses.map(r => r.toJSON()),
+      fixedExpenses: fixedExpenses.map(r => normalizeNumbers(r.toJSON())),
       fixedExpenseMonths: fixedExpenseMonths.map(r => r.toJSON()),
-      variableExpenses: variableExpenses.map(r => r.toJSON()),
-      loans: loans.map(r => r.toJSON()),
-      loanRepayments: loanRepayments.map(r => r.toJSON()),
-      laborCosts: laborCosts.map(r => r.toJSON()),
+      variableExpenses: variableExpenses.map(r => normalizeNumbers(r.toJSON())),
+      loans: loans.map(r => normalizeNumbers(r.toJSON())),
+      loanRepayments: loanRepayments.map(r => normalizeNumbers(r.toJSON())),
+      laborCosts: laborCosts.map(r => normalizeNumbers(r.toJSON())),
       laborCostMonths: laborCostMonths.map(r => r.toJSON()),
-      cashFlows: cashFlows.map(r => r.toJSON()),
-      fixedAssets: fixedAssets.map(r => r.toJSON()),
-      fixedAssetDepreciationSchedules: fixedAssetDepreciationSchedules.map(r => r.toJSON()),
+      cashFlows: cashFlows.map(r => normalizeNumbers(r.toJSON())),
+      fixedAssets: fixedAssets.map(r => normalizeNumbers(r.toJSON())),
+      fixedAssetDepreciationSchedules: fixedAssetDepreciationSchedules.map(r => normalizeNumbers(r.toJSON())),
       comments: comments.map(r => r.toJSON()),
-      startupCosts: startupCosts.map(r => r.toJSON()),
+      startupCosts: startupCosts.map(r => normalizeNumbers(r.toJSON())),
     },
   });
 });

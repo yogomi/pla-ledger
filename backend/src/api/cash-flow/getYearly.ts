@@ -131,7 +131,10 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
 
   // スタートアップコストを一括取得してマップ化する（N+1クエリを防ぐ）
   const startupCostMap = await fetchStartupCostMap(projectId, startYearMonth, `${targetYear}-12`);
-  const ZERO_TOTALS: StartupCostTotals = { capex: 0, intangible: 0, expense: 0, initialInventory: 0 };
+  const ZERO_TOTALS: StartupCostTotals = {
+    equipment: 0, renovation: 0, deposit: 0, intangible: 0,
+    founding: 0, marketing: 0, consumables: 0, initialInventory: 0,
+  };
 
   // startYearMonth から対象年の 12 月まで残高を累積計算する
   let runningBalance = Number(project.initial_cash_balance);
@@ -163,9 +166,9 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
           + Number(r.accounts_receivable_change)
           + Number(r.inventory_change) + startupTotals.initialInventory
           + Number(r.accounts_payable_change)
-          + Number(r.other_operating) + startupTotals.expense;
+          + Number(r.other_operating) + startupTotals.founding + startupTotals.marketing + startupTotals.consumables;
         investingCF =
-          Number(r.capex_acquisition) + startupTotals.capex
+          Number(r.capex_acquisition) + startupTotals.equipment + startupTotals.renovation + startupTotals.deposit
           + Number(r.asset_sale)
           + Number(r.intangible_acquisition) + startupTotals.intangible
           + Number(r.other_investing);
@@ -187,9 +190,9 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
           + Number(prevRecord.accounts_receivable_change)
           + Number(prevRecord.inventory_change) + startupTotals.initialInventory
           + Number(prevRecord.accounts_payable_change)
-          + Number(prevRecord.other_operating) + startupTotals.expense;
+          + Number(prevRecord.other_operating) + startupTotals.founding + startupTotals.marketing + startupTotals.consumables;
         investingCF =
-          Number(prevRecord.capex_acquisition) + startupTotals.capex
+          Number(prevRecord.capex_acquisition) + startupTotals.equipment + startupTotals.renovation + startupTotals.deposit
           + Number(prevRecord.asset_sale)
           + Number(prevRecord.intangible_acquisition) + startupTotals.intangible
           + Number(prevRecord.other_investing);
@@ -207,8 +210,9 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
 
         operatingCF =
           profitBeforeTax + depreciation
-          + startupTotals.expense + startupTotals.initialInventory;
-        investingCF = startupTotals.capex + startupTotals.intangible;
+          + startupTotals.founding + startupTotals.marketing + startupTotals.consumables + startupTotals.initialInventory;
+        investingCF =
+          startupTotals.equipment + startupTotals.renovation + startupTotals.deposit + startupTotals.intangible;
         financingCF = borrowingProceeds + loanRepaymentAmount;
       }
 

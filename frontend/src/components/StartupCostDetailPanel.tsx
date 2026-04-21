@@ -8,7 +8,7 @@ interface StartupCostDetailPanelProps {
   currency: string;
 }
 
-const COST_TYPE_ORDER: CostType[] = ['capex', 'intangible', 'expense', 'initial_inventory'];
+const COST_TYPE_ORDER: CostType[] = ['equipment', 'renovation', 'deposit', 'intangible', 'founding', 'marketing', 'consumables', 'initial_inventory', 'working_capital'];
 
 /**
  * スタートアップコストを費目区分ごとに分割して表示する読み取り専用パネル。
@@ -22,10 +22,15 @@ export default function StartupCostDetailPanel({
 
   const costTypeLabel = (costType: CostType): string => {
     const labels: Record<CostType, string> = {
-      capex: t('cost_type_capex'),
+      equipment: t('cost_type_equipment'),
+      renovation: t('cost_type_renovation'),
+      deposit: t('cost_type_deposit'),
       intangible: t('cost_type_intangible'),
-      expense: t('cost_type_expense'),
+      founding: t('cost_type_founding'),
+      marketing: t('cost_type_marketing'),
+      consumables: t('cost_type_consumables'),
       initial_inventory: t('cost_type_initial_inventory'),
+      working_capital: t('cost_type_working_capital'),
     };
     return labels[costType];
   };

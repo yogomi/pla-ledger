@@ -367,29 +367,48 @@ export default function CashFlowMonthlyEditor({
           <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
             {t('startup_cost_breakdown')}
           </Typography>
-          {data.startupCostBreakdown.capex !== 0 && (
-            <Typography variant="body2">
-              {t('capex_acquisition')} ({t('cost_type_capex')}):
-              {' '}{data.startupCostBreakdown.capex.toLocaleString()}
-            </Typography>
+          {/* 投資活動 */}
+          {(['equipment', 'renovation', 'deposit', 'intangible'] as const).some(
+            k => data.startupCostBreakdown[k] !== 0,
+          ) && (
+            <Box mt={0.5}>
+              <Typography variant="caption" color="text.secondary">{t('investing_activities')}</Typography>
+              {(['equipment', 'renovation', 'deposit', 'intangible'] as const).map(k =>
+                data.startupCostBreakdown[k] !== 0 ? (
+                  <Typography key={k} variant="body2" sx={{ pl: 1 }}>
+                    {t(`cost_type_${k}`)}: {data.startupCostBreakdown[k].toLocaleString()}
+                  </Typography>
+                ) : null,
+              )}
+            </Box>
           )}
-          {data.startupCostBreakdown.intangible !== 0 && (
-            <Typography variant="body2">
-              {t('intangible_acquisition')} ({t('cost_type_intangible')}):
-              {' '}{data.startupCostBreakdown.intangible.toLocaleString()}
-            </Typography>
-          )}
-          {data.startupCostBreakdown.expense !== 0 && (
-            <Typography variant="body2">
-              {t('other_operating')} ({t('cost_type_expense')}):
-              {' '}{data.startupCostBreakdown.expense.toLocaleString()}
-            </Typography>
-          )}
-          {data.startupCostBreakdown.initialInventory !== 0 && (
-            <Typography variant="body2">
-              {t('inventory_change')} ({t('cost_type_initial_inventory')}):
-              {' '}{data.startupCostBreakdown.initialInventory.toLocaleString()}
-            </Typography>
+          {/* 営業活動 */}
+          {(['founding', 'marketing', 'consumables', 'initialInventory'] as const).some(
+            k => data.startupCostBreakdown[k] !== 0,
+          ) && (
+            <Box mt={0.5}>
+              <Typography variant="caption" color="text.secondary">{t('operating_activities')}</Typography>
+              {data.startupCostBreakdown.founding !== 0 && (
+                <Typography variant="body2" sx={{ pl: 1 }}>
+                  {t('cost_type_founding')}: {data.startupCostBreakdown.founding.toLocaleString()}
+                </Typography>
+              )}
+              {data.startupCostBreakdown.marketing !== 0 && (
+                <Typography variant="body2" sx={{ pl: 1 }}>
+                  {t('cost_type_marketing')}: {data.startupCostBreakdown.marketing.toLocaleString()}
+                </Typography>
+              )}
+              {data.startupCostBreakdown.consumables !== 0 && (
+                <Typography variant="body2" sx={{ pl: 1 }}>
+                  {t('cost_type_consumables')}: {data.startupCostBreakdown.consumables.toLocaleString()}
+                </Typography>
+              )}
+              {data.startupCostBreakdown.initialInventory !== 0 && (
+                <Typography variant="body2" sx={{ pl: 1 }}>
+                  {t('cost_type_initial_inventory')}: {data.startupCostBreakdown.initialInventory.toLocaleString()}
+                </Typography>
+              )}
+            </Box>
           )}
         </Box>
       )}

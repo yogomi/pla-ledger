@@ -1043,7 +1043,7 @@ Project.hasMany(CashFlowMonthly, { foreignKey: 'project_id', as: 'cashFlows' });
 CashFlowMonthly.belongsTo(Project, { foreignKey: 'project_id' });
 
 // ========== StartupCost ==========
-export type CostType = 'capex' | 'intangible' | 'expense' | 'initial_inventory';
+export type CostType = 'equipment' | 'renovation' | 'deposit' | 'intangible' | 'founding' | 'marketing' | 'consumables' | 'initial_inventory' | 'working_capital';
 
 interface StartupCostAttributes {
   id: string;
@@ -1082,7 +1082,7 @@ StartupCost.init({
   quantity: { type: DataTypes.DECIMAL(10, 2), allowNull: false, defaultValue: 1 },
   unit_price: { type: DataTypes.DECIMAL(15, 2), allowNull: false, defaultValue: 0 },
   cost_type: {
-    type: DataTypes.ENUM('capex', 'intangible', 'expense', 'initial_inventory'),
+    type: DataTypes.ENUM('equipment', 'renovation', 'deposit', 'intangible', 'founding', 'marketing', 'consumables', 'initial_inventory', 'working_capital'),
     allowNull: false,
   },
   allocation_month: { type: DataTypes.STRING(7), allowNull: false },

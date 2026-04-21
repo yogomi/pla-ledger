@@ -149,15 +149,20 @@ async function fetchBorrowingData(
 
 /** スタートアップコスト集計結果の型 */
 export interface StartupCostTotals {
-  capex: number;
+  equipment: number;
+  renovation: number;
+  deposit: number;
   intangible: number;
-  expense: number;
+  founding: number;
+  marketing: number;
+  consumables: number;
   initialInventory: number;
 }
 
 /** スタートアップコストがゼロの初期値 */
 const ZERO_TOTALS: StartupCostTotals = {
-  capex: 0, intangible: 0, expense: 0, initialInventory: 0,
+  equipment: 0, renovation: 0, deposit: 0, intangible: 0,
+  founding: 0, marketing: 0, consumables: 0, initialInventory: 0,
 };
 
 /**
@@ -184,18 +189,20 @@ async function fetchStartupCostMap(
   for (const cost of costs) {
     const ym = cost.allocation_month;
     if (!map.has(ym)) {
-      map.set(ym, { capex: 0, intangible: 0, expense: 0, initialInventory: 0 });
+      map.set(ym, { ...ZERO_TOTALS });
     }
     const entry = map.get(ym)!;
     const amount = Number(cost.quantity) * Number(cost.unit_price);
-    if (cost.cost_type === 'capex') {
-      entry.capex -= amount;
-    } else if (cost.cost_type === 'intangible') {
-      entry.intangible -= amount;
-    } else if (cost.cost_type === 'expense') {
-      entry.expense -= amount;
-    } else if (cost.cost_type === 'initial_inventory') {
-      entry.initialInventory -= amount;
+    switch (cost.cost_type) {
+      case 'equipment':   entry.equipment -= amount; break;
+      case 'renovation':  entry.renovation -= amount; break;
+      case 'deposit':     entry.deposit -= amount; break;
+      case 'intangible':  entry.intangible -= amount; break;
+      case 'founding':     entry.founding -= amount; break;
+      case 'marketing':    entry.marketing -= amount; break;
+      case 'consumables':  entry.consumables -= amount; break;
+      case 'initial_inventory': entry.initialInventory -= amount; break;
+      // working_capital はキャッシュフローに含めない
     }
   }
   return map;
@@ -268,8 +275,8 @@ async function calculateCashBalanceUpToMonth(
 
       const startupTotals = startupCostMap.get(yearMonth) ?? { ...ZERO_TOTALS };
       // スタートアップコスト由来の各合計
-      const startupOperating = startupTotals.expense + startupTotals.initialInventory;
-      const startupInvesting = startupTotals.capex + startupTotals.intangible;
+      const startupOperating = startupTotals.founding + startupTotals.marketing + startupTotals.consumables + startupTotals.initialInventory;
+      const startupInvesting = startupTotals.equipment + startupTotals.renovation + startupTotals.deposit + startupTotals.intangible;
 
       let netCashChange: number;
       if (savedRecordsMap.has(yearMonth)) {
@@ -284,8 +291,8 @@ async function calculateCashBalanceUpToMonth(
           + Number(savedRecord.accounts_receivable_change)
           + Number(savedRecord.inventory_change) + startupTotals.initialInventory
           + Number(savedRecord.accounts_payable_change)
-          + Number(savedRecord.other_operating) + startupTotals.expense
-          + Number(savedRecord.capex_acquisition) + startupTotals.capex
+          + Number(savedRecord.other_operating) + startupTotals.founding + startupTotals.marketing + startupTotals.consumables
+          + Number(savedRecord.capex_acquisition) + startupTotals.equipment + startupTotals.renovation + startupTotals.deposit
           + Number(savedRecord.asset_sale)
           + Number(savedRecord.intangible_acquisition) + startupTotals.intangible
           + Number(savedRecord.other_investing)
@@ -404,8 +411,10 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     // 未保存月はゼロ初期値で返す（自動継承なし）
     // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算
     const operatingCfSubtotal =
-      profitBeforeTax + depreciation + startupTotals.expense + startupTotals.initialInventory;
-    const investingCfSubtotal = startupTotals.capex + startupTotals.intangible;
+      profitBeforeTax + depreciation
+      + startupTotals.founding + startupTotals.marketing + startupTotals.consumables + startupTotals.initialInventory;
+    const investingCfSubtotal =
+      startupTotals.equipment + startupTotals.renovation + startupTotals.deposit + startupTotals.intangible;
     const financingCfSubtotal = borrowingProceeds + loanRepaymentAmount;
     const netCashChange = operatingCfSubtotal + investingCfSubtotal + financingCfSubtotal;
 
@@ -451,9 +460,13 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
           en: null,
         },
         startupCostBreakdown: {
-          capex: startupTotals.capex,
+          equipment: startupTotals.equipment,
+          renovation: startupTotals.renovation,
+          deposit: startupTotals.deposit,
           intangible: startupTotals.intangible,
-          expense: startupTotals.expense,
+          founding: startupTotals.founding,
+          marketing: startupTotals.marketing,
+          consumables: startupTotals.consumables,
           initialInventory: startupTotals.initialInventory,
         },
       },
@@ -475,15 +488,17 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   const otherFinancing = Number(record.other_financing);
 
   // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算し、運転資本増減を調整する
-  // スタートアップコストは inventoryChange/otherOperating/capexAcquisition/intangibleAcquisition に加算
+  // スタートアップコスト: equipment/renovation/deposit → 投資CF(capex行), intangible → 投資CF(無形資産行)
+  //                       founding/marketing → 営業CF(その他営業行), initial_inventory → 営業CF(棚卸資産行)
+  //                       working_capital → CFに含めない
   const operatingCfSubtotal =
     profitBeforeTax + depreciation
     + accountsReceivableChange
     + inventoryChange + startupTotals.initialInventory
     + accountsPayableChange
-    + otherOperating + startupTotals.expense;
+    + otherOperating + startupTotals.founding + startupTotals.marketing + startupTotals.consumables;
   const investingCfSubtotal =
-    capexAcquisition + startupTotals.capex
+    capexAcquisition + startupTotals.equipment + startupTotals.renovation + startupTotals.deposit
     + assetSale
     + intangibleAcquisition + startupTotals.intangible
     + otherInvesting;
@@ -533,9 +548,12 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
         en: record.note_en,
       },
       startupCostBreakdown: {
-        capex: startupTotals.capex,
+        equipment: startupTotals.equipment,
+        renovation: startupTotals.renovation,
+        deposit: startupTotals.deposit,
         intangible: startupTotals.intangible,
-        expense: startupTotals.expense,
+        founding: startupTotals.founding,
+        marketing: startupTotals.marketing,
         initialInventory: startupTotals.initialInventory,
       },
     },

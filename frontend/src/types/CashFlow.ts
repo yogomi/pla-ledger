@@ -38,9 +38,13 @@ export interface CashFlowSummary {
 
 /** スタートアップコスト内訳（マイナス値） */
 export interface StartupCostBreakdown {
-  capex: number;
+  equipment: number;
+  renovation: number;
+  deposit: number;
   intangible: number;
-  expense: number;
+  founding: number;
+  marketing: number;
+  consumables: number;
   initialInventory: number;
 }
 

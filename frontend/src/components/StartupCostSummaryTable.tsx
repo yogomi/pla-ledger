@@ -16,7 +16,7 @@ interface StartupCostSummaryTableProps {
   currency: string;
 }
 
-const COST_TYPE_ORDER: CostType[] = ['capex', 'intangible', 'expense', 'initial_inventory'];
+const COST_TYPE_ORDER: CostType[] = ['equipment', 'renovation', 'deposit', 'intangible', 'founding', 'marketing', 'consumables', 'initial_inventory', 'working_capital'];
 
 /**
  * スタートアップコストの費目区分ごとの件数・合計金額を集計して表示する。
@@ -33,10 +33,15 @@ export default function StartupCostSummaryTable({
 
   const rows = useMemo(() => {
     const aggregates: Record<CostType, { count: number; totalAmount: number }> = {
-      capex: { count: 0, totalAmount: 0 },
+      equipment: { count: 0, totalAmount: 0 },
+      renovation: { count: 0, totalAmount: 0 },
+      deposit: { count: 0, totalAmount: 0 },
       intangible: { count: 0, totalAmount: 0 },
-      expense: { count: 0, totalAmount: 0 },
+      founding: { count: 0, totalAmount: 0 },
+      marketing: { count: 0, totalAmount: 0 },
+      consumables: { count: 0, totalAmount: 0 },
       initial_inventory: { count: 0, totalAmount: 0 },
+      working_capital: { count: 0, totalAmount: 0 },
     };
 
     for (const item of items) {
@@ -58,10 +63,15 @@ export default function StartupCostSummaryTable({
 
   const costTypeLabel = (costType: CostType): string => {
     const labels: Record<CostType, string> = {
-      capex: t('cost_type_capex'),
+      equipment: t('cost_type_equipment'),
+      renovation: t('cost_type_renovation'),
+      deposit: t('cost_type_deposit'),
       intangible: t('cost_type_intangible'),
-      expense: t('cost_type_expense'),
+      founding: t('cost_type_founding'),
+      marketing: t('cost_type_marketing'),
+      consumables: t('cost_type_consumables'),
       initial_inventory: t('cost_type_initial_inventory'),
+      working_capital: t('cost_type_working_capital'),
     };
     return labels[costType];
   };

@@ -17,7 +17,7 @@ const StartupCostInputSchema = z.object({
   // Sequelize DECIMAL由来で文字列が来るケースを防御的に受け付ける
   quantity: z.coerce.number().positive(),
   unit_price: z.coerce.number().min(0),
-  cost_type: z.enum(['capex', 'intangible', 'expense', 'initial_inventory']),
+  cost_type: z.enum(['equipment', 'renovation', 'deposit', 'intangible', 'founding', 'marketing', 'consumables', 'initial_inventory', 'working_capital']),
   allocation_month: z.string().regex(YearMonthRegex, 'YYYY-MM format required'),
   display_order: z.number().int().min(0).optional().default(0),
 });
