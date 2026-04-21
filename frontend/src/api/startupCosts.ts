@@ -11,13 +11,22 @@ export interface StartupCostInput {
   display_order?: number;
 }
 
+function normalizeStartupCostItem(item: StartupCostItem): StartupCostItem {
+  return {
+    ...item,
+    // Sequelize の DECIMAL カラムは文字列で返るため、number に変換する
+    quantity: Number(item.quantity),
+    unit_price: Number(item.unit_price),
+  };
+}
+
 /**
  * スタートアップコスト一覧を取得する。
  * @param projectId プロジェクトID
  */
 export async function getStartupCosts(projectId: string): Promise<StartupCostItem[]> {
   const res = await api.get(`/projects/${projectId}/startup-costs`);
-  return res.data.data.items as StartupCostItem[];
+  return (res.data.data.items as StartupCostItem[]).map(normalizeStartupCostItem);
 }
 
 /**
@@ -30,7 +39,7 @@ export async function updateStartupCosts(
   items: StartupCostInput[],
 ): Promise<StartupCostItem[]> {
   const res = await api.put(`/projects/${projectId}/startup-costs`, { items });
-  return res.data.data.items as StartupCostItem[];
+  return (res.data.data.items as StartupCostItem[]).map(normalizeStartupCostItem);
 }
 
 /**

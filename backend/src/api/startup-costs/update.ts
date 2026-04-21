@@ -14,8 +14,8 @@ const YearMonthRegex = /^\d{4}-\d{2}$/;
 
 const StartupCostInputSchema = z.object({
   description: z.string().min(1).max(255),
-  quantity: z.number().positive(),
-  unit_price: z.number().min(0),
+  quantity: z.coerce.number().positive(),
+  unit_price: z.coerce.number().min(0),
   cost_type: z.enum(['capex', 'intangible', 'expense', 'initial_inventory']),
   allocation_month: z.string().regex(YearMonthRegex, 'YYYY-MM format required'),
   display_order: z.number().int().min(0).optional().default(0),
