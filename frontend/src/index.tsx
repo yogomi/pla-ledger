@@ -11,6 +11,14 @@ import { AuthProvider } from './app/AuthContext';
 
 const queryClient = new QueryClient();
 
+// number入力にフォーカスがある状態でホイールしても値が変わらないようにする
+document.addEventListener('wheel', () => {
+  if (document.activeElement instanceof HTMLInputElement &&
+      document.activeElement.type === 'number') {
+    document.activeElement.blur();
+  }
+});
+
 const root = createRoot(document.getElementById('root')!);
 root.render(
   <React.StrictMode>
