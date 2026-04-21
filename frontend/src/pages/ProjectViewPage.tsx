@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box, Typography, CircularProgress, Alert, Chip, Button, Divider,
-  Paper, Grid, TextField, List, ListItem, ListItemText, Tab, Tabs,
+  Paper, Grid, TextField, List, ListItem, ListItemText, Tab, Tabs, Snackbar,
   IconButton, Select, MenuItem, FormControl, InputLabel, ListItemSecondaryAction,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -103,6 +103,7 @@ export default function ProjectViewPage() {
 
   // 編集フォーム
   const [editError, setEditError] = useState('');
+  const [editErrorSnackOpen, setEditErrorSnackOpen] = useState(false);
   const [editSuccess, setEditSuccess] = useState(false);
   const [exportError, setExportError] = useState('');
   const [editCurrency, setEditCurrency] = useState('JPY');
@@ -222,6 +223,7 @@ export default function ProjectViewPage() {
 
   const handleEditSave = async (data: EditFormData) => {
     setEditError('');
+    setEditErrorSnackOpen(false);
     setEditSuccess(false);
     try {
       const tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
@@ -252,6 +254,7 @@ export default function ProjectViewPage() {
       const msg = (err as { response?: { data?: { message?: string } } })
         ?.response?.data?.message || 'Failed to update project';
       setEditError(msg);
+      setEditErrorSnackOpen(true);
     }
   };
 
@@ -489,6 +492,16 @@ export default function ProjectViewPage() {
       {activeTab === 'edit' && canEdit && (
         <Box>
           {editError && <Alert severity="error" sx={{ mb: 2 }}>{editError}</Alert>}
+          <Snackbar
+            open={editErrorSnackOpen && Boolean(editError)}
+            autoHideDuration={6000}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            onClose={() => setEditErrorSnackOpen(false)}
+          >
+            <Alert severity="error" onClose={() => setEditErrorSnackOpen(false)}>
+              {editError}
+            </Alert>
+          </Snackbar>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Box component="form" onSubmit={handleEditSubmit(handleEditSave)}>
               <Controller name="title" control={editControl} render={({ field }) => (
