@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Button, TextField, Select, MenuItem, FormControl,
-  InputLabel, Paper, Grid, Chip, Alert, Divider,
+  InputLabel, Paper, Grid, Alert, Divider,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,13 +15,11 @@ const schema = z.object({
   summary: z.string().optional(),
   visibility: z.enum(['public', 'private', 'unlisted']),
   currency: z.string().min(3).max(10),
-  stage: z.string().optional(),
   tags: z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
 const CURRENCIES = ['JPY', 'USD', 'EUR', 'GBP', 'CNY', 'KRW'];
-const STAGES = ['idea', 'planning', 'launch', 'growth', 'mature'];
 
 export default function ProjectCreatePage() {
   const { t } = useTranslation();
@@ -30,7 +28,7 @@ export default function ProjectCreatePage() {
 
   const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { visibility: 'private', currency: 'JPY', stage: '' },
+    defaultValues: { visibility: 'private', currency: 'JPY' },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -56,7 +54,6 @@ export default function ProjectCreatePage() {
         summary: data.summary || undefined,
         visibility: data.visibility,
         currency: data.currency,
-        stage: data.stage || undefined,
         tags,
         sections,
       });
@@ -117,17 +114,6 @@ export default function ProjectCreatePage() {
                   <InputLabel>{t('currency')}</InputLabel>
                   <Select {...field} label={t('currency')}>
                     {CURRENCIES.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-                  </Select>
-                </FormControl>
-              )} />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Controller name="stage" control={control} render={({ field }) => (
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>{t('stage')}</InputLabel>
-                  <Select {...field} label={t('stage')}>
-                    <MenuItem value="">(none)</MenuItem>
-                    {STAGES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                   </Select>
                 </FormControl>
               )} />

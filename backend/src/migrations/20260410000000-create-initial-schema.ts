@@ -120,10 +120,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       allowNull: false,
       defaultValue: 'JPY',
     },
-    stage: {
-      type: DataTypes.STRING,
-      defaultValue: null,
-    },
     tags: {
       type: DataTypes.JSON,
       defaultValue: [],

@@ -31,7 +31,6 @@ export const ProjectCreateSchema = z.object({
   summary: z.string().optional(),
   visibility: z.enum(['public', 'private', 'unlisted']),
   currency: z.string().min(3).max(10),
-  stage: z.string().optional(),
   tags: z.array(z.string()).optional(),
   sections: z.array(z.object({ type: z.string(), content: z.any() })).optional(),
   social_insurance_rate: z.number().min(0).max(100).optional(),
@@ -58,7 +57,6 @@ export const PublicProjectsQuerySchema = z.object({
   page: z.coerce.number().min(1).optional().default(1),
   limit: z.coerce.number().min(1).max(100).optional().default(20),
   keyword: z.string().optional(),
-  stage: z.string().optional(),
   currency: z.string().optional(),
   tags: z.string().optional(),
 });
@@ -78,7 +76,6 @@ const ProjectDataSchema = z.object({
   summary: z.string().nullable(),
   visibility: z.enum(['public', 'private', 'unlisted']),
   currency: z.string(),
-  stage: z.string().nullable(),
   tags: z.array(z.string()),
   published_at: z.string().nullable(),
   social_insurance_rate: z.coerce.number(),

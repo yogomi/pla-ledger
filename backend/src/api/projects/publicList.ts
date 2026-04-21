@@ -8,7 +8,7 @@ import { formatZodError } from '../../utils/zodError';
  * @api {GET} /api/projects/public 公開プロジェクト一覧
  * @description
  *   - 公開（visibility: 'public'）のプロジェクト一覧を取得する
- *   - キーワード・ステージ・通貨でフィルタリング可能
+ *   - キーワード・通貨でフィルタリング可能
  *   - ページネーション対応
  *
  * @request
@@ -16,7 +16,6 @@ import { formatZodError } from '../../utils/zodError';
  *   - page: number (optional, default: 1) - ページ番号（1以上）
  *   - limit: number (optional, default: 20, max: 100) - 1ページあたりの件数
  *   - keyword: string (optional) - タイトルの部分一致フィルタ
- *   - stage: string (optional) - ステージフィルタ
  *   - currency: string (optional) - 通貨フィルタ
  *   バリデーションはZodで行い、失敗時は
  *   { success: false, code: 'invalid_query', message: エラー内容, data: null }
@@ -63,9 +62,8 @@ router.get('/', async (req, res: Response) => {
     });
     return;
   }
-  const { page, limit, keyword, stage, currency } = parsed.data;
+  const { page, limit, keyword, currency } = parsed.data;
   const where: Record<string, unknown> = { visibility: 'public' };
-  if (stage) where['stage'] = stage;
   if (currency) where['currency'] = currency;
   if (keyword) {
     where['title'] = { [Op.like]: `%${keyword}%` };

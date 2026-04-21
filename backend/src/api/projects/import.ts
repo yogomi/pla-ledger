@@ -140,7 +140,6 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       summary: exportData.project.summary,
       visibility: exportData.project.visibility,
       currency: exportData.project.currency,
-      stage: exportData.project.stage,
       tags: exportData.project.tags,
       published_at: exportData.project.visibility === 'public' ? new Date() : null,
       social_insurance_rate: exportData.project.social_insurance_rate,

@@ -65,7 +65,6 @@ interface ProjectAttributes {
   summary: string | null;
   visibility: 'public' | 'private' | 'unlisted';
   currency: string;
-  stage: string | null;
   tags: string[];
   published_at: Date | null;
   social_insurance_rate: number;
@@ -78,7 +77,6 @@ type ProjectCreation = Optional<
   ProjectAttributes,
   | 'id'
   | 'summary'
-  | 'stage'
   | 'tags'
   | 'published_at'
   | 'social_insurance_rate'
@@ -95,7 +93,6 @@ export class Project
   declare summary: string | null;
   declare visibility: 'public' | 'private' | 'unlisted';
   declare currency: string;
-  declare stage: string | null;
   declare tags: string[];
   declare published_at: Date | null;
   declare social_insurance_rate: number;
@@ -114,7 +111,6 @@ Project.init({
     defaultValue: 'private',
   },
   currency: { type: DataTypes.STRING(10), allowNull: false, defaultValue: 'JPY' },
-  stage: { type: DataTypes.STRING, defaultValue: null },
   tags: { type: DataTypes.JSON, defaultValue: [] },
   published_at: { type: DataTypes.DATE, defaultValue: null },
   social_insurance_rate: { type: DataTypes.DECIMAL(5, 2), allowNull: false, defaultValue: 15.0 },

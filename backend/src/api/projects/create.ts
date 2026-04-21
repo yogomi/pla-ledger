@@ -23,7 +23,6 @@ import { formatZodError } from '../../utils/zodError';
  *   - summary: string (optional) - 概要
  *   - visibility: 'public' | 'private' | 'unlisted' (required) - 公開設定
  *   - currency: string (required, 3-10文字) - 通貨コード 例: 'JPY'
- *   - stage: string (optional) - ステージ 例: 'idea', 'launch'
  *   - tags: string[] (optional) - タグ一覧
  *   - sections: Array<{ type: string, content: any }> (optional) - セクション一覧
  *   バリデーションはZodで行い、失敗時は
@@ -68,7 +67,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     });
     return;
   }
-  const { title, summary, visibility, currency, stage, tags, sections } = parsed.data;
+  const { title, summary, visibility, currency, tags, sections } = parsed.data;
   const existingProject = await Project.findOne({ where: { title } });
   if (existingProject) {
     res.status(409).json({
@@ -85,7 +84,6 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     summary: summary ?? null,
     visibility,
     currency,
-    stage: stage ?? null,
     tags: tags ?? [],
     published_at: visibility === 'public' ? new Date() : null,
   }).catch((err: unknown) => {

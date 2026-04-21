@@ -24,7 +24,6 @@ import { formatZodError } from '../../utils/zodError';
  *   - summary: string (optional) - 概要
  *   - visibility: 'public' | 'private' | 'unlisted' (optional) - 公開設定
  *   - currency: string (optional) - 通貨コード
- *   - stage: string (optional) - ステージ
  *   - tags: string[] (optional) - タグ一覧
  *   - sections: Array<{ type: string, content: any }> (optional) - セクション一覧（upsert）
  *   バリデーションはZodで行い、失敗時は

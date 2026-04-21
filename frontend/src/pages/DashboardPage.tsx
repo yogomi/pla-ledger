@@ -16,7 +16,6 @@ interface Project {
   title: string;
   visibility: string;
   currency: string;
-  stage: string | null;
   tags: string[];
   created_at: string;
 }
@@ -88,7 +87,6 @@ export default function DashboardPage() {
                             color={p.visibility === 'public' ? 'success' : 'default'}
                           />
                           <Chip label={p.currency} size="small" variant="outlined" />
-                          {p.stage && <Chip label={p.stage} size="small" variant="outlined" />}
                         </Box>
                         {p.tags && p.tags.length > 0 && (
                           <Box mt={1} display="flex" gap={0.5} flexWrap="wrap">

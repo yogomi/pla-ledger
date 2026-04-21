@@ -36,7 +36,7 @@ interface Version {
 interface Section { id: string; type: string; content: Record<string, unknown>; version: number; }
 interface Project {
   id: string; title: string; summary: string | null;
-  visibility: string; currency: string; stage: string | null; tags: string[];
+  visibility: string; currency: string; tags: string[];
   owner_id: string; sections: Section[];
   social_insurance_rate: number | null;
   initial_cash_balance: number | null;
@@ -57,7 +57,6 @@ const editSchema = z.object({
   summary: z.string().optional(),
   visibility: z.enum(['public', 'private', 'unlisted']),
   currency: z.string().min(3).max(10),
-  stage: z.string().optional(),
   tags: z.string().optional(),
   social_insurance_rate: z.number().min(0).max(100).optional(),
   planned_opening_date: z.string().optional(),
@@ -65,7 +64,6 @@ const editSchema = z.object({
 type EditFormData = z.infer<typeof editSchema>;
 
 const CURRENCIES = ['JPY', 'USD', 'EUR', 'GBP', 'CNY', 'KRW'];
-const STAGES = ['idea', 'planning', 'launch', 'growth', 'mature'];
 
 export default function ProjectViewPage() {
   const { t } = useTranslation();
@@ -157,7 +155,6 @@ export default function ProjectViewPage() {
         summary: p.summary || '',
         visibility: p.visibility,
         currency: p.currency,
-        stage: p.stage || '',
         tags: Array.isArray(p.tags) ? p.tags.join(', ') : '',
         social_insurance_rate: p.social_insurance_rate != null ? Number(p.social_insurance_rate) : 15,
         planned_opening_date: p.planned_opening_date ?? '',
@@ -234,7 +231,6 @@ export default function ProjectViewPage() {
         summary: data.summary || undefined,
         visibility: data.visibility,
         currency: data.currency,
-        stage: data.stage || null,
         tags,
         social_insurance_rate: data.social_insurance_rate,
         planned_opening_date: data.planned_opening_date || null,
@@ -319,7 +315,6 @@ export default function ProjectViewPage() {
               size="small"
             />
             <Chip label={project.currency} variant="outlined" size="small" />
-            {project.stage && <Chip label={project.stage} variant="outlined" size="small" />}
             {owner && <Chip label={`Owner: ${owner.name}`} variant="outlined" size="small" />}
           </Box>
         </Box>
@@ -559,17 +554,6 @@ export default function ProjectViewPage() {
                       <InputLabel>{t('currency')}</InputLabel>
                       <Select {...field} label={t('currency')}>
                         {CURRENCIES.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                  )} />
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Controller name="stage" control={editControl} render={({ field }) => (
-                    <FormControl fullWidth margin="normal">
-                      <InputLabel>{t('stage')}</InputLabel>
-                      <Select {...field} label={t('stage')}>
-                        <MenuItem value="">(none)</MenuItem>
-                        {STAGES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                       </Select>
                     </FormControl>
                   )} />

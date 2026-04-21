@@ -31,7 +31,6 @@ import { authenticate, AuthRequest } from '../../middleware/auth';
  *           "title": "My Project",
  *           "visibility": "private",
  *           "currency": "JPY",
- *           "stage": "idea",
  *           "tags": ["food", "restaurant"],
  *           "created_at": "2026-01-01T00:00:00.000Z"
  *         }
