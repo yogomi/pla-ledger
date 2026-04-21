@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Paper, TextField, Button, Alert, Select, MenuItem,
-  FormControl, InputLabel, Divider,
+  FormControl, InputLabel, Divider, Snackbar,
 } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,6 +32,9 @@ export default function SettingsPage() {
   const [error, setError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [snackOpen, setSnackOpen] = useState(false);
+  const [snackMessage, setSnackMessage] = useState('');
+  const [snackSeverity, setSnackSeverity] = useState<'error'>('error');
 
   const {
     control,
@@ -52,7 +55,11 @@ export default function SettingsPage() {
       localStorage.setItem('locale', locale);
       setSuccess('Language updated');
     } catch {
-      setError('Failed to update language');
+      const message = 'Failed to update language';
+      setError(message);
+      setSnackMessage(message);
+      setSnackSeverity('error');
+      setSnackOpen(true);
     }
   };
 
@@ -70,10 +77,16 @@ export default function SettingsPage() {
       const resData = (err as { response?: { data?: { code?: string; message?: string } } })
         ?.response?.data;
       if (resData?.code === 'invalid_password') {
-        setPasswordError(t('current_password_incorrect'));
+        const message = t('current_password_incorrect');
+        setPasswordError(message);
+        setSnackMessage(message);
       } else {
-        setPasswordError(resData?.message || t('error'));
+        const message = resData?.message || t('error');
+        setPasswordError(message);
+        setSnackMessage(message);
       }
+      setSnackSeverity('error');
+      setSnackOpen(true);
     }
   };
 
@@ -199,7 +212,17 @@ export default function SettingsPage() {
           <Button variant="contained" onClick={handleSaveLocale}>{t('save')}</Button>
         </Box>
       </Paper>
+
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() => setSnackOpen(false)}
+      >
+        <Alert severity={snackSeverity} onClose={() => setSnackOpen(false)}>
+          {snackMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
-

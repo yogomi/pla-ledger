@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Box, Button, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Snackbar, TextField, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 interface ProjectInitialCashBalanceProps {
@@ -30,6 +30,7 @@ export default function ProjectInitialCashBalance({
   const [balance, setBalance] = useState(currentBalance);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorSnackOpen, setErrorSnackOpen] = useState(false);
 
   /** 表示用の開業予定日ラベル（例: ja→"2025年1月"、en→"January 2025"、未設定時は2025-01） */
   const dateLabel = (() => {
@@ -45,10 +46,12 @@ export default function ProjectInitialCashBalance({
   const handleSave = async () => {
     setIsSaving(true);
     setError(null);
+    setErrorSnackOpen(false);
     try {
       await onUpdate(balance);
     } catch {
       setError(t('initial_cash_balance_update_error'));
+      setErrorSnackOpen(true);
     } finally {
       setIsSaving(false);
     }
@@ -93,6 +96,17 @@ export default function ProjectInitialCashBalance({
           {isSaving ? t('saving') : t('save')}
         </Button>
       </Box>
+
+      <Snackbar
+        open={errorSnackOpen}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() => setErrorSnackOpen(false)}
+      >
+        <Alert severity="error" onClose={() => setErrorSnackOpen(false)}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
