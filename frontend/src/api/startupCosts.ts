@@ -11,12 +11,24 @@ export interface StartupCostInput {
   display_order?: number;
 }
 
+/**
+ * スタートアップコストAPIレスポンスを画面用の型へ正規化する。
+ * @param item APIレスポンスの1行データ
+ */
 function normalizeStartupCostItem(item: StartupCostItem): StartupCostItem {
+  const quantity = Number(item.quantity);
+  const unitPrice = Number(item.unit_price);
+  if (!Number.isFinite(quantity) || !Number.isFinite(unitPrice)) {
+    throw new Error(
+      `Invalid numeric fields: quantity=${item.quantity}, unit_price=${item.unit_price}`,
+    );
+  }
+
   return {
     ...item,
     // Sequelize の DECIMAL カラムは文字列で返るため、number に変換する
-    quantity: Number(item.quantity),
-    unit_price: Number(item.unit_price),
+    quantity,
+    unit_price: unitPrice,
   };
 }
 

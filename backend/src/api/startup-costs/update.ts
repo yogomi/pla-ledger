@@ -14,6 +14,7 @@ const YearMonthRegex = /^\d{4}-\d{2}$/;
 
 const StartupCostInputSchema = z.object({
   description: z.string().min(1).max(255),
+  // Sequelize DECIMAL由来で文字列が来るケースを防御的に受け付ける
   quantity: z.coerce.number().positive(),
   unit_price: z.coerce.number().min(0),
   cost_type: z.enum(['capex', 'intangible', 'expense', 'initial_inventory']),
