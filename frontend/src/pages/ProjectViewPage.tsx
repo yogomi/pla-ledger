@@ -23,6 +23,7 @@ import SimulationSheetContainer from '../components/SimulationSheetContainer';
 import FinancialSummaryCards from '../components/FinancialSummaryCards';
 import ProjectTimeline from '../components/ProjectTimeline';
 import { getStartupCosts, updateStartupCosts } from '../api/startupCosts';
+import { getCashFlowMonthly } from '../api/cashFlow';
 import { useLoans } from '../hooks/useLoan';
 
 interface Comment { id: string; author_id: string; body: string; created_at: string; }
@@ -109,6 +110,7 @@ export default function ProjectViewPage() {
   const [startupCostSaveErrorSnackOpen, setStartupCostSaveErrorSnackOpen] = useState(false);
   const [startupCostSaveSuccess, setStartupCostSaveSuccess] = useState(false);
   const [startupCostItems, setStartupCostItems] = useState<StartupCostItem[]>([]);
+  const [openingCapital, setOpeningCapital] = useState<number | null>(null);
 
   /** 借入一覧（ロールがある場合のみ取得） */
   const { data: loanData } = useLoans(id ?? '');
@@ -158,6 +160,15 @@ export default function ProjectViewPage() {
       });
     }).catch(() => setError('Failed to load project')).finally(() => setLoading(false));
   }, [id]);
+
+  /** プロジェクトタブ表示時に開業月のキャッシュフローから資本金払込額を取得 */
+  useEffect(() => {
+    if (!id || !project?.planned_opening_date) return;
+    if (activeTab !== 'project') return;
+    getCashFlowMonthly(id, project.planned_opening_date)
+      .then(data => setOpeningCapital(data.financing.capitalIncrease))
+      .catch(() => setOpeningCapital(null));
+  }, [id, project?.planned_opening_date, activeTab]);
 
   /** アクセス管理タブがアクティブになった際にデータを取得 */
   const loadAccessData = () => {
@@ -388,6 +399,7 @@ export default function ProjectViewPage() {
           {/* 財務サマリーカード */}
           <FinancialSummaryCards
             startupCostItems={startupCostItems}
+            openingCapital={openingCapital}
             plannedOpeningDate={project.planned_opening_date}
             currency={project.currency}
             loans={role ? (loanData?.loans ?? []) : undefined}
