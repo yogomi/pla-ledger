@@ -22,11 +22,11 @@ const ParamsSchema = z.object({
  * @api {GET} /api/projects/:projectId/cash-flow/yearly/:year 年次キャッシュフロー取得
  * @description
  *   - 指定年の12ヶ月分のキャッシュフローデータを取得
- *   - 期首残高・期末残高は 2024-01 からの累積計算で算出（DB保存なし）
+ *   - 期首残高・期末残高は 2025-01 からの累積計算で算出（DB保存なし）
  *   - 年間合計を計算して返却
  *
  * @request
- *   - params: projectId (UUID), year (YYYY形式、2024以降)
+ *   - params: projectId (UUID), year (YYYY形式、2025以降)
  *   - 認証必須
  *
  * @response
@@ -100,8 +100,8 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
 
   const targetYear = Number(year);
 
-  // 開業予定日（未設定の場合は 2024-01 をデフォルト使用）
-  const startYearMonth = project.planned_opening_date ?? '2024-01';
+  // 開業予定日（未設定の場合は 2025-01 をデフォルト使用）
+  const startYearMonth = project.planned_opening_date ?? '2025-01';
   const [startYear, startMonth] = startYearMonth.split('-').map(Number);
 
   // 対象年のレコードをあらかじめ一括取得してマップ化

@@ -223,7 +223,7 @@ async function fetchStartupCostTotals(
 }
 
 /**
- * 2024-01 から指定月までの現金残高を順次計算する。
+ * 2025-01 から指定月までの現金残高を順次計算する。
  * プロジェクトの initial_cash_balance を起点として、各月の net_cash_change を累積する。
  * 保存済みレコードは一括取得してマップ化し、N+1クエリを防ぐ。
  * @param projectId - プロジェクトID
@@ -241,8 +241,8 @@ async function calculateCashBalanceUpToMonth(
     throw new Error('Project not found');
   }
 
-  // 開業予定日（未設定の場合は 2024-01 をデフォルト使用）
-  const startYearMonth = project.planned_opening_date ?? '2024-01';
+  // 開業予定日（未設定の場合は 2025-01 をデフォルト使用）
+  const startYearMonth = project.planned_opening_date ?? '2025-01';
   const [startYear, startMonth] = startYearMonth.split('-').map(Number);
   const [targetYear, targetMonth] = targetYearMonth.split('-').map(Number);
 
@@ -322,12 +322,12 @@ async function calculateCashBalanceUpToMonth(
  * @api {GET} /api/projects/:projectId/cash-flow/monthly/:yearMonth 月次キャッシュフロー取得
  * @description
  *   - 指定月のキャッシュフローデータを取得
- *   - 期首残高・期末残高は 2024-01 からの累積計算で算出（DB保存なし）
+ *   - 期首残高・期末残高は 2025-01 からの累積計算で算出（DB保存なし）
  *   - データが存在しない場合は全項目ゼロで返す（自動継承なし）
  *   - 損益計算表・借入金管理からの自動連携データを含める
  *
  * @request
- *   - params: projectId (UUID), yearMonth (YYYY-MM形式、2024-01以降)
+ *   - params: projectId (UUID), yearMonth (YYYY-MM形式、2025-01以降)
  *   - 認証必須（authenticateミドルウェア）
  *
  * @response
@@ -399,7 +399,7 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
   // スタートアップコストを取得
   const startupTotals = await fetchStartupCostTotals(projectId, yearMonth);
 
-  // 期首残高・期末残高を 開業予定日（または2024-01）からの累積計算で算出
+  // 期首残高・期末残高を 開業予定日（または2025-01）からの累積計算で算出
   const { cashBeginning, cashEnding } =
     await calculateCashBalanceUpToMonth(projectId, yearMonth);
 

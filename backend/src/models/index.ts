@@ -127,7 +127,7 @@ Project.init({
   planned_opening_date: {
     type: DataTypes.STRING(7),
     allowNull: true,
-    comment: '開業予定日（YYYY-MM形式）。未設定の場合は2024-01をデフォルト使用',
+    comment: '開業予定日（YYYY-MM形式）。未設定の場合は2025-01をデフォルト使用',
   },
 }, { sequelize, tableName: 'projects', underscored: true });
 
