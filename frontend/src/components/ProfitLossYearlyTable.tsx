@@ -73,41 +73,6 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
-      {/* 月次損益推移グラフ */}
-      <Box>
-        <Typography variant="h6" gutterBottom>{t('profit_loss_yearly_label')}</Typography>
-        <ResponsiveContainer width="100%" height={320}>
-          <ComposedChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip formatter={tooltipFormatter} />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey={t('sales_row')}
-              stroke={CHART_COLORS.sales}
-              strokeWidth={2}
-              dot={{ r: 3 }}
-            />
-            <Line
-              type="monotone"
-              dataKey={t('operating_profit')}
-              stroke={CHART_COLORS.operatingProfit}
-              strokeWidth={2}
-              dot={{ r: 3 }}
-            />
-            <Line
-              type="monotone"
-              dataKey={t('net_profit')}
-              stroke={CHART_COLORS.netProfit}
-              strokeWidth={2}
-              dot={{ r: 3 }}
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </Box>
-
       <Paper variant="outlined" sx={{ overflow: 'auto' }}>
       <Table size="small">
         <TableHead>
@@ -240,6 +205,41 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
         </TableBody>
       </Table>
     </Paper>
+
+      {/* 月次損益推移グラフ */}
+      <Box>
+        <Typography variant="h6" gutterBottom>{t('profit_loss_yearly_label')}</Typography>
+        <ResponsiveContainer width="100%" height={320}>
+          <ComposedChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip formatter={tooltipFormatter} />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey={t('sales_row')}
+              stroke={CHART_COLORS.sales}
+              strokeWidth={2}
+              dot={{ r: 3 }}
+            />
+            <Line
+              type="monotone"
+              dataKey={t('operating_profit')}
+              stroke={CHART_COLORS.operatingProfit}
+              strokeWidth={2}
+              dot={{ r: 3 }}
+            />
+            <Line
+              type="monotone"
+              dataKey={t('net_profit')}
+              stroke={CHART_COLORS.netProfit}
+              strokeWidth={2}
+              dot={{ r: 3 }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </Box>
     </Box>
   );
 }
