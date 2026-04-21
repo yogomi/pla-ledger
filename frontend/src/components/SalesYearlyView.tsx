@@ -13,8 +13,8 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -146,21 +146,22 @@ export default function SalesYearlyView({ projectId, year, currency }: SalesYear
         {t('sales_yearly_chart_title')} ({currency})
       </Typography>
       <ResponsiveContainer width="100%" height={320}>
-        <BarChart data={chartData}>
+        <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis tickFormatter={v => Number(v).toLocaleString()} />
           <Tooltip formatter={tooltipFormatter} />
           <Legend />
           {data.categories.map((cat, idx) => (
-            <Bar
+            <Line
               key={cat.categoryId}
+              type="monotone"
               dataKey={cat.categoryName}
-              stackId="sales"
-              fill={CHART_COLORS[idx % CHART_COLORS.length]}
+              stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+              dot={false}
             />
           ))}
-        </BarChart>
+        </LineChart>
       </ResponsiveContainer>
     </Box>
   );
