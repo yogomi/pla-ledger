@@ -98,7 +98,7 @@ export default function ProjectInitialCashBalance({
       </Box>
 
       <Snackbar
-        open={errorSnackOpen}
+        open={errorSnackOpen && Boolean(error)}
         autoHideDuration={6000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         onClose={() => setErrorSnackOpen(false)}

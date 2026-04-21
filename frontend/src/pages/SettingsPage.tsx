@@ -34,7 +34,6 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState('');
   const [snackOpen, setSnackOpen] = useState(false);
   const [snackMessage, setSnackMessage] = useState('');
-  const [snackSeverity, setSnackSeverity] = useState<'error'>('error');
 
   const {
     control,
@@ -58,7 +57,6 @@ export default function SettingsPage() {
       const message = 'Failed to update language';
       setError(message);
       setSnackMessage(message);
-      setSnackSeverity('error');
       setSnackOpen(true);
     }
   };
@@ -85,7 +83,6 @@ export default function SettingsPage() {
         setPasswordError(message);
         setSnackMessage(message);
       }
-      setSnackSeverity('error');
       setSnackOpen(true);
     }
   };
@@ -219,7 +216,7 @@ export default function SettingsPage() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         onClose={() => setSnackOpen(false)}
       >
-        <Alert severity={snackSeverity} onClose={() => setSnackOpen(false)}>
+        <Alert severity="error" onClose={() => setSnackOpen(false)}>
           {snackMessage}
         </Alert>
       </Snackbar>

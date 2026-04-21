@@ -493,7 +493,7 @@ export default function ProjectViewPage() {
         <Box>
           {editError && <Alert severity="error" sx={{ mb: 2 }}>{editError}</Alert>}
           <Snackbar
-            open={editErrorSnackOpen}
+            open={editErrorSnackOpen && Boolean(editError)}
             autoHideDuration={6000}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             onClose={() => setEditErrorSnackOpen(false)}
