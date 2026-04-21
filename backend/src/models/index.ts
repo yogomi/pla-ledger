@@ -68,7 +68,6 @@ interface ProjectAttributes {
   tags: string[];
   published_at: Date | null;
   social_insurance_rate: number;
-  initial_cash_balance: number;
   planned_opening_date: string | null;
   created_at?: Date;
   updated_at?: Date;
@@ -80,7 +79,6 @@ type ProjectCreation = Optional<
   | 'tags'
   | 'published_at'
   | 'social_insurance_rate'
-  | 'initial_cash_balance'
   | 'planned_opening_date'
 >;
 
@@ -96,7 +94,6 @@ export class Project
   declare tags: string[];
   declare published_at: Date | null;
   declare social_insurance_rate: number;
-  declare initial_cash_balance: number;
   declare planned_opening_date: string | null;
 }
 
@@ -114,12 +111,6 @@ Project.init({
   tags: { type: DataTypes.JSON, defaultValue: [] },
   published_at: { type: DataTypes.DATE, defaultValue: null },
   social_insurance_rate: { type: DataTypes.DECIMAL(5, 2), allowNull: false, defaultValue: 15.0 },
-  initial_cash_balance: {
-    type: DataTypes.DECIMAL(15, 2),
-    allowNull: false,
-    defaultValue: 0,
-    comment: '事業開始時（開業予定日）の初期現金残高',
-  },
   planned_opening_date: {
     type: DataTypes.STRING(7),
     allowNull: true,

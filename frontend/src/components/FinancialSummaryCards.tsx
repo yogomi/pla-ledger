@@ -6,7 +6,6 @@ import {
   Grid,
   Typography,
 } from '@mui/material';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
 import StorefrontIcon from '@mui/icons-material/Storefront';
@@ -18,8 +17,6 @@ import { Loan } from '../types/Loan';
 interface FinancialSummaryCardsProps {
   /** スタートアップコスト一覧 */
   startupCostItems: StartupCostItem[];
-  /** 初期現金残高 */
-  initialCashBalance: number | null;
   /** 開業予定日 (YYYY-MM) */
   plannedOpeningDate: string | null;
   /** 通貨コード (例: JPY, USD) */
@@ -34,7 +31,6 @@ interface FinancialSummaryCardsProps {
  */
 export default function FinancialSummaryCards({
   startupCostItems,
-  initialCashBalance,
   plannedOpeningDate,
   currency,
   loans,
@@ -89,11 +85,6 @@ export default function FinancialSummaryCards({
       label: t('startup_costs_section'),
       value: formatAmount(totalStartupCost),
     },
-    {
-      icon: <AccountBalanceWalletIcon fontSize="large" color="success" />,
-      label: t('initial_cash_balance'),
-      value: initialCashBalance != null ? formatAmount(initialCashBalance) : '-',
-    },
     ...(loans !== undefined
       ? [{
         icon: <CreditScoreIcon fontSize="large" color="secondary" />,
@@ -120,9 +111,7 @@ export default function FinancialSummaryCards({
           item
           xs={12}
           sm={6}
-          // 5カード時はsxでflex幅を20%に指定、4カード時は3列（12/4）
-          md={loans !== undefined ? undefined : 3}
-          sx={loans !== undefined ? { flexBasis: '20%', maxWidth: '20%' } : undefined}
+          md={loans !== undefined ? 3 : 4}
           key={card.label}
         >
           <Card elevation={2} sx={{ height: '100%' }}>

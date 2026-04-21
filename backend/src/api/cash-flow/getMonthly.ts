@@ -224,7 +224,7 @@ async function fetchStartupCostTotals(
 
 /**
  * 2025-01 から指定月までの現金残高を順次計算する。
- * プロジェクトの initial_cash_balance を起点として、各月の net_cash_change を累積する。
+ * 開業予定日を起点として 0 から各月の net_cash_change を累積する。
  * 保存済みレコードは一括取得してマップ化し、N+1クエリを防ぐ。
  * @param projectId - プロジェクトID
  * @param targetYearMonth - 対象年月 (YYYY-MM)
@@ -235,7 +235,7 @@ async function calculateCashBalanceUpToMonth(
   targetYearMonth: string,
 ): Promise<{ cashBeginning: number; cashEnding: number }> {
   const project = await Project.findByPk(projectId, {
-    attributes: ['initial_cash_balance', 'planned_opening_date'],
+    attributes: ['planned_opening_date'],
   });
   if (!project) {
     throw new Error('Project not found');
@@ -259,7 +259,7 @@ async function calculateCashBalanceUpToMonth(
   // スタートアップコストを一括取得してマップ化する（N+1クエリを防ぐ）
   const startupCostMap = await fetchStartupCostMap(projectId, startYearMonth, targetYearMonth);
 
-  let runningBalance = Number(project.initial_cash_balance);
+  let runningBalance = 0;
   let cashBeginning = runningBalance;
 
   // startYearMonth から targetYearMonth まで月ごとに累積する

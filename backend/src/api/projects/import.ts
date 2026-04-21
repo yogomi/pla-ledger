@@ -143,7 +143,6 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       tags: exportData.project.tags,
       published_at: exportData.project.visibility === 'public' ? new Date() : null,
       social_insurance_rate: exportData.project.social_insurance_rate,
-      initial_cash_balance: exportData.project.initial_cash_balance ?? 0,
       planned_opening_date: exportData.project.planned_opening_date ?? null,
     }, { transaction });
 

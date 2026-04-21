@@ -133,12 +133,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       allowNull: false,
       defaultValue: 15.0,
     },
-    initial_cash_balance: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-      comment: '事業開始時（開業予定日）の初期現金残高',
-    },
     planned_opening_date: {
       type: DataTypes.STRING(7),
       allowNull: true,

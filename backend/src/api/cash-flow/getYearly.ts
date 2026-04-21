@@ -75,7 +75,7 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
   const { projectId, year } = parsed.data;
 
   const project = await Project.findByPk(projectId, {
-    attributes: ['initial_cash_balance', 'planned_opening_date'],
+    attributes: ['planned_opening_date'],
   });
   if (!project) {
     res.status(404).json({
@@ -137,7 +137,7 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
   };
 
   // startYearMonth から対象年の 12 月まで残高を累積計算する
-  let runningBalance = Number(project.initial_cash_balance);
+  let runningBalance = 0;
   let periodCashBeginning = runningBalance;
   const months = [];
 

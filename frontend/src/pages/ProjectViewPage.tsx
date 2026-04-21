@@ -20,7 +20,6 @@ import StartupCostSummaryTable from '../components/StartupCostSummaryTable';
 import StartupCostDetailPanel from '../components/StartupCostDetailPanel';
 import SimulationViewContainer from '../components/SimulationViewContainer';
 import SimulationSheetContainer from '../components/SimulationSheetContainer';
-import ProjectInitialCashBalance from '../components/ProjectInitialCashBalance';
 import FinancialSummaryCards from '../components/FinancialSummaryCards';
 import ProjectTimeline from '../components/ProjectTimeline';
 import { getStartupCosts, updateStartupCosts } from '../api/startupCosts';
@@ -39,7 +38,6 @@ interface Project {
   visibility: string; currency: string; tags: string[];
   owner_id: string; sections: Section[];
   social_insurance_rate: number | null;
-  initial_cash_balance: number | null;
   planned_opening_date: string | null;
 }
 interface AccessRequest {
@@ -375,7 +373,6 @@ export default function ProjectViewPage() {
           {/* 財務サマリーカード */}
           <FinancialSummaryCards
             startupCostItems={startupCostItems}
-            initialCashBalance={project.initial_cash_balance}
             plannedOpeningDate={project.planned_opening_date}
             currency={project.currency}
             loans={role ? (loanData?.loans ?? []) : undefined}
@@ -588,22 +585,6 @@ export default function ProjectViewPage() {
                     onChange={e => field.onChange(Number(e.target.value))}
                   />
                 )}
-              />
-
-              <Divider sx={{ my: 3 }} />
-
-              <ProjectInitialCashBalance
-                currentBalance={project.initial_cash_balance != null
-                  ? Number(project.initial_cash_balance) : 0}
-                currency={editCurrency}
-                isOwner={isOwner}
-                plannedOpeningDate={watchedPlannedOpeningDate || project.planned_opening_date || null}
-                onUpdate={async (newBalance) => {
-                  await api.patch(`/projects/${id}/initial-cash-balance`, {
-                    initialCashBalance: newBalance,
-                  });
-                  setProject(prev => prev ? { ...prev, initial_cash_balance: newBalance } : prev);
-                }}
               />
 
               <Divider sx={{ my: 3 }} />
