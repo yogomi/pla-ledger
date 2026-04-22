@@ -1,9 +1,11 @@
 import { Router, Response } from 'express';
+import { Op } from 'sequelize';
 import {
   Project,
   SalesSimulationCategory,
   SalesSimulationItem,
   SalesSimulationSnapshot,
+  CashFlowMonthly,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
@@ -126,8 +128,26 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     categoryMonthlyMap.set(cat.id, new Map());
   }
 
+  // キャッシュフローメモを一括取得（N+1クエリ回避）
+  const cashFlowRecords = await CashFlowMonthly.findAll({
+    attributes: ['year_month', 'note_ja', 'note_en'],
+    where: {
+      project_id: projectId,
+      year_month: { [Op.like]: `${year}-%` },
+    },
+  });
+  const noteMap = new Map<string, { noteJa: string | null; noteEn: string | null }>(
+    cashFlowRecords.map(r => [r.year_month, { noteJa: r.note_ja ?? null, noteEn: r.note_en ?? null }]),
+  );
+
   // 月次合計を格納する配列
-  const monthlyTotals: Array<{ yearMonth: string; totalSales: number; totalCost: number }> = [];
+  const monthlyTotals: Array<{
+    yearMonth: string;
+    totalSales: number;
+    totalCost: number;
+    noteJa: string | null;
+    noteEn: string | null;
+  }> = [];
 
   // 1月〜12月の各月のデータを処理する
   for (let m = 1; m <= 12; m++) {
@@ -181,7 +201,11 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
       monthCost += catCost;
     }
 
-    monthlyTotals.push({ yearMonth, totalSales: monthTotal, totalCost: monthCost });
+    const notes = noteMap.get(yearMonth) ?? { noteJa: null, noteEn: null };
+    monthlyTotals.push({
+      yearMonth, totalSales: monthTotal, totalCost: monthCost,
+      noteJa: notes.noteJa, noteEn: notes.noteEn,
+    });
   }
 
   // カテゴリデータを整形する

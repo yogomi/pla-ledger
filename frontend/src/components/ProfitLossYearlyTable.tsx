@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   Alert,
   Box,
@@ -22,15 +23,13 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { useProfitLossYearly } from '../hooks/useSalesSimulation';
+import ChartTooltip from './ChartTooltip';
 
 const CHART_COLORS = {
   sales: '#4caf50',
   operatingProfit: '#2196f3',
   netProfit: '#ff9800',
 };
-
-const tooltipFormatter = (v: unknown) =>
-  typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 interface ProfitLossYearlyTableProps {
   projectId: string;
@@ -68,6 +67,8 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
       [t('sales_row')]: Math.round(m.monthlySales),
       [t('operating_profit')]: Math.round(m.operatingProfit),
       [t('net_profit')]: Math.round(m.netProfit),
+      noteJa: m.noteJa,
+      noteEn: m.noteEn,
     };
   });
 
@@ -214,7 +215,7 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis />
-            <Tooltip formatter={tooltipFormatter} />
+            <Tooltip content={props => <ChartTooltip {...props} />} />
             <Legend />
             <Line
               type="monotone"

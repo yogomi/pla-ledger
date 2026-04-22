@@ -225,7 +225,11 @@ router.get('/yearly/:year', authenticate, async (req: AuthRequest, res: Response
           // 対象年の最初の月の期首残高を記録
           periodCashBeginning = cashBeginning;
         }
-        months.push({ yearMonth, operatingCF, investingCF, financingCF, netCashChange, cashEnding });
+        months.push({
+          yearMonth, operatingCF, investingCF, financingCF, netCashChange, cashEnding,
+          noteJa: r?.note_ja ?? null,
+          noteEn: r?.note_en ?? null,
+        });
       }
     }
   }

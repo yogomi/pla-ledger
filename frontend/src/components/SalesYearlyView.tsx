@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { useSalesSimulationYearly } from '../hooks/useSalesSimulation';
+import ChartTooltip from './ChartTooltip';
 
 interface SalesYearlyViewProps {
   projectId: string;
@@ -38,14 +39,6 @@ const CHART_COLORS = [
   '#4caf50', '#2196f3', '#ff9800', '#f44336', '#9c27b0',
   '#00bcd4', '#ffeb3b', '#795548', '#607d8b', '#e91e63',
 ];
-
-/**
- * Recharts の Tooltip formatter。
- * @param v - Tooltip が受け取る値（number | string | その他）
- * @returns 数値の場合は toLocaleString で整形した文字列、それ以外は String() 変換した文字列
- */
-const tooltipFormatter = (v: unknown) =>
-  typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 /**
  * 売上シミュレーションの年次表示コンポーネント。
@@ -70,7 +63,11 @@ export default function SalesYearlyView({ projectId, year, currency }: SalesYear
   /** 月次グラフ用データ（カテゴリー別の売上） */
   const chartData = data.monthlyTotals.map((mt, idx) => {
     const month = mt.yearMonth.split('-')[1];
-    const entry: Record<string, number | string> = { name: month };
+    const entry: Record<string, number | string | null> = {
+      name: month,
+      noteJa: mt.noteJa,
+      noteEn: mt.noteEn,
+    };
     data.categories.forEach(cat => {
       const m = cat.months[idx];
       entry[cat.categoryName] = m ? m.monthlySales : 0;
@@ -150,7 +147,7 @@ export default function SalesYearlyView({ projectId, year, currency }: SalesYear
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis tickFormatter={v => Number(v).toLocaleString()} />
-          <Tooltip formatter={tooltipFormatter} />
+          <Tooltip content={props => <ChartTooltip {...props} />} />
           <Legend />
           {data.categories.map((cat, idx) => (
             <Line

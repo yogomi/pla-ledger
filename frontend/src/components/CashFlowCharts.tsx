@@ -17,18 +17,11 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { useCashFlowYearly } from '../hooks/useCashFlow';
+import ChartTooltip from './ChartTooltip';
 
 const COLORS = {
   cashBalance: '#ff9800',
 };
-
-/**
- * Recharts の Tooltip formatter。
- * @param v - Tooltip が受け取る値（number | string | その他）
- * @returns 数値の場合は整数に丸めて toLocaleString で整形した文字列、それ以外は String() 変換した文字列
- */
-const tooltipFormatter = (v: unknown) =>
-  typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 /**
  * キャッシュフローグラフコンポーネント。
@@ -60,6 +53,8 @@ export default function CashFlowCharts({
   const monthlyChartData = data.months.map(m => ({
     name: m.yearMonth.split('-')[1],
     [t('cash_balance')]: m.cashEnding,
+    noteJa: m.noteJa,
+    noteEn: m.noteEn,
   }));
 
   return (
@@ -72,7 +67,7 @@ export default function CashFlowCharts({
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis />
-            <Tooltip formatter={tooltipFormatter} />
+            <Tooltip content={props => <ChartTooltip {...props} />} />
             <Legend />
             <Line
               type="monotone"

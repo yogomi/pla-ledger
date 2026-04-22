@@ -43,14 +43,9 @@ export default function ProjectTimeline({
     enabled: Boolean(projectId) && enabled,
   });
 
-  /** ロケールに応じてコメントを取得する */
-  const getNote = (noteJa: string | null, noteEn: string | null): string | null => {
-    const lang = i18n.language;
-    if (lang === 'ja' && noteJa) return noteJa;
-    if (lang !== 'ja' && noteEn) return noteEn;
-    // フォールバック: 存在する方を返す
-    return noteJa ?? noteEn ?? null;
-  };
+  /** 日英両方のコメントを返す。どちらか一方のみでも返す。 */
+  const hasNote = (noteJa: string | null, noteEn: string | null): boolean =>
+    Boolean(noteJa?.trim()) || Boolean(noteEn?.trim());
 
   /** YYYY-MM を表示用文字列にフォーマット */
   const formatMonth = (yearMonth: string): string => {
@@ -80,9 +75,7 @@ export default function ProjectTimeline({
     return <Alert severity="error">{t('failed_to_load')}</Alert>;
   }
 
-  const entries = (data ?? [])
-    .map(e => ({ yearMonth: e.yearMonth, note: getNote(e.noteJa, e.noteEn) }))
-    .filter(e => e.note !== null && e.note.trim() !== '');
+  const entries = (data ?? []).filter(e => hasNote(e.noteJa, e.noteEn));
 
   if (entries.length === 0) {
     return (
@@ -99,9 +92,16 @@ export default function ProjectTimeline({
           <Typography variant="subtitle1" fontWeight="bold" color="primary">
             {formatMonth(e.yearMonth)}
           </Typography>
-          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: 0.5 }}>
-            {e.note}
-          </Typography>
+          {e.noteJa && (
+            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: 0.5 }}>
+              {e.noteJa}
+            </Typography>
+          )}
+          {e.noteEn && (
+            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: e.noteJa ? 0.5 : 0.5, color: 'text.secondary' }}>
+              {e.noteEn}
+            </Typography>
+          )}
         </Box>
       ))}
     </Box>

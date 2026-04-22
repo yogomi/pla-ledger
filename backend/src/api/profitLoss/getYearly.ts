@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
   Project, FixedExpense, VariableExpense, SalesSimulationSnapshot, FixedExpenseMonth,
-  LoanRepayment, LaborCost, LaborCostMonth,
+  LoanRepayment, LaborCost, LaborCostMonth, CashFlowMonthly,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
@@ -272,12 +272,25 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     interestExpenseMap.set(r.year_month, prev + Number(r.interest_payment));
   }
 
+  // キャッシュフローメモを一括取得（N+1クエリ回避）
+  const cashFlowRecords = await CashFlowMonthly.findAll({
+    attributes: ['year_month', 'note_ja', 'note_en'],
+    where: {
+      project_id: projectId,
+      year_month: { [Op.like]: `${year}-%` },
+    },
+  });
+  const noteMap = new Map<string, { noteJa: string | null; noteEn: string | null }>(
+    cashFlowRecords.map(r => [r.year_month, { noteJa: r.note_ja ?? null, noteEn: r.note_en ?? null }]),
+  );
+
   // 1月〜12月の月次データを順次計算
-  const months: MonthData[] = [];
+  const months: Array<MonthData & { noteJa: string | null; noteEn: string | null }> = [];
   for (let m = 1; m <= 12; m++) {
     const yearMonth = `${year}-${String(m).padStart(2, '0')}`;
     const monthData = await buildMonthData(projectId, yearMonth, interestExpenseMap, socialInsuranceRate);
-    months.push(monthData);
+    const notes = noteMap.get(yearMonth) ?? { noteJa: null, noteEn: null };
+    months.push({ ...monthData, noteJa: notes.noteJa, noteEn: notes.noteEn });
   }
 
   // 年間集計

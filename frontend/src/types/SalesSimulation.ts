@@ -73,6 +73,8 @@ export interface MonthlyProfitLoss {
   netProfit: number;
   profitRate: number;
   isInherited: boolean;
+  noteJa: string | null;
+  noteEn: string | null;
 }
 
 /** 損益計算書の年次データ */
@@ -208,6 +210,8 @@ export interface SalesMonthlyTotal {
   yearMonth: string;
   totalSales: number;
   totalCost: number;
+  noteJa: string | null;
+  noteEn: string | null;
 }
 
 /** 売上年次データ（APIレスポンス用） */
