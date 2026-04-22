@@ -150,12 +150,12 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
       let catCost = 0;
 
       for (const item of items) {
-        let unitPrice = Number(item.unit_price);
-        let quantity = Number(item.quantity);
-        let operatingDays = Number(item.operating_days);
+        let unitPrice = 0;
+        let quantity = 0;
+        let operatingDays = 0;
         let costRate = Number(item.cost_rate);
         let calculationType: 'daily' | 'monthly' = item.calculation_type ?? 'daily';
-        let monthlyQuantity = Number(item.monthly_quantity ?? 0);
+        let monthlyQuantity = 0;
 
         if (snapshot) {
           const snapItem = snapshot.items_snapshot.find(s => s.itemId === item.id);
