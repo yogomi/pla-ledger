@@ -114,6 +114,8 @@ const SalesSimulationItemDataSchema = z.object({
   operating_days: z.coerce.number(),
   cost_rate: z.coerce.number(),
   description: z.string().nullable(),
+  calculation_type: z.enum(['daily', 'monthly']).optional().default('daily'),
+  monthly_quantity: z.coerce.number().optional().default(0),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
 });

@@ -189,6 +189,8 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
         operating_days: item.operating_days,
         cost_rate: item.cost_rate,
         description: item.description,
+        calculation_type: item.calculation_type,
+        monthly_quantity: item.monthly_quantity,
       }, { transaction })));
     }
 
