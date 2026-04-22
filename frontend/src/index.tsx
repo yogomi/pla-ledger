@@ -9,7 +9,14 @@ import theme from './theme';
 import i18n from './i18n';
 import { AuthProvider } from './app/AuthContext';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // number入力にフォーカスがある状態でホイールしても値が変わらないようにする
 document.addEventListener('wheel', () => {
