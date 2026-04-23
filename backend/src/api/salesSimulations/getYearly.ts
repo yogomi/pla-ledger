@@ -2,8 +2,6 @@ import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
   Project,
-  SalesSimulationCategory,
-  SalesSimulationItem,
   SalesSimulationSnapshot,
   CashFlowMonthly,
 } from '../../models';
@@ -20,6 +18,7 @@ import {
  * @api {GET} /api/projects/:projectId/sales-simulations/yearly 年次売上シミュレーション取得
  * @description
  *   - 指定年の1月〜12月の売上データをカテゴリ別に集計して返す
+ *   - カテゴリ構造はマスタではなく各月のスナップショットから導出する
  *   - 各月のスナップショットが存在しない場合、直前のスナップショットを継承する
  *   - viewer 以上の権限が必要
  *
@@ -69,7 +68,7 @@ import {
  *   }
  *
  * @author copilot
- * @date 2026-04-01
+ * @date 2026-04-23
  */
 const router = Router({ mergeParams: true });
 
@@ -111,23 +110,6 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
 
   const { year } = parsed.data;
 
-  // 現在のカテゴリ・アイテムマスタを取得
-  const categories = await SalesSimulationCategory.findAll({
-    where: { project_id: projectId },
-    include: [{ model: SalesSimulationItem, as: 'items' }],
-    order: [
-      ['category_order', 'ASC'],
-      [{ model: SalesSimulationItem, as: 'items' }, 'item_order', 'ASC'],
-    ],
-  });
-
-  // カテゴリごとの月次データを格納するマップ
-  // { categoryId: { yearMonth: { monthlySales, monthlyCost } } }
-  const categoryMonthlyMap = new Map<string, Map<string, { monthlySales: number; monthlyCost: number }>>();
-  for (const cat of categories) {
-    categoryMonthlyMap.set(cat.id, new Map());
-  }
-
   // キャッシュフローメモを一括取得（N+1クエリ回避）
   const cashFlowRecords = await CashFlowMonthly.findAll({
     attributes: ['year_month', 'note_ja', 'note_en'],
@@ -140,7 +122,39 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     cashFlowRecords.map(r => [r.year_month, { noteJa: r.note_ja ?? null, noteEn: r.note_en ?? null }]),
   );
 
-  // 月次合計を格納する配列
+  // 1月〜12月の各月のスナップショットを取得してマップに格納する
+  type SnapshotItem = SalesSimulationSnapshot['items_snapshot'][number];
+  const monthItemsMap = new Map<string, SnapshotItem[]>();
+
+  for (let m = 1; m <= 12; m++) {
+    const yearMonth = `${year}-${String(m).padStart(2, '0')}`;
+    let snapshot: SalesSimulationSnapshot | null = await SalesSimulationSnapshot.findOne({
+      where: { project_id: projectId, year_month: yearMonth },
+    });
+    if (!snapshot) {
+      snapshot = await getPreviousSnapshot(projectId, yearMonth);
+    }
+    monthItemsMap.set(yearMonth, snapshot?.items_snapshot ?? []);
+  }
+
+  // 全月のスナップショットからユニークなカテゴリを収集する
+  const categoryInfoMap = new Map<string, { categoryName: string; categoryOrder: number }>();
+  for (const items of monthItemsMap.values()) {
+    for (const item of items) {
+      if (!categoryInfoMap.has(item.categoryId)) {
+        categoryInfoMap.set(item.categoryId, {
+          categoryName: item.categoryName,
+          categoryOrder: item.categoryOrder,
+        });
+      }
+    }
+  }
+
+  // カテゴリを order 順に並べる
+  const sortedCategories = Array.from(categoryInfoMap.entries())
+    .sort((a, b) => a[1].categoryOrder - b[1].categoryOrder);
+
+  // 月次合計と月別カテゴリ売上を計算する
   const monthlyTotals: Array<{
     yearMonth: string;
     totalSales: number;
@@ -149,68 +163,53 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     noteEn: string | null;
   }> = [];
 
-  // 1月〜12月の各月のデータを処理する
+  // categoryId -> yearMonth -> { monthlySales, monthlyCost }
+  const categoryMonthlyMap = new Map<string, Map<string, { monthlySales: number; monthlyCost: number }>>();
+  for (const [categoryId] of sortedCategories) {
+    categoryMonthlyMap.set(categoryId, new Map());
+  }
+
   for (let m = 1; m <= 12; m++) {
     const yearMonth = `${year}-${String(m).padStart(2, '0')}`;
+    const items = monthItemsMap.get(yearMonth) ?? [];
 
-    // 指定月のスナップショットを検索（なければ継承）
-    let snapshot: SalesSimulationSnapshot | null = await SalesSimulationSnapshot.findOne({
-      where: { project_id: projectId, year_month: yearMonth },
-    });
-    if (!snapshot) {
-      snapshot = await getPreviousSnapshot(projectId, yearMonth);
-    }
+    let totalSales = 0;
+    let totalCost = 0;
 
-    let monthTotal = 0;
-    let monthCost = 0;
-
-    for (const cat of categories) {
-      const items = (cat.get('items') as SalesSimulationItem[] | undefined) ?? [];
+    // カテゴリごとに集計する
+    for (const [categoryId] of sortedCategories) {
+      const catItems = items.filter(item => item.categoryId === categoryId);
       let catSales = 0;
       let catCost = 0;
 
-      for (const item of items) {
-        let unitPrice = 0;
-        let quantity = 0;
-        let operatingDays = 0;
-        let costRate = Number(item.cost_rate);
-        let calculationType: 'daily' | 'monthly' = item.calculation_type ?? 'daily';
-        let monthlyQuantity = 0;
-
-        if (snapshot) {
-          const snapItem = snapshot.items_snapshot.find(s => s.itemId === item.id);
-          if (snapItem) {
-            unitPrice = snapItem.unitPrice;
-            quantity = snapItem.quantity;
-            operatingDays = snapItem.operatingDays;
-            costRate = snapItem.costRate;
-            calculationType = snapItem.calculationType ?? 'daily';
-            monthlyQuantity = snapItem.monthlyQuantity ?? 0;
-          }
-        }
-
-        const { sales, cost } = calculateItemMetrics(
-          { unitPrice, quantity, operatingDays, costRate, calculationType, monthlyQuantity },
-        );
+      for (const snapItem of catItems) {
+        const { sales, cost } = calculateItemMetrics({
+          unitPrice: snapItem.unitPrice,
+          quantity: snapItem.quantity,
+          operatingDays: snapItem.operatingDays,
+          costRate: snapItem.costRate,
+          calculationType: snapItem.calculationType ?? 'daily',
+          monthlyQuantity: snapItem.monthlyQuantity ?? 0,
+        });
         catSales += sales;
         catCost += cost;
       }
 
-      categoryMonthlyMap.get(cat.id)!.set(yearMonth, { monthlySales: catSales, monthlyCost: catCost });
-      monthTotal += catSales;
-      monthCost += catCost;
+      categoryMonthlyMap.get(categoryId)!.set(yearMonth, { monthlySales: catSales, monthlyCost: catCost });
+      totalSales += catSales;
+      totalCost += catCost;
     }
 
     const notes = noteMap.get(yearMonth) ?? { noteJa: null, noteEn: null };
     monthlyTotals.push({
-      yearMonth, totalSales: monthTotal, totalCost: monthCost,
+      yearMonth, totalSales, totalCost,
       noteJa: notes.noteJa, noteEn: notes.noteEn,
     });
   }
 
   // カテゴリデータを整形する
-  const categoryData = categories.map(cat => {
-    const monthMap = categoryMonthlyMap.get(cat.id)!;
+  const categoryData = sortedCategories.map(([categoryId, catInfo]) => {
+    const monthMap = categoryMonthlyMap.get(categoryId)!;
     const months = Array.from(monthMap.entries()).map(([yearMonth, data]) => ({
       yearMonth,
       monthlySales: data.monthlySales,
@@ -219,8 +218,8 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     const yearlyTotal = months.reduce((sum, m) => sum + m.monthlySales, 0);
     const yearlyCost = months.reduce((sum, m) => sum + m.monthlyCost, 0);
     return {
-      categoryId: cat.id,
-      categoryName: cat.category_name,
+      categoryId,
+      categoryName: catInfo.categoryName,
       months,
       yearlyTotal,
       yearlyCost,

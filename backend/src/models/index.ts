@@ -308,98 +308,6 @@ ActivityLog.init({
   meta: { type: DataTypes.JSON, defaultValue: {} },
 }, { sequelize, tableName: 'activity_logs', underscored: true, updatedAt: false });
 
-// ========== SalesSimulationCategory ==========
-interface SalesSimulationCategoryAttributes {
-  id: string;
-  project_id: string;
-  category_name: string;
-  category_order: number;
-  created_at?: Date;
-  updated_at?: Date;
-}
-type SalesSimulationCategoryCreation = Optional<
-  SalesSimulationCategoryAttributes,
-  'id' | 'category_order'
->;
-
-export class SalesSimulationCategory
-  extends Model<SalesSimulationCategoryAttributes, SalesSimulationCategoryCreation>
-  implements SalesSimulationCategoryAttributes {
-  declare id: string;
-  declare project_id: string;
-  declare category_name: string;
-  declare category_order: number;
-}
-
-SalesSimulationCategory.init({
-  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-  project_id: { type: DataTypes.UUID, allowNull: false },
-  category_name: { type: DataTypes.STRING, allowNull: false },
-  category_order: { type: DataTypes.INTEGER, defaultValue: 0 },
-}, { sequelize, tableName: 'sales_simulation_categories', underscored: true });
-
-// ========== SalesSimulationItem ==========
-interface SalesSimulationItemAttributes {
-  id: string;
-  category_id: string;
-  project_id: string;
-  item_name: string;
-  item_order: number;
-  unit_price: number;
-  quantity: number;
-  operating_days: number;
-  cost_rate: number;
-  description: string | null;
-  calculation_type: 'daily' | 'monthly';
-  monthly_quantity: number;
-  created_at?: Date;
-  updated_at?: Date;
-}
-type SalesSimulationItemCreation = Optional<
-  SalesSimulationItemAttributes,
-  | 'id'
-  | 'item_order'
-  | 'unit_price'
-  | 'quantity'
-  | 'operating_days'
-  | 'cost_rate'
-  | 'description'
-  | 'calculation_type'
-  | 'monthly_quantity'
->;
-
-export class SalesSimulationItem
-  extends Model<SalesSimulationItemAttributes, SalesSimulationItemCreation>
-  implements SalesSimulationItemAttributes {
-  declare id: string;
-  declare category_id: string;
-  declare project_id: string;
-  declare item_name: string;
-  declare item_order: number;
-  declare unit_price: number;
-  declare quantity: number;
-  declare operating_days: number;
-  declare cost_rate: number;
-  declare description: string | null;
-  declare calculation_type: 'daily' | 'monthly';
-  declare monthly_quantity: number;
-}
-
-SalesSimulationItem.init({
-  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-  category_id: { type: DataTypes.UUID, allowNull: false },
-  project_id: { type: DataTypes.UUID, allowNull: false },
-  item_name: { type: DataTypes.STRING, allowNull: false },
-  item_order: { type: DataTypes.INTEGER, defaultValue: 0 },
-  unit_price: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
-  quantity: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
-  operating_days: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
-  cost_rate: { type: DataTypes.DECIMAL(5, 2), defaultValue: 0 },
-  description: { type: DataTypes.TEXT, defaultValue: null },
-  calculation_type: { type: DataTypes.STRING(10), defaultValue: 'daily' },
-  monthly_quantity: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
-}, { sequelize, tableName: 'sales_simulation_items', underscored: true });
-
 // ========== SalesSimulationSnapshot ==========
 interface ItemSnapshotData {
   itemId: string;
@@ -788,12 +696,6 @@ Comment.belongsTo(Project, { foreignKey: 'project_id' });
 
 User.hasMany(Permission, { foreignKey: 'user_id', as: 'permissions' });
 Permission.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-
-Project.hasMany(SalesSimulationCategory, { foreignKey: 'project_id', as: 'salesCategories' });
-SalesSimulationCategory.belongsTo(Project, { foreignKey: 'project_id' });
-
-SalesSimulationCategory.hasMany(SalesSimulationItem, { foreignKey: 'category_id', as: 'items' });
-SalesSimulationItem.belongsTo(SalesSimulationCategory, { foreignKey: 'category_id' });
 
 Project.hasMany(SalesSimulationSnapshot, { foreignKey: 'project_id', as: 'salesSnapshots' });
 SalesSimulationSnapshot.belongsTo(Project, { foreignKey: 'project_id' });

@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import {
   Project, ProjectSection,
-  SalesSimulationCategory, SalesSimulationItem, SalesSimulationSnapshot,
+  SalesSimulationSnapshot,
   FixedExpense, FixedExpenseMonth, VariableExpense,
   Loan, LoanRepayment, LaborCost, LaborCostMonth,
   CashFlowMonthly, Comment,
@@ -40,8 +40,6 @@ import { getProjectRole } from './utils';
  *       "exportedAt": "2026-03-21T...",
  *       "project": { ... },
  *       "sections": [ ... ],
- *       "salesCategories": [ ... ],
- *       "salesItems": [ ... ],
  *       "salesSnapshots": [ ... ],
  *       "fixedExpenses": [ ... ],
  *       "fixedExpenseMonths": [ ... ],
@@ -105,8 +103,6 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
 
   const [
     sections,
-    salesCategories,
-    salesItems,
     salesSnapshots,
     fixedExpenses,
     fixedExpenseMonths,
@@ -121,8 +117,6 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
     startupCosts,
   ] = await Promise.all([
     ProjectSection.findAll({ where: { project_id: id } }),
-    SalesSimulationCategory.findAll({ where: { project_id: id } }),
-    SalesSimulationItem.findAll({ where: { project_id: id } }),
     SalesSimulationSnapshot.findAll({ where: { project_id: id } }),
     FixedExpense.findAll({ where: { project_id: id } }),
     FixedExpenseMonth.findAll({ where: { project_id: id } }),
@@ -157,8 +151,6 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
       exportedAt: new Date().toISOString(),
       project: normalizeNumbers(project.toJSON()),
       sections: sections.map(r => r.toJSON()),
-      salesCategories: salesCategories.map(r => normalizeNumbers(r.toJSON())),
-      salesItems: salesItems.map(r => normalizeNumbers(r.toJSON())),
       salesSnapshots: salesSnapshots.map(r => r.toJSON()),
       fixedExpenses: fixedExpenses.map(r => normalizeNumbers(r.toJSON())),
       fixedExpenseMonths: fixedExpenseMonths.map(r => r.toJSON()),

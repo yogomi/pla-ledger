@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -30,11 +30,6 @@ import { useTranslation } from 'react-i18next';
 import {
   useSalesSimulationMonthly,
   useUpdateSalesSimulation,
-  useCreateSalesCategory,
-  useUpdateSalesCategory,
-  useDeleteSalesCategory,
-  useCreateSalesItem,
-  useDeleteSalesItem,
   useDeleteSalesSimulationMonthly,
 } from '../hooks/useSalesSimulation';
 import { ItemInputData, ItemSnapshotData } from '../types/SalesSimulation';
@@ -48,12 +43,18 @@ interface FormValues {
   items: ItemInputData[];
 }
 
+interface CategoryInfo {
+  categoryId: string;
+  categoryName: string;
+  categoryOrder: number;
+}
+
 interface ItemRowProps {
   idx: number;
   fieldId: string;
   originalItem: ItemSnapshotData | undefined;
   control: Control<FormValues>;
-  onDelete: (itemId: string, itemName: string) => void;
+  onDelete: (idx: number, itemName: string) => void;
 }
 
 /**
@@ -228,10 +229,7 @@ function ItemRow({ idx, fieldId, originalItem, control, onDelete }: ItemRowProps
           <IconButton
             size="small"
             color="error"
-            onClick={() => onDelete(
-              originalItem?.itemId ?? '',
-              originalItem?.itemName ?? '',
-            )}
+            onClick={() => onDelete(idx, originalItem?.itemName ?? '')}
             aria-label={t('delete_item')}
           >
             <DeleteIcon fontSize="small" />
@@ -244,7 +242,8 @@ function ItemRow({ idx, fieldId, originalItem, control, onDelete }: ItemRowProps
 
 /**
  * 指定月の売上シミュレーションをカテゴリ別アコーディオンで表示・編集するコンポーネント。
- * カテゴリ・アイテムの追加・削除も行える。
+ * スナップショットを正とし、マスタには依存しない。
+ * カテゴリ・アイテムの追加・削除はスナップショットに対して直接行う。
  */
 export default function SalesSimulationMonthlyEditor({
   projectId,
@@ -254,26 +253,30 @@ export default function SalesSimulationMonthlyEditor({
   const { data, isLoading, isError } = useSalesSimulationMonthly(projectId, yearMonth);
   const mutation = useUpdateSalesSimulation(projectId);
   const deleteMutation = useDeleteSalesSimulationMonthly(projectId);
-  const createCategoryMutation = useCreateSalesCategory(projectId);
-  const updateCategoryMutation = useUpdateSalesCategory(projectId);
-  const deleteCategoryMutation = useDeleteSalesCategory(projectId);
-  const createItemMutation = useCreateSalesItem(projectId);
-  const deleteItemMutation = useDeleteSalesItem(projectId);
 
+  // カテゴリ一覧をローカル状態で管理する（マスタAPIではなくスナップショットに直接反映）
+  const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryOrder, setNewCategoryOrder] = useState<number | ''>('');
   const [addingCategory, setAddingCategory] = useState(false);
-  /** カテゴリごとの優先度編集中の値（categoryId -> 入力中の値） */
   const [editingOrders, setEditingOrders] = useState<Record<string, number | ''>>({});
-  /** カテゴリごとの新規アイテム名入力状態 */
   const [newItemNames, setNewItemNames] = useState<Record<string, string>>({});
 
-  const { control, handleSubmit, reset } = useForm<FormValues>({ defaultValues: { items: [] } });
-  const { fields } = useFieldArray({ control, name: 'items' });
+  const { control, handleSubmit, reset, getValues, setValue } = useForm<FormValues>({
+    defaultValues: { items: [] },
+  });
+  const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const watchedItems = useWatch({ control, name: 'items' }) ?? [];
 
+  // APIレスポンスでフォームとカテゴリ一覧を初期化する
   useEffect(() => {
     if (data) {
+      setCategories(data.categories.map(cat => ({
+        categoryId: cat.categoryId,
+        categoryName: cat.categoryName,
+        categoryOrder: cat.categoryOrder,
+      })));
+
       const flat: ItemInputData[] = data.categories.flatMap(cat =>
         cat.items.map(item => ({
           itemId: item.itemId,
@@ -299,62 +302,108 @@ export default function SalesSimulationMonthlyEditor({
     mutation.mutate({ yearMonth, items: values.items });
   };
 
-  /** この月の登録を削除する */
   const handleDeleteMonthly = () => {
     if (!window.confirm(t('confirm_delete_monthly_data'))) return;
     deleteMutation.mutate({ yearMonth });
   };
 
-  /** カテゴリを追加する */
+  /** カテゴリをスナップショットに追加する（マスタAPIを使わない） */
   const handleAddCategory = () => {
     if (!newCategoryName.trim()) return;
-    createCategoryMutation.mutate(
-      {
-        categoryName: newCategoryName.trim(),
-        categoryOrder: typeof newCategoryOrder === 'number' ? newCategoryOrder : undefined,
-      },
-      {
-        onSuccess: () => {
-          setNewCategoryName('');
-          setNewCategoryOrder('');
-          setAddingCategory(false);
-        },
-      },
-    );
+    const categoryId = crypto.randomUUID();
+    const order = typeof newCategoryOrder === 'number'
+      ? newCategoryOrder
+      : (categories.length > 0 ? Math.max(...categories.map(c => c.categoryOrder)) + 1 : 0);
+    setCategories(prev => [...prev, {
+      categoryId,
+      categoryName: newCategoryName.trim(),
+      categoryOrder: order,
+    }]);
+    setNewCategoryName('');
+    setNewCategoryOrder('');
+    setAddingCategory(false);
   };
 
-  /** カテゴリの優先度をサーバーに保存する */
+  /** カテゴリの表示順をフォームアイテムに反映する */
   const handleSaveCategoryOrder = (categoryId: string, currentOrder: number) => {
     const editing = editingOrders[categoryId];
     const newOrder = typeof editing === 'number' ? editing : currentOrder;
     if (newOrder === currentOrder) return;
-    updateCategoryMutation.mutate({ categoryId, categoryOrder: newOrder });
+
+    setCategories(prev => prev.map(c =>
+      c.categoryId === categoryId ? { ...c, categoryOrder: newOrder } : c,
+    ));
+
+    // フォーム内の全アイテムの categoryOrder を更新する
+    const currentItems = getValues('items');
+    currentItems.forEach((item, idx) => {
+      if (item.categoryId === categoryId) {
+        setValue(`items.${idx}.categoryOrder`, newOrder);
+      }
+    });
   };
 
-  /** カテゴリを削除する */
-  const handleDeleteCategory = (categoryId: string, categoryName: string) => {    if (!window.confirm(t('confirm_delete_category', { name: categoryName }))) return;
-    deleteCategoryMutation.mutate({ categoryId });
+  /** カテゴリとその配下のアイテムをスナップショットから除去する */
+  const handleDeleteCategory = (categoryId: string, categoryName: string) => {
+    if (!window.confirm(t('confirm_delete_category', { name: categoryName }))) return;
+    setCategories(prev => prev.filter(c => c.categoryId !== categoryId));
+
+    // このカテゴリに属するアイテムのインデックスを逆順で削除する
+    const indicesToRemove = fields.reduce<number[]>((acc, f, idx) => {
+      if (f.categoryId === categoryId) acc.push(idx);
+      return acc;
+    }, []);
+    for (const idx of [...indicesToRemove].reverse()) {
+      remove(idx);
+    }
   };
 
-  /** アイテムを追加する */
-  const handleAddItem = (categoryId: string) => {
-    const name = (newItemNames[categoryId] ?? '').trim();
+  /** アイテムをスナップショットに直接追加する（マスタAPIを使わない） */
+  const handleAddItem = (cat: CategoryInfo) => {
+    const name = (newItemNames[cat.categoryId] ?? '').trim();
     if (!name) return;
-    createItemMutation.mutate(
-      { categoryId, itemName: name },
-      {
-        onSuccess: () => {
-          setNewItemNames(prev => ({ ...prev, [categoryId]: '' }));
-        },
-      },
-    );
+
+    const catFields = fields.filter(f => f.categoryId === cat.categoryId);
+    const maxOrder = catFields.reduce((max, f) => Math.max(max, f.itemOrder), -1);
+
+    append({
+      itemId: crypto.randomUUID(),
+      categoryId: cat.categoryId,
+      categoryName: cat.categoryName,
+      categoryOrder: cat.categoryOrder,
+      itemName: name,
+      itemOrder: maxOrder + 1,
+      unitPrice: 0,
+      quantity: 0,
+      operatingDays: 0,
+      costRate: 0,
+      description: null,
+      calculationType: 'daily',
+      monthlyQuantity: 0,
+    });
+
+    setNewItemNames(prev => ({ ...prev, [cat.categoryId]: '' }));
   };
 
-  /** アイテムを削除する */
-  const handleDeleteItem = (itemId: string, itemName: string) => {
+  /** アイテムをフォームから除去する（スナップショット保存時に反映される） */
+  const handleDeleteItem = (idx: number, itemName: string) => {
     if (!window.confirm(t('confirm_delete_item', { name: itemName }))) return;
-    deleteItemMutation.mutate({ itemId });
+    remove(idx);
   };
+
+  // カテゴリを order 順に並べ、各カテゴリに属するフィールドインデックスを付与する
+  const categoryGroups = useMemo(() =>
+    [...categories]
+      .sort((a, b) => a.categoryOrder - b.categoryOrder)
+      .map(cat => ({
+        ...cat,
+        fieldIndices: fields.reduce<number[]>((acc, f, idx) => {
+          if (f.categoryId === cat.categoryId) acc.push(idx);
+          return acc;
+        }, []),
+      })),
+    [categories, fields],
+  );
 
   if (isLoading) {
     return (
@@ -367,13 +416,6 @@ export default function SalesSimulationMonthlyEditor({
   if (isError || !data) {
     return <Alert severity="error">{t('load_error')}</Alert>;
   }
-  const categoryGroups = data.categories.map(cat => ({
-    ...cat,
-    fieldIndices: fields.reduce<number[]>((acc, f, idx) => {
-      if (f.categoryId === cat.categoryId) acc.push(idx);
-      return acc;
-    }, []),
-  }));
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)}>
@@ -461,9 +503,9 @@ export default function SalesSimulationMonthlyEditor({
                 </TableHead>
                 <TableBody>
                   {cat.fieldIndices.map(idx => {
-                    const originalItem = cat.items.find(
-                      it => it.itemId === fields[idx]?.itemId,
-                    );
+                    const originalItem = data.categories
+                      .find(c => c.categoryId === cat.categoryId)
+                      ?.items.find(it => it.itemId === fields[idx]?.itemId);
                     return (
                       <ItemRow
                         key={fields[idx]?.id ?? idx}
@@ -492,7 +534,7 @@ export default function SalesSimulationMonthlyEditor({
                           onKeyDown={e => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              handleAddItem(cat.categoryId);
+                              handleAddItem(cat);
                             }
                           }}
                           sx={{ minWidth: '200px' }}
@@ -503,8 +545,7 @@ export default function SalesSimulationMonthlyEditor({
                           variant="outlined"
                           startIcon={<AddIcon />}
                           type="button"
-                          onClick={() => handleAddItem(cat.categoryId)}
-                          disabled={createItemMutation.isPending}
+                          onClick={() => handleAddItem(cat)}
                         >
                           {t('add_item')}
                         </Button>
@@ -554,7 +595,6 @@ export default function SalesSimulationMonthlyEditor({
               variant="contained"
               type="button"
               onClick={handleAddCategory}
-              disabled={createCategoryMutation.isPending}
             >
               {t('add')}
             </Button>

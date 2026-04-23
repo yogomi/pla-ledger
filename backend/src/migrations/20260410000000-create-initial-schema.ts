@@ -380,120 +380,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
   await queryInterface.addIndex('activity_logs', ['user_id']);
   await queryInterface.addIndex('activity_logs', ['project_id']);
 
-  // ========== sales_simulation_categories ==========
-  await queryInterface.createTable('sales_simulation_categories', {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-      allowNull: false,
-    },
-    project_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: { model: 'projects', key: 'id' },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE',
-    },
-    category_name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    category_order: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-  });
-
-  await queryInterface.addIndex('sales_simulation_categories', ['project_id']);
-
-  // ========== sales_simulation_items ==========
-  await queryInterface.createTable('sales_simulation_items', {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-      allowNull: false,
-    },
-    category_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: { model: 'sales_simulation_categories', key: 'id' },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE',
-    },
-    project_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: { model: 'projects', key: 'id' },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE',
-    },
-    item_name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    item_order: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
-    },
-    unit_price: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    quantity: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    operating_days: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    cost_rate: {
-      type: DataTypes.DECIMAL(5, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    description: {
-      type: DataTypes.TEXT,
-      defaultValue: null,
-    },
-    calculation_type: {
-      type: DataTypes.STRING(10),
-      allowNull: false,
-      defaultValue: 'daily',
-    },
-    monthly_quantity: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-  });
-
-  await queryInterface.addIndex('sales_simulation_items', ['category_id']);
-  await queryInterface.addIndex('sales_simulation_items', ['project_id']);
-
   // ========== sales_simulation_snapshots ==========
   // 注意: project_id と year_month には個別の unique を付けず、複合ユニークインデックスのみ設定する。
   await queryInterface.createTable('sales_simulation_snapshots', {
@@ -1192,8 +1078,6 @@ export async function down(queryInterface: QueryInterface): Promise<void> {
   await queryInterface.dropTable('fixed_expense_months');
   await queryInterface.dropTable('fixed_expenses');
   await queryInterface.dropTable('sales_simulation_snapshots');
-  await queryInterface.dropTable('sales_simulation_items');
-  await queryInterface.dropTable('sales_simulation_categories');
   await queryInterface.dropTable('activity_logs');
   await queryInterface.dropTable('comments');
   await queryInterface.dropTable('project_versions');

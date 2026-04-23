@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { sequelize } from '../../models';
 import {
   Project, Permission, ProjectSection,
-  SalesSimulationCategory, SalesSimulationItem, SalesSimulationSnapshot,
+  SalesSimulationSnapshot,
   FixedExpense, FixedExpenseMonth, VariableExpense,
   Loan, LoanRepayment, LaborCost, LaborCostMonth,
   CashFlowMonthly, Comment, ActivityLog,
@@ -108,18 +108,6 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
   try {
     const newProjectId = uuidv4();
 
-    // カテゴリIDのマッピング（旧ID → 新ID）
-    const categoryIdMap: Record<string, string> = {};
-    exportData.salesCategories.forEach(c => {
-      categoryIdMap[c.id] = uuidv4();
-    });
-
-    // 売上シミュレーション品目IDのマッピング（旧ID → 新ID）
-    const itemIdMap: Record<string, string> = {};
-    exportData.salesItems.forEach(item => {
-      itemIdMap[item.id] = uuidv4();
-    });
-
     // 借入IDのマッピング（旧ID → 新ID）
     const loanIdMap: Record<string, string> = {};
     exportData.loans.forEach(l => {
@@ -166,51 +154,16 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       }, { transaction })));
     }
 
-    // 売上シミュレーションカテゴリ作成
-    if (exportData.salesCategories.length > 0) {
-      await Promise.all(exportData.salesCategories.map(c => SalesSimulationCategory.create({
-        id: categoryIdMap[c.id],
-        project_id: newProjectId,
-        category_name: c.category_name,
-        category_order: c.category_order,
-      }, { transaction })));
-    }
-
-    // 売上シミュレーション品目作成（category_idを新IDに置換、品目IDも明示的に指定）
-    if (exportData.salesItems.length > 0) {
-      await Promise.all(exportData.salesItems.map(item => SalesSimulationItem.create({
-        id: itemIdMap[item.id],
-        category_id: categoryIdMap[item.category_id],
-        project_id: newProjectId,
-        item_name: item.item_name,
-        item_order: item.item_order,
-        unit_price: item.unit_price,
-        quantity: item.quantity,
-        operating_days: item.operating_days,
-        cost_rate: item.cost_rate,
-        description: item.description,
-        calculation_type: item.calculation_type,
-        monthly_quantity: item.monthly_quantity,
-      }, { transaction })));
-    }
-
-    // 売上スナップショット作成（items_snapshot内のitemId・categoryIdを新IDに置換）
+    // 売上スナップショット作成
     if (exportData.salesSnapshots.length > 0) {
-      await Promise.all(exportData.salesSnapshots.map(s => {
-        const remappedSnapshot = s.items_snapshot.map(entry => ({
-          ...entry,
-          itemId: itemIdMap[(entry as Record<string, unknown>)['itemId'] as string]
-            ?? (entry as Record<string, unknown>)['itemId'],
-          categoryId: categoryIdMap[(entry as Record<string, unknown>)['categoryId'] as string]
-            ?? (entry as Record<string, unknown>)['categoryId'],
-        }));
-        return SalesSimulationSnapshot.create({
+      await Promise.all(exportData.salesSnapshots.map(s =>
+        SalesSimulationSnapshot.create({
           project_id: newProjectId,
           year_month: s.year_month,
-          items_snapshot: remappedSnapshot as unknown as
+          items_snapshot: s.items_snapshot as unknown as
             import('../../models').SalesSimulationSnapshot['items_snapshot'],
-        }, { transaction });
-      }));
+        }, { transaction }),
+      ));
     }
 
     // 固定費作成

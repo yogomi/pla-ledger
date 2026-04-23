@@ -94,32 +94,6 @@ const ProjectSectionDataSchema = z.object({
   created_at: z.string().optional(),
 });
 
-const SalesSimulationCategoryDataSchema = z.object({
-  id: z.string(),
-  project_id: z.string(),
-  category_name: z.string(),
-  category_order: z.number(),
-  created_at: z.string().optional(),
-  updated_at: z.string().optional(),
-});
-
-const SalesSimulationItemDataSchema = z.object({
-  id: z.string(),
-  category_id: z.string(),
-  project_id: z.string(),
-  item_name: z.string(),
-  item_order: z.coerce.number(),
-  unit_price: z.coerce.number(),
-  quantity: z.coerce.number(),
-  operating_days: z.coerce.number(),
-  cost_rate: z.coerce.number(),
-  description: z.string().nullable(),
-  calculation_type: z.enum(['daily', 'monthly']).optional().default('daily'),
-  monthly_quantity: z.coerce.number().optional().default(0),
-  created_at: z.string().optional(),
-  updated_at: z.string().optional(),
-});
-
 const SalesSimulationSnapshotDataSchema = z.object({
   id: z.string(),
   project_id: z.string(),
@@ -317,8 +291,6 @@ export const ProjectExportSchema = z.object({
   exportedAt: z.string(),
   project: ProjectDataSchema,
   sections: z.array(ProjectSectionDataSchema),
-  salesCategories: z.array(SalesSimulationCategoryDataSchema),
-  salesItems: z.array(SalesSimulationItemDataSchema),
   salesSnapshots: z.array(SalesSimulationSnapshotDataSchema),
   fixedExpenses: z.array(FixedExpenseDataSchema),
   fixedExpenseMonths: z.array(FixedExpenseMonthDataSchema),

@@ -1,8 +1,6 @@
 import { Router, Response } from 'express';
 import {
   Project,
-  SalesSimulationCategory,
-  SalesSimulationItem,
   SalesSimulationSnapshot,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
@@ -15,8 +13,8 @@ import { calculateItemMetrics, getPreviousSnapshot } from '../../utils/salesSimu
  * @api {GET} /api/projects/:projectId/sales-simulations/monthly-expanded 月次売上シミュレーション取得（展開形式）
  * @description
  *   - 指定年月の売上シミュレーションデータをカテゴリ・アイテム展開形式で取得する
- *   - 指定年月のスナップショットが存在しない場合、直前のスナップショットを継承する
- *   - スナップショットが一切存在しない場合、現在のアイテムマスタの値を使用する
+ *   - スナップショット（継承含む）が存在する場合はスナップショットのみを使用する（マスタ非参照）
+ *   - スナップショットが一切存在しない場合のみ、マスタをゼロ値テンプレートとして使用する
  *   - viewer 以上の権限が必要
  *
  * @request
@@ -60,6 +58,8 @@ import { calculateItemMetrics, getPreviousSnapshot } from '../../utils/salesSimu
  *               "operatingDays": 25,
  *               "costRate": 40,
  *               "description": null,
+ *               "calculationType": "daily",
+ *               "monthlyQuantity": 0,
  *               "monthlySales": 1250000,
  *               "monthlyCost": 500000,
  *               "isInherited": false
@@ -73,7 +73,7 @@ import { calculateItemMetrics, getPreviousSnapshot } from '../../utils/salesSimu
  *   }
  *
  * @author copilot
- * @date 2026-06-01
+ * @date 2026-04-23
  */
 const router = Router({ mergeParams: true });
 
@@ -121,97 +121,98 @@ router.get('/monthly-expanded', authenticate, async (req: AuthRequest, res: Resp
   let isInherited = false;
 
   if (!snapshot) {
-    // 直前のスナップショットを継承
     snapshot = await getPreviousSnapshot(projectId, yearMonth);
     if (snapshot) {
       isInherited = true;
     }
   }
 
-  // 現在のカテゴリ・アイテムマスタを取得
-  const categories = await SalesSimulationCategory.findAll({
-    where: { project_id: projectId },
-    include: [{ model: SalesSimulationItem, as: 'items' }],
-    order: [
-      ['category_order', 'ASC'],
-      [{ model: SalesSimulationItem, as: 'items' }, 'item_order', 'ASC'],
-    ],
-  });
-
   let monthlyTotal = 0;
   let monthlyCost = 0;
 
-  const categoryData = categories.map(cat => {
-    const items = (cat.get('items') as SalesSimulationItem[] | undefined) ?? [];
-    const itemData = items.map(item => {
-      let itemName = item.item_name;
-      let unitPrice = 0;
-      let quantity = 0;
-      let operatingDays = 0;
-      let costRate = Number(item.cost_rate);
-      let description = item.description;
-      let calculationType: 'daily' | 'monthly' = item.calculation_type ?? 'daily';
-      let monthlyQuantity = 0;
-      let itemIsInherited = false;
+  // スナップショットが存在する場合: スナップショットのみからカテゴリ・アイテムを構築する
+  if (snapshot) {
+    const categoryMap = new Map<string, {
+      categoryId: string;
+      categoryName: string;
+      categoryOrder: number;
+      items: Array<{
+        itemId: string;
+        itemName: string;
+        itemOrder: number;
+        unitPrice: number;
+        quantity: number;
+        operatingDays: number;
+        costRate: number;
+        description: string | null;
+        calculationType: 'daily' | 'monthly';
+        monthlyQuantity: number;
+        monthlySales: number;
+        monthlyCost: number;
+        isInherited: boolean;
+      }>;
+    }>();
 
-      if (snapshot) {
-        // スナップショット内の一致するアイテムを検索
-        const snapItem = snapshot.items_snapshot.find(s => s.itemId === item.id);
-        if (snapItem) {
-          itemName = snapItem.itemName;
-          unitPrice = snapItem.unitPrice;
-          quantity = snapItem.quantity;
-          operatingDays = snapItem.operatingDays;
-          costRate = snapItem.costRate;
-          description = snapItem.description ?? null;
-          calculationType = snapItem.calculationType ?? 'daily';
-          monthlyQuantity = snapItem.monthlyQuantity ?? 0;
-          itemIsInherited = isInherited;
-        }
-      }
-
-      const { sales, cost } = calculateItemMetrics(
-        { unitPrice, quantity, operatingDays, costRate, calculationType, monthlyQuantity },
-      );
+    for (const snapItem of snapshot.items_snapshot) {
+      const { sales, cost } = calculateItemMetrics({
+        unitPrice: snapItem.unitPrice,
+        quantity: snapItem.quantity,
+        operatingDays: snapItem.operatingDays,
+        costRate: snapItem.costRate,
+        calculationType: snapItem.calculationType ?? 'daily',
+        monthlyQuantity: snapItem.monthlyQuantity ?? 0,
+      });
       monthlyTotal += sales;
       monthlyCost += cost;
 
-      return {
-        itemId: item.id,
-        itemName,
-        itemOrder: item.item_order,
-        unitPrice,
-        quantity,
-        operatingDays,
-        costRate,
-        description,
-        calculationType,
-        monthlyQuantity,
+      if (!categoryMap.has(snapItem.categoryId)) {
+        categoryMap.set(snapItem.categoryId, {
+          categoryId: snapItem.categoryId,
+          categoryName: snapItem.categoryName,
+          categoryOrder: snapItem.categoryOrder,
+          items: [],
+        });
+      }
+
+      categoryMap.get(snapItem.categoryId)!.items.push({
+        itemId: snapItem.itemId,
+        itemName: snapItem.itemName,
+        itemOrder: snapItem.itemOrder,
+        unitPrice: snapItem.unitPrice,
+        quantity: snapItem.quantity,
+        operatingDays: snapItem.operatingDays,
+        costRate: snapItem.costRate,
+        description: snapItem.description ?? null,
+        calculationType: snapItem.calculationType ?? 'daily',
+        monthlyQuantity: snapItem.monthlyQuantity ?? 0,
         monthlySales: sales,
         monthlyCost: cost,
-        isInherited: itemIsInherited,
-      };
+        isInherited,
+      });
+    }
+
+    const categoryData = Array.from(categoryMap.values())
+      .sort((a, b) => a.categoryOrder - b.categoryOrder)
+      .map(cat => ({
+        ...cat,
+        items: cat.items.sort((a, b) => a.itemOrder - b.itemOrder),
+      }));
+
+    res.json({
+      success: true,
+      code: '',
+      message: 'OK',
+      data: { yearMonth, isInherited, categories: categoryData, monthlyTotal, monthlyCost },
     });
+    return;
+  }
 
-    return {
-      categoryId: cat.id,
-      categoryName: cat.category_name,
-      categoryOrder: cat.category_order,
-      items: itemData,
-    };
-  });
-
+  // スナップショットが一切存在しない場合: 空のカテゴリ一覧を返す
   res.json({
     success: true,
     code: '',
     message: 'OK',
-    data: {
-      yearMonth,
-      isInherited,
-      categories: categoryData,
-      monthlyTotal,
-      monthlyCost,
-    },
+    data: { yearMonth, isInherited: false, categories: [], monthlyTotal: 0, monthlyCost: 0 },
   });
 });
 
