@@ -4,7 +4,7 @@ import {
   Project, FixedExpense, SalesSimulationSnapshot, FixedExpenseMonth,
   LaborCost, LaborCostMonth,
 } from '../../models';
-import { authenticate, AuthRequest } from '../../middleware/auth';
+import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearMonthQuerySchema } from '../../schemas/salesSimulation';
@@ -60,7 +60,7 @@ import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
  */
 const router = Router({ mergeParams: true });
 
-router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/monthly', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   const { projectId } = req.params;
 
   const project = await Project.findByPk(projectId);
@@ -74,8 +74,8 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
     return;
   }
 
-  const role = await getProjectRole(projectId, req.user!.id);
-  if (!role) {
+  const role = await getProjectRole(projectId, req.user?.id);
+  if (project.visibility !== 'public' && !role) {
     res.status(403).json({
       success: false,
       code: 'forbidden',
@@ -169,10 +169,20 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
   }
 
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const laborTotal = laborCosts.reduce(
-    (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
-    0,
-  );
+
+  const laborTypeMap = new Map<string, number>();
+  let laborTotal = 0;
+  for (const lc of laborCosts) {
+    const amount = calcLaborMonthlyTotal(lc, socialInsuranceRate);
+    laborTotal += amount;
+    laborTypeMap.set(lc.type, (laborTypeMap.get(lc.type) ?? 0) + amount);
+  }
+
+  const typeOrder = ['owner_salary', 'full_time', 'part_time'];
+  const laborByType = typeOrder
+    .filter(type => laborTypeMap.has(type))
+    .map(type => ({ type, amount: laborTypeMap.get(type)! }));
+
   const totalExpense = monthlyCost + fixedTotal + laborTotal;
   const operatingProfit = monthlySales - totalExpense;
 
@@ -193,6 +203,7 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
       })),
       fixedTotal,
       laborTotal,
+      laborByType,
       totalExpense,
       operatingProfit,
     },

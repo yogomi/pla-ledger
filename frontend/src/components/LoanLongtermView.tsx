@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
   CircularProgress,
+  Divider,
   Paper,
   Table,
   TableBody,
@@ -11,9 +12,16 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { useLoans, useLoanRepaymentSchedule } from '../hooks/useLoan';
 import { Loan, LoanRepayment } from '../types/Loan';
+
+const LINE_COLORS = ['#2196f3', '#4caf50', '#f44336', '#ff9800', '#9c27b0', '#00bcd4'];
+const yFmt = (v: unknown) => typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 interface LoanLongtermViewProps {
   projectId: string;
@@ -120,6 +128,18 @@ export default function LoanLongtermView({
 
   const loans = loansData?.loans ?? [];
 
+  const chartData = years.map(year => {
+    const entry: Record<string, number | string> = { name: year };
+    loans.forEach(loan => {
+      const schedule = scheduleMap.get(loan.id) ?? [];
+      const yearSchedule = schedule.filter(r => r.yearMonth.startsWith(year));
+      entry[loan.lenderName] = yearSchedule.length > 0
+        ? yearSchedule[yearSchedule.length - 1].remainingBalance
+        : 0;
+    });
+    return entry;
+  });
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
@@ -128,7 +148,27 @@ export default function LoanLongtermView({
       {loans.length === 0 ? (
         <Alert severity="info">{t('no_loans')}</Alert>
       ) : (
-        <Paper variant="outlined" sx={{ overflow: 'auto' }}>
+        <>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={chartData} margin={{ top: 4, right: 16, left: 16, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={yFmt} width={90} />
+              <Tooltip formatter={yFmt} />
+              <Legend />
+              {loans.map((loan, idx) => (
+                <Line
+                  key={loan.id}
+                  type="monotone"
+                  dataKey={loan.lenderName}
+                  stroke={LINE_COLORS[idx % LINE_COLORS.length]}
+                  dot={false}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+          <Divider sx={{ my: 2 }} />
+          <Paper variant="outlined" sx={{ overflow: 'auto' }}>
           <Table size="small">
             <TableHead>
               <TableRow sx={{ backgroundColor: 'grey.100' }}>
@@ -177,6 +217,7 @@ export default function LoanLongtermView({
             </TableBody>
           </Table>
         </Paper>
+        </>
       )}
     </Box>
   );

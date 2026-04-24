@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { Project, Loan, LoanRepayment } from '../../models';
-import { authenticate, AuthRequest } from '../../middleware/auth';
+import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 
 /**
@@ -37,7 +37,7 @@ import { getProjectRole } from '../projects/utils';
  */
 const router = Router({ mergeParams: true });
 
-router.get('/:loanId/schedule', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/:loanId/schedule', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   const { projectId, loanId } = req.params;
 
   const project = await Project.findByPk(projectId);
@@ -48,8 +48,8 @@ router.get('/:loanId/schedule', authenticate, async (req: AuthRequest, res: Resp
     return;
   }
 
-  const role = await getProjectRole(projectId, req.user!.id);
-  if (!role) {
+  const role = await getProjectRole(projectId, req.user?.id);
+  if (project.visibility !== 'public' && !role) {
     res.status(403).json({
       success: false, code: 'forbidden', message: 'View permission required', data: null,
     });

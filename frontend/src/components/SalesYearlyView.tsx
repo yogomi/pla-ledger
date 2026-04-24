@@ -81,6 +81,31 @@ export default function SalesYearlyView({ projectId, year, currency }: SalesYear
         {t('yearly_sales_by_category')} ({t('year_label', { year })})
       </Typography>
 
+      {/* 月次売上推移グラフ */}
+      <Typography variant="h6" gutterBottom>
+        {t('sales_yearly_chart_title')} ({currency})
+      </Typography>
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis tickFormatter={v => Number(v).toLocaleString()} />
+          <Tooltip content={props => <ChartTooltip {...props} />} />
+          <Legend />
+          {data.categories.map((cat, idx) => (
+            <Line
+              key={cat.categoryId}
+              type="monotone"
+              dataKey={cat.categoryName}
+              stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+              dot={false}
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+
+      <Divider sx={{ my: 2 }} />
+
       {/* カテゴリー別年間売上表 */}
       <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
         <Table size="small">
@@ -135,31 +160,6 @@ export default function SalesYearlyView({ projectId, year, currency }: SalesYear
           </TableBody>
         </Table>
       </Paper>
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* 月次売上推移グラフ */}
-      <Typography variant="h6" gutterBottom>
-        {t('sales_yearly_chart_title')} ({currency})
-      </Typography>
-      <ResponsiveContainer width="100%" height={320}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis tickFormatter={v => Number(v).toLocaleString()} />
-          <Tooltip content={props => <ChartTooltip {...props} />} />
-          <Legend />
-          {data.categories.map((cat, idx) => (
-            <Line
-              key={cat.categoryId}
-              type="monotone"
-              dataKey={cat.categoryName}
-              stroke={CHART_COLORS[idx % CHART_COLORS.length]}
-              dot={false}
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
     </Box>
   );
 }

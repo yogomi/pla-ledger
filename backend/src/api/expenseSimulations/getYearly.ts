@@ -4,7 +4,7 @@ import {
   Project, FixedExpense, FixedExpenseMonth,
   LaborCost, LaborCostMonth,
 } from '../../models';
-import { authenticate, AuthRequest } from '../../middleware/auth';
+import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearQuerySchema } from '../../schemas/salesSimulation';
@@ -76,7 +76,7 @@ import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
  */
 const router = Router({ mergeParams: true });
 
-router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/yearly', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   const { projectId } = req.params;
 
   const project = await Project.findByPk(projectId);
@@ -90,8 +90,8 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const role = await getProjectRole(projectId, req.user!.id);
-  if (!role) {
+  const role = await getProjectRole(projectId, req.user?.id);
+  if (project.visibility !== 'public' && !role) {
     res.status(403).json({
       success: false,
       code: 'forbidden',
@@ -120,6 +120,9 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
 
   // 月次人件費合計: yearMonth -> amount
   const laborMonthMap = new Map<string, number>();
+
+  // 人件費 type 別集計マップ: type -> { yearMonth: amount }
+  const laborTypeMap = new Map<string, Map<string, number>>();
 
   // 月次合計: yearMonth -> { fixedTotal, laborTotal }
   const monthlyTotals: Array<{
@@ -182,10 +185,14 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
       fixedMap.get(name)!.set(yearMonth, prev + Number(e.amount));
     }
 
-    const laborTotal = laborCosts.reduce(
-      (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
-      0,
-    );
+    let laborTotal = 0;
+    for (const lc of laborCosts) {
+      const amount = calcLaborMonthlyTotal(lc, socialInsuranceRate);
+      laborTotal += amount;
+      if (!laborTypeMap.has(lc.type)) laborTypeMap.set(lc.type, new Map());
+      const prev = laborTypeMap.get(lc.type)!.get(yearMonth) ?? 0;
+      laborTypeMap.get(lc.type)!.set(yearMonth, prev + amount);
+    }
     laborMonthMap.set(yearMonth, laborTotal);
 
     const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
@@ -215,6 +222,20 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     amount: laborMonthMap.get(yearMonth) ?? 0,
   }));
 
+  // 人件費 type 別に整形する
+  const typeOrder = ['owner_salary', 'full_time', 'part_time'];
+  const laborByType = typeOrder
+    .filter(type => laborTypeMap.has(type))
+    .map(type => {
+      const monthMap = laborTypeMap.get(type)!;
+      const months = allMonths.map(yearMonth => ({
+        yearMonth,
+        amount: monthMap.get(yearMonth) ?? 0,
+      }));
+      const yearlyTotal = months.reduce((sum, m) => sum + m.amount, 0);
+      return { categoryName: type, months, yearlyTotal };
+    });
+
   // 年間合計
   const totalFixed = monthlyTotals.reduce((sum, m) => sum + m.fixedTotal, 0);
   const totalLabor = monthlyTotals.reduce((sum, m) => sum + m.laborTotal, 0);
@@ -228,6 +249,7 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
       year,
       fixedByCategory,
       laborMonths,
+      laborByType,
       monthlyTotals,
       yearlyTotals: { totalFixed, totalLabor, totalExpense },
     },

@@ -42,6 +42,12 @@ export interface ExpenseItem {
   description: string | null;
 }
 
+/** 人件費 type 別月次内訳 */
+export interface LaborByTypeItem {
+  type: string;
+  amount: number;
+}
+
 /** 経費シミュレーション月次データ */
 export interface ExpenseSimulationData {
   yearMonth: string;
@@ -51,6 +57,7 @@ export interface ExpenseSimulationData {
   fixedExpenses: ExpenseItem[];
   fixedTotal: number;
   laborTotal: number;
+  laborByType: LaborByTypeItem[];
   totalExpense: number;
   operatingProfit: number;
 }
@@ -245,6 +252,7 @@ export interface ExpenseYearlyData {
   year: string;
   fixedByCategory: ExpenseCategoryYearly[];
   laborMonths: ExpenseCategoryMonthly[];
+  laborByType: ExpenseCategoryYearly[];
   monthlyTotals: ExpenseMonthlyTotal[];
   yearlyTotals: {
     totalFixed: number;

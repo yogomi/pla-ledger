@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   CircularProgress,
+  Divider,
   Paper,
   Table,
   TableBody,
@@ -11,9 +12,15 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { getExpenseSimulationYearly } from '../api/salesSimulations';
 import { ExpenseYearlyData } from '../types/SalesSimulation';
+
+const yFmt = (v: unknown) => typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 interface ExpenseLongtermViewProps {
   projectId: string;
@@ -83,11 +90,33 @@ export default function ExpenseLongtermView({
     },
   ];
 
+  const chartData = years.map((year, i) => ({
+    name: year,
+    [t('fixed_total_row')]: results[i].data?.yearlyTotals.totalFixed ?? 0,
+    [t('labor_total_row')]: results[i].data?.yearlyTotals.totalLabor ?? 0,
+    [t('expense_total_row')]: results[i].data?.yearlyTotals.totalExpense ?? 0,
+  }));
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
         {t('longterm_expense_title')}
       </Typography>
+
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData} margin={{ top: 4, right: 16, left: 16, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis tickFormatter={yFmt} width={90} />
+          <Tooltip formatter={yFmt} />
+          <Legend />
+          <Line type="monotone" dataKey={t('fixed_total_row')} stroke="#f44336" dot={false} />
+          <Line type="monotone" dataKey={t('labor_total_row')} stroke="#2196f3" dot={false} />
+          <Line type="monotone" dataKey={t('expense_total_row')} stroke="#9c27b0" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+
+      <Divider sx={{ my: 2 }} />
       <Paper variant="outlined" sx={{ overflow: 'auto' }}>
         <Table size="small">
           <TableHead>

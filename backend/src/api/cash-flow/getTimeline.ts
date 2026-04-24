@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import { z } from 'zod';
 import { Project, CashFlowMonthly } from '../../models';
-import { authenticate, AuthRequest } from '../../middleware/auth';
+import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearMonthSchema } from '../../schemas/salesSimulation';
@@ -74,7 +74,7 @@ function buildMonthRange(base: string, before: number, after: number): { from: s
   };
 }
 
-router.get('/timeline', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/timeline', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   const parsed = QuerySchema.safeParse({ projectId: req.params.projectId, base: req.query.base });
   if (!parsed.success) {
     res.status(400).json({
@@ -99,8 +99,8 @@ router.get('/timeline', authenticate, async (req: AuthRequest, res: Response) =>
     return;
   }
 
-  const role = await getProjectRole(projectId, req.user!.id);
-  if (!role) {
+  const role = await getProjectRole(projectId, req.user?.id);
+  if (project.visibility !== 'public' && !role) {
     res.status(403).json({
       success: false,
       code: 'forbidden',

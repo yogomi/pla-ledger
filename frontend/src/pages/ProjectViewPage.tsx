@@ -305,12 +305,13 @@ export default function ProjectViewPage() {
 
   const isOwner = user?.id === project.owner_id;
   const canEdit = role === 'owner' || role === 'editor';
+  const canView = Boolean(role) || project.visibility === 'public';
   const financeSection = project.sections?.find(s => s.type === 'finances');
 
   /** 権限に応じて表示するタブ一覧を構築 */
   const visibleTabs = [
     { value: 'project', label: t('project_tab') },
-    ...(role ? [{ value: 'simulation', label: t('simulation') }] : []),
+    ...(canView ? [{ value: 'simulation', label: t('simulation') }] : []),
     ...(canEdit ? [{ value: 'simulation-input', label: t('simulation_edit') }] : []),
     ...(canEdit ? [{ value: 'startup-costs', label: t('startup_costs_input') }] : []),
     ...(canEdit ? [{ value: 'edit', label: t('edit_project') }] : []),
@@ -402,7 +403,7 @@ export default function ProjectViewPage() {
             openingCapital={openingCapital}
             plannedOpeningDate={project.planned_opening_date}
             currency={project.currency}
-            loans={role ? (loanData?.loans ?? []) : undefined}
+            loans={loanData?.loans ?? []}
           />
           <Divider sx={{ mb: 2 }} />
           <Tabs value={innerTabValue} onChange={(_, v) => setInnerTabValue(v)} sx={{ mb: 2 }}>
@@ -421,7 +422,7 @@ export default function ProjectViewPage() {
                   <ProjectTimeline
                     projectId={id!}
                     plannedOpeningDate={project.planned_opening_date}
-                    enabled={Boolean(role)}
+                    enabled={canView}
                   />
                 </Paper>
               </Grid>
@@ -500,7 +501,7 @@ export default function ProjectViewPage() {
       )}
 
       {/* ===== Simulation タブ ===== */}
-      {activeTab === 'simulation' && role && (
+      {activeTab === 'simulation' && canView && (
         <SimulationViewContainer
           projectId={id!}
           yearMonth={simulationYearMonth}

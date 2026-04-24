@@ -1,9 +1,9 @@
-import React from 'react';
 import { useQueries } from '@tanstack/react-query';
 import {
   Alert,
   Box,
   CircularProgress,
+  Divider,
   Paper,
   Table,
   TableBody,
@@ -12,8 +12,15 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { getSalesSimulationYearly } from '../api/salesSimulations';
+
+const LINE_COLORS = ['#2196f3', '#4caf50', '#f44336', '#ff9800', '#9c27b0', '#00bcd4'];
+const yFmt = (v: unknown) => typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 interface SalesLongtermViewProps {
   projectId: string;
@@ -71,11 +78,49 @@ export default function SalesLongtermView({
     });
   });
 
+  const chartData = years.map((year, i) => {
+    const entry: Record<string, number | string> = { name: year };
+    categoryNames.forEach(catName => {
+      const cat = results[i].data?.categories.find(c => c.categoryName === catName);
+      entry[catName] = cat?.yearlyTotal ?? 0;
+    });
+    entry[t('yearly_total')] = results[i].data?.yearlyTotal ?? 0;
+    return entry;
+  });
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
         {t('longterm_sales_title')}
       </Typography>
+
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData} margin={{ top: 4, right: 16, left: 16, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis tickFormatter={yFmt} width={90} />
+          <Tooltip formatter={yFmt} />
+          <Legend />
+          {categoryNames.map((catName, idx) => (
+            <Line
+              key={catName}
+              type="monotone"
+              dataKey={catName}
+              stroke={LINE_COLORS[idx % LINE_COLORS.length]}
+              dot={false}
+            />
+          ))}
+          <Line
+            type="monotone"
+            dataKey={t('yearly_total')}
+            stroke="#000"
+            strokeWidth={2}
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+
+      <Divider sx={{ my: 2 }} />
       <Paper variant="outlined" sx={{ overflow: 'auto' }}>
         <Table size="small">
           <TableHead>

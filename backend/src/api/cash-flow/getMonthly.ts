@@ -5,7 +5,7 @@ import {
   SalesSimulationSnapshot, FixedExpense, LaborCost, LaborCostMonth, FixedExpenseMonth,
   StartupCost,
 } from '../../models';
-import { authenticate, AuthRequest } from '../../middleware/auth';
+import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearMonthSchema } from '../../schemas/salesSimulation';
@@ -351,7 +351,7 @@ async function calculateCashBalanceUpToMonth(
  */
 const router = Router({ mergeParams: true });
 
-router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/monthly/:yearMonth', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   const parsed = ParamsSchema.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({
@@ -375,8 +375,8 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
     return;
   }
 
-  const role = await getProjectRole(projectId, req.user!.id);
-  if (!role) {
+  const role = await getProjectRole(projectId, req.user?.id);
+  if (project.visibility !== 'public' && !role) {
     res.status(403).json({
       success: false,
       code: 'forbidden',

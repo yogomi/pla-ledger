@@ -1,9 +1,9 @@
-import React from 'react';
 import { useQueries } from '@tanstack/react-query';
 import {
   Alert,
   Box,
   CircularProgress,
+  Divider,
   Paper,
   Table,
   TableBody,
@@ -13,9 +13,15 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { getCashFlowYearly } from '../api/cashFlow';
 import { CashFlowYearlyData } from '../types/CashFlow';
+
+const yFmt = (v: unknown) => typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 interface CashFlowLongtermTableProps {
   projectId: string;
@@ -94,11 +100,35 @@ export default function CashFlowLongtermTable({
     },
   ];
 
+  const chartData = years.map((year, i) => ({
+    name: year,
+    [t('operating_cf')]: results[i].data?.yearly.totalOperatingCF ?? 0,
+    [t('investing_cf')]: results[i].data?.yearly.totalInvestingCF ?? 0,
+    [t('financing_cf')]: results[i].data?.yearly.totalFinancingCF ?? 0,
+    [t('cash_ending')]: results[i].data?.yearly.cashEnding ?? 0,
+  }));
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
         {t('longterm_cashflow_title')}
       </Typography>
+
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData} margin={{ top: 4, right: 16, left: 16, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis tickFormatter={yFmt} width={90} />
+          <Tooltip formatter={yFmt} />
+          <Legend />
+          <Line type="monotone" dataKey={t('operating_cf')} stroke="#4caf50" dot={false} />
+          <Line type="monotone" dataKey={t('investing_cf')} stroke="#f44336" dot={false} />
+          <Line type="monotone" dataKey={t('financing_cf')} stroke="#2196f3" dot={false} />
+          <Line type="monotone" dataKey={t('cash_ending')} stroke="#9c27b0" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+
+      <Divider sx={{ my: 2 }} />
       <TableContainer component={Paper} sx={{ overflow: 'auto' }}>
         <Table size="small">
           <TableHead>

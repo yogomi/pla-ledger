@@ -269,6 +269,16 @@ export default function ExpenseMonthlyEditor({
                 <TableCell>{t('fixed_total_row')}</TableCell>
                 <TableCell align="right">{Math.round(data.fixedTotal).toLocaleString()} 円</TableCell>
               </TableRow>
+              {(data.laborByType ?? []).map(lb => (
+                <TableRow key={lb.type}>
+                  <TableCell sx={{ pl: 3 }}>
+                    {t(lb.type as Parameters<typeof t>[0])}
+                  </TableCell>
+                  <TableCell align="right">
+                    {Math.round(lb.amount).toLocaleString()} 円
+                  </TableCell>
+                </TableRow>
+              ))}
               <TableRow>
                 <TableCell>{t('labor_cost_section')}</TableCell>
                 <TableCell align="right">{Math.round(data.laborTotal).toLocaleString()} 円</TableCell>

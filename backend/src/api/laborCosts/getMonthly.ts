@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import { Project, LaborCost, LaborCostMonth } from '../../models';
-import { authenticate, AuthRequest } from '../../middleware/auth';
+import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearMonthQuerySchema } from '../../schemas/salesSimulation';
@@ -57,7 +57,7 @@ import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
  */
 const router = Router({ mergeParams: true });
 
-router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/monthly', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   const { projectId } = req.params;
 
   const project = await Project.findByPk(projectId);
@@ -71,8 +71,8 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
     return;
   }
 
-  const role = await getProjectRole(projectId, req.user!.id);
-  if (!role) {
+  const role = await getProjectRole(projectId, req.user?.id);
+  if (project.visibility !== 'public' && !role) {
     res.status(403).json({
       success: false,
       code: 'forbidden',

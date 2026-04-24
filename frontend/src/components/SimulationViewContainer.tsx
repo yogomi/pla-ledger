@@ -21,6 +21,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTranslation } from 'react-i18next';
 import { useSalesSimulationMonthly, useExpenseSimulationMonthly } from '../hooks/useSalesSimulation';
+import { useLaborCostMonthly } from '../hooks/useLaborCost';
 import ProfitLossYearlyTable from './ProfitLossYearlyTable';
 import ProfitLossMonthlyView from './ProfitLossMonthlyView';
 import SalesSimulationPagination from './SalesSimulationPagination';
@@ -169,6 +170,7 @@ function ExpenseMonthlyView({
 }) {
   const { t } = useTranslation();
   const { data, isLoading, isError } = useExpenseSimulationMonthly(projectId, yearMonth);
+  const { data: laborData, isLoading: laborLoading } = useLaborCostMonthly(projectId, yearMonth);
 
   if (isLoading) {
     return (
@@ -222,6 +224,81 @@ function ExpenseMonthlyView({
         </Table>
       </Paper>
 
+      {/* 人件費 */}
+      <Paper variant="outlined">
+        <Box p={2} borderBottom={1} borderColor="divider">
+          <Typography variant="h6">{t('labor_cost_section')}</Typography>
+        </Box>
+        {laborLoading ? (
+          <Box display="flex" justifyContent="center" p={2}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : (
+          <>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ backgroundColor: 'grey.100' }}>
+                  <TableCell sx={{ minWidth: 120 }}>{t('labor_cost_type')}</TableCell>
+                  <TableCell>{t('labor_cost_input')}</TableCell>
+                  <TableCell align="right" sx={{ minWidth: 120 }}>{t('monthly_amount')}</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {(laborData?.laborCosts ?? []).length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center">
+                      <Typography variant="body2" color="text.secondary">{t('no_items')}</Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+                {(laborData?.laborCosts ?? []).map(lc => (
+                  <TableRow key={lc.id}>
+                    <TableCell>{t(lc.type as Parameters<typeof t>[0])}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        {lc.type === 'owner_salary' && (
+                          `${(lc.ownerSalary ?? 0).toLocaleString()} 円 / 月`
+                        )}
+                        {lc.type === 'full_time' && (
+                          `${t('monthly_salary')} ${(lc.monthlySalary ?? 0).toLocaleString()} 円 × ${lc.employeeCount ?? 0} 名 / ${t('bonus_months')} ${lc.bonusMonths ?? 0} ヶ月`
+                        )}
+                        {lc.type === 'part_time' && (
+                          `${t('hourly_wage')} ${(lc.hourlyWage ?? 0).toLocaleString()} 円 × ${lc.hoursPerDay ?? 0} h × ${lc.daysPerMonth ?? 0} 日 × ${lc.partTimeCount ?? 0} 名`
+                        )}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      {Math.round(lc.monthlyTotal).toLocaleString()} {currency}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {(laborData?.laborCosts ?? []).length > 0 && (
+                  <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                    <TableCell colSpan={2}>
+                      <Typography variant="body2" fontWeight="bold">
+                        {t('total_labor_cost')}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography variant="body2" fontWeight="bold">
+                        {Math.round(laborData?.monthlyTotal ?? 0).toLocaleString()} {currency}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            {laborData && laborData.socialInsuranceRate > 0 && (
+              <Box px={2} pb={1}>
+                <Typography variant="caption" color="text.secondary">
+                  ※ {t('social_insurance_rate')}: {laborData.socialInsuranceRate}%（{t('social_insurance_rate_hint')}）
+                </Typography>
+              </Box>
+            )}
+          </>
+        )}
+      </Paper>
+
       {/* 損益サマリー */}
       <Paper variant="outlined">
         <Box p={2}>
@@ -240,6 +317,16 @@ function ExpenseMonthlyView({
                 <TableCell>{t('fixed_total_row')}</TableCell>
                 <TableCell align="right">{Math.round(data.fixedTotal).toLocaleString()} {currency}</TableCell>
               </TableRow>
+              {(data.laborByType ?? []).map(lb => (
+                <TableRow key={lb.type}>
+                  <TableCell sx={{ pl: 3 }}>
+                    {t(lb.type as Parameters<typeof t>[0])}
+                  </TableCell>
+                  <TableCell align="right">
+                    {Math.round(lb.amount).toLocaleString()} {currency}
+                  </TableCell>
+                </TableRow>
+              ))}
               <TableRow>
                 <TableCell>{t('labor_cost_section')}</TableCell>
                 <TableCell align="right">{Math.round(data.laborTotal).toLocaleString()} {currency}</TableCell>
@@ -379,10 +466,9 @@ export default function SimulationViewContainer({
       )}
       {viewMode === 'yearly' && tab === 3 && (
         <>
+          <CashFlowCharts projectId={projectId} year={year} />
+          <Divider sx={{ my: 2 }} />
           <CashFlowYearlyTable projectId={projectId} year={year} currency={currency} />
-          <Box mt={3}>
-            <CashFlowCharts projectId={projectId} year={year} />
-          </Box>
         </>
       )}
       {viewMode === 'yearly' && tab === 4 && (

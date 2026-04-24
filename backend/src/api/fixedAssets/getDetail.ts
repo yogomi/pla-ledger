@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { z } from 'zod';
 import { Project, FixedAsset, FixedAssetDepreciationSchedule } from '../../models';
-import { authenticate, AuthRequest } from '../../middleware/auth';
+import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { formatAsset } from './create';
@@ -33,7 +33,7 @@ const ParamsSchema = z.object({
  */
 const router = Router({ mergeParams: true });
 
-router.get('/:assetId', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/:assetId', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   const parsed = ParamsSchema.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({
@@ -54,8 +54,8 @@ router.get('/:assetId', authenticate, async (req: AuthRequest, res: Response) =>
     return;
   }
 
-  const role = await getProjectRole(projectId, req.user!.id);
-  if (!role) {
+  const role = await getProjectRole(projectId, req.user?.id);
+  if (project.visibility !== 'public' && !role) {
     res.status(403).json({
       success: false, code: 'forbidden', message: 'View permission required', data: null,
     });

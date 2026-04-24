@@ -12,8 +12,8 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -163,6 +163,36 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
         {t('yearly_expense_summary')} ({t('year_label', { year })})
       </Typography>
 
+      {/* 月次経費推移グラフ */}
+      <Typography variant="h6" gutterBottom>
+        {t('expense_yearly_chart_title')} ({currency})
+      </Typography>
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis tickFormatter={v => Number(v).toLocaleString()} />
+          <Tooltip formatter={tooltipFormatter} />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey={t('fixed_expenses_section')}
+            stroke="#f44336"
+            strokeWidth={2}
+            dot={false}
+          />
+          <Line
+            type="monotone"
+            dataKey={t('labor_cost_section')}
+            stroke="#2196f3"
+            strokeWidth={2}
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+
+      <Divider sx={{ my: 2 }} />
+
       {/* 固定費カテゴリー別表 */}
       {renderCategoryTable(
         t('fixed_expenses_section'),
@@ -170,43 +200,15 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
         t('fixed_total_row'),
       )}
 
-      {/* 人件費月次表 */}
-      <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
-        <Box p={2} borderBottom={1} borderColor="divider">
-          <Typography variant="h6">{t('labor_cost_section')}</Typography>
-        </Box>
-        <Table size="small">
-          <TableHead>
-            <TableRow sx={{ backgroundColor: 'grey.100' }}>
-              <TableCell>{t('category_name_col')}</TableCell>
-              {allMonths.map(ym => {
-                const m = ym.split('-')[1];
-                return (
-                  <TableCell key={ym} align="right">
-                    {t('month_label_short', { month: Number(m) })}
-                  </TableCell>
-                );
-              })}
-              <TableCell align="right">{t('category_total')}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell>{t('labor_cost_section')}</TableCell>
-              {data.laborMonths.map(lm => (
-                <TableCell key={lm.yearMonth} align="right">
-                  {Math.round(lm.amount).toLocaleString()}
-                </TableCell>
-              ))}
-              <TableCell align="right">
-                <Typography fontWeight="bold">
-                  {Math.round(data.yearlyTotals.totalLabor).toLocaleString()}
-                </Typography>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Paper>
+      {/* 人件費 type 別表 */}
+      {renderCategoryTable(
+        t('labor_cost_section'),
+        (data.laborByType ?? []).map(lt => ({
+          ...lt,
+          categoryName: t(lt.categoryName as Parameters<typeof t>[0]),
+        })),
+        t('labor_total_row'),
+      )}
 
       {/* 経費合計サマリー表 */}
       <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
@@ -273,32 +275,6 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
           </TableBody>
         </Table>
       </Paper>
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* 月次経費推移グラフ */}
-      <Typography variant="h6" gutterBottom>
-        {t('expense_yearly_chart_title')} ({currency})
-      </Typography>
-      <ResponsiveContainer width="100%" height={320}>
-        <BarChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis tickFormatter={v => Number(v).toLocaleString()} />
-          <Tooltip formatter={tooltipFormatter} />
-          <Legend />
-          <Bar
-            dataKey={t('fixed_expenses_section')}
-            stackId="expense"
-            fill="#f44336"
-          />
-          <Bar
-            dataKey={t('labor_cost_section')}
-            stackId="expense"
-            fill="#2196f3"
-          />
-        </BarChart>
-      </ResponsiveContainer>
     </Box>
   );
 }

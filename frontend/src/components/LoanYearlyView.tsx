@@ -200,6 +200,32 @@ export default function LoanYearlyView({ projectId, year, currency }: LoanYearly
         <Alert severity="info">{t('no_loans')}</Alert>
       ) : (
         <>
+          {/* 月次残高グラフ（各ローンの残高推移） */}
+          <Typography variant="h6" gutterBottom>
+            {t('loan_yearly_chart_title')} ({currency})
+          </Typography>
+          <ResponsiveContainer width="100%" height={320}>
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={v => Number(v).toLocaleString()} />
+              <Tooltip formatter={tooltipFormatter} />
+              <Legend />
+              {loans.map((loan, idx) => (
+                <Line
+                  key={loan.id}
+                  type="monotone"
+                  dataKey={loan.lenderName}
+                  stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+
+          <Divider sx={{ my: 2 }} />
+
           {/* 年次借入サマリー表 */}
           <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
             <Table size="small">
@@ -224,32 +250,6 @@ export default function LoanYearlyView({ projectId, year, currency }: LoanYearly
               </TableBody>
             </Table>
           </Paper>
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* 月次残高グラフ（各ローンの残高推移） */}
-          <Typography variant="h6" gutterBottom>
-            {t('loan_yearly_chart_title')} ({currency})
-          </Typography>
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis tickFormatter={v => Number(v).toLocaleString()} />
-              <Tooltip formatter={tooltipFormatter} />
-              <Legend />
-              {loans.map((loan, idx) => (
-                <Line
-                  key={loan.id}
-                  type="monotone"
-                  dataKey={loan.lenderName}
-                  stroke={CHART_COLORS[idx % CHART_COLORS.length]}
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
         </>
       )}
     </Box>

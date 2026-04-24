@@ -5,7 +5,7 @@ import {
   SalesSimulationSnapshot,
   CashFlowMonthly,
 } from '../../models';
-import { authenticate, AuthRequest } from '../../middleware/auth';
+import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
 import { formatZodError } from '../../utils/zodError';
 import { YearQuerySchema } from '../../schemas/salesSimulation';
@@ -72,7 +72,7 @@ import {
  */
 const router = Router({ mergeParams: true });
 
-router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/yearly', optionalAuthenticate, async (req: AuthRequest, res: Response) => {
   const { projectId } = req.params;
 
   const project = await Project.findByPk(projectId);
@@ -86,8 +86,8 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const role = await getProjectRole(projectId, req.user!.id);
-  if (!role) {
+  const role = await getProjectRole(projectId, req.user?.id);
+  if (project.visibility !== 'public' && !role) {
     res.status(403).json({
       success: false,
       code: 'forbidden',

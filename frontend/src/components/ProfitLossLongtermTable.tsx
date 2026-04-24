@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   CircularProgress,
+  Divider,
   Paper,
   Table,
   TableBody,
@@ -12,9 +13,15 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { getProfitLossYearly } from '../api/salesSimulations';
 import { ProfitLossYearlyData } from '../types/SalesSimulation';
+
+const yFmt = (v: unknown) => typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
 interface ProfitLossLongtermTableProps {
   projectId: string;
@@ -118,11 +125,33 @@ export default function ProfitLossLongtermTable({
     },
   ];
 
+  const chartData = years.map((year, i) => ({
+    name: year,
+    [t('sales_row')]: results[i].data?.yearly.totalSales ?? 0,
+    [t('operating_profit')]: results[i].data?.yearly.totalOperatingProfit ?? 0,
+    [t('profit_before_tax')]: results[i].data?.yearly.totalProfitBeforeTax ?? 0,
+  }));
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
         {t('longterm_profitloss_title')}
       </Typography>
+
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData} margin={{ top: 4, right: 16, left: 16, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis tickFormatter={yFmt} width={90} />
+          <Tooltip formatter={yFmt} />
+          <Legend />
+          <Line type="monotone" dataKey={t('sales_row')} stroke="#2196f3" dot={false} />
+          <Line type="monotone" dataKey={t('operating_profit')} stroke="#4caf50" strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey={t('profit_before_tax')} stroke="#ff9800" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+
+      <Divider sx={{ my: 2 }} />
       <TableContainer component={Paper} sx={{ overflow: 'auto' }}>
         <Table size="small">
           <TableHead>
