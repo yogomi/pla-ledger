@@ -84,19 +84,25 @@ export default function CashFlowMonthlyEditor({
     const borrowingProceeds = data?.financing.borrowingProceeds ?? 0;
     const loanRepayment = data?.financing.loanRepayment ?? 0;
 
+    const scb = data?.startupCostBreakdown;
+    const startupOperating = (scb?.founding ?? 0) + (scb?.marketing ?? 0) + (scb?.consumables ?? 0);
+    const startupInventory = scb?.initialInventory ?? 0;
+    const startupCapex = (scb?.equipment ?? 0) + (scb?.renovation ?? 0) + (scb?.deposit ?? 0);
+    const startupIntangible = scb?.intangible ?? 0;
+
     // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算し、運転資本増減を調整する
     const operatingSubtotal =
       profitBeforeTax
       + depreciation
       + formData.accountsReceivableChange
-      + formData.inventoryChange
+      + formData.inventoryChange + startupInventory
       + formData.accountsPayableChange
-      + formData.otherOperating;
+      + formData.otherOperating + startupOperating;
 
     const investingSubtotal =
-      formData.capexAcquisition
+      formData.capexAcquisition + startupCapex
       + formData.assetSale
-      + formData.intangibleAcquisition
+      + formData.intangibleAcquisition + startupIntangible
       + formData.otherInvesting;
 
     const financingSubtotal =
