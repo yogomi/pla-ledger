@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
-  Project, FixedExpense, VariableExpense, SalesSimulationSnapshot, FixedExpenseMonth,
+  Project, FixedExpense, SalesSimulationSnapshot, FixedExpenseMonth,
   LoanRepayment, LaborCost, LaborCostMonth, CashFlowMonthly,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
@@ -18,7 +18,6 @@ interface MonthData {
   monthlySales: number;
   monthlyCost: number;
   fixedTotal: number;
-  variableTotal: number;
   laborTotal: number;
   depreciation: number;
   totalExpense: number;
@@ -89,10 +88,6 @@ async function buildMonthData(
     }
   }
 
-  const variableExpenses = await VariableExpense.findAll({
-    where: { project_id: projectId, year_month: yearMonth },
-  });
-
   // 人件費取得
   let laborCosts = await LaborCost.findAll({
     where: { project_id: projectId, year_month: yearMonth },
@@ -118,13 +113,12 @@ async function buildMonthData(
   }
 
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const laborTotal = laborCosts.reduce(
     (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
     0,
   );
   const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
-  const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal + depreciation;
+  const totalExpense = monthlyCost + fixedTotal + laborTotal + depreciation;
   const operatingProfit = monthlySales - totalExpense;
 
   // 利息支払額：一括取得済みのマップから参照する（N+1クエリ回避）
@@ -142,7 +136,6 @@ async function buildMonthData(
     monthlySales,
     monthlyCost,
     fixedTotal,
-    variableTotal,
     laborTotal,
     depreciation,
     totalExpense,
@@ -297,7 +290,6 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
   const totalSales = months.reduce((sum, m) => sum + m.monthlySales, 0);
   const totalCost = months.reduce((sum, m) => sum + m.monthlyCost, 0);
   const totalFixed = months.reduce((sum, m) => sum + m.fixedTotal, 0);
-  const totalVariable = months.reduce((sum, m) => sum + m.variableTotal, 0);
   const totalLabor = months.reduce((sum, m) => sum + m.laborTotal, 0);
   const totalDepreciation = months.reduce((sum, m) => sum + m.depreciation, 0);
   const totalExpense = months.reduce((sum, m) => sum + m.totalExpense, 0);
@@ -320,7 +312,6 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
         totalSales,
         totalCost,
         totalFixed,
-        totalVariable,
         totalLabor,
         totalDepreciation,
         totalExpense,

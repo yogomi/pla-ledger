@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Accordion,
@@ -222,38 +222,6 @@ function ExpenseMonthlyView({
         </Table>
       </Paper>
 
-      {/* 変動費 */}
-      <Paper variant="outlined">
-        <Box p={2} borderBottom={1} borderColor="divider">
-          <Typography variant="h6">{t('variable_expenses_section')}</Typography>
-        </Box>
-        <Table size="small">
-          <TableHead>
-            <TableRow sx={{ backgroundColor: 'grey.100' }}>
-              <TableCell>{t('category_name_col')}</TableCell>
-              <TableCell align="right">{t('monthly_amount')}</TableCell>
-              <TableCell>{t('notes')}</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.variableExpenses.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={3} align="center">
-                  <Typography variant="body2" color="text.secondary">{t('no_items')}</Typography>
-                </TableCell>
-              </TableRow>
-            )}
-            {data.variableExpenses.map(e => (
-              <TableRow key={e.id}>
-                <TableCell>{e.categoryName}</TableCell>
-                <TableCell align="right">{Math.round(e.amount).toLocaleString()}</TableCell>
-                <TableCell>{e.description ?? ''}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Paper>
-
       {/* 損益サマリー */}
       <Paper variant="outlined">
         <Box p={2}>
@@ -271,10 +239,6 @@ function ExpenseMonthlyView({
               <TableRow>
                 <TableCell>{t('fixed_total_row')}</TableCell>
                 <TableCell align="right">{Math.round(data.fixedTotal).toLocaleString()} {currency}</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>{t('variable_total_row')}</TableCell>
-                <TableCell align="right">{Math.round(data.variableTotal).toLocaleString()} {currency}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('labor_cost_section')}</TableCell>

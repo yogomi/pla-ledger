@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
-  Project, FixedExpense, VariableExpense, FixedExpenseMonth,
+  Project, FixedExpense, FixedExpenseMonth,
   LaborCost, LaborCostMonth,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
@@ -30,7 +30,7 @@ import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
  *
  * @response
  *   成功時: { success: true, code: '', message: 'OK', data: { year, fixedByCategory,
- *             variableByCategory, laborMonths, monthlyTotals, yearlyTotals } }
+ *             laborMonths, monthlyTotals, yearlyTotals } }
  *   失敗時:
  *     - 400: { success: false, code: 'invalid_query', message: エラー内容, data: null }
  *     - 401: { success: false, code: 'unauthorized', message: 'No token provided', data: null }
@@ -117,16 +117,14 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
 
   // カテゴリ別集計マップ: categoryName -> { yearMonth: amount }
   const fixedMap = new Map<string, Map<string, number>>();
-  const variableMap = new Map<string, Map<string, number>>();
 
   // 月次人件費合計: yearMonth -> amount
   const laborMonthMap = new Map<string, number>();
 
-  // 月次合計: yearMonth -> { fixedTotal, variableTotal, laborTotal }
+  // 月次合計: yearMonth -> { fixedTotal, laborTotal }
   const monthlyTotals: Array<{
     yearMonth: string;
     fixedTotal: number;
-    variableTotal: number;
     laborTotal: number;
     totalExpense: number;
   }> = [];
@@ -154,11 +152,6 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
         }
       }
     }
-
-    // 変動費取得（継承なし）
-    const variableExpenses = await VariableExpense.findAll({
-      where: { project_id: projectId, year_month: yearMonth },
-    });
 
     // 人件費取得（継承ロジック）
     let laborCosts = await LaborCost.findAll({
@@ -189,14 +182,6 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
       fixedMap.get(name)!.set(yearMonth, prev + Number(e.amount));
     }
 
-    // 変動費をカテゴリ別に集計する
-    for (const e of variableExpenses) {
-      const name = e.category_name;
-      if (!variableMap.has(name)) variableMap.set(name, new Map());
-      const prev = variableMap.get(name)!.get(yearMonth) ?? 0;
-      variableMap.get(name)!.set(yearMonth, prev + Number(e.amount));
-    }
-
     const laborTotal = laborCosts.reduce(
       (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
       0,
@@ -204,9 +189,8 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     laborMonthMap.set(yearMonth, laborTotal);
 
     const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-    const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-    const totalExpense = fixedTotal + variableTotal + laborTotal;
-    monthlyTotals.push({ yearMonth, fixedTotal, variableTotal, laborTotal, totalExpense });
+    const totalExpense = fixedTotal + laborTotal;
+    monthlyTotals.push({ yearMonth, fixedTotal, laborTotal, totalExpense });
   }
 
   // 全月リストを生成する
@@ -225,16 +209,6 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     return { categoryName, months, yearlyTotal };
   });
 
-  // 変動費カテゴリ別に整形する
-  const variableByCategory = Array.from(variableMap.entries()).map(([categoryName, monthMap]) => {
-    const months = allMonths.map(yearMonth => ({
-      yearMonth,
-      amount: monthMap.get(yearMonth) ?? 0,
-    }));
-    const yearlyTotal = months.reduce((sum, m) => sum + m.amount, 0);
-    return { categoryName, months, yearlyTotal };
-  });
-
   // 人件費月次を整形する
   const laborMonths = allMonths.map(yearMonth => ({
     yearMonth,
@@ -243,9 +217,8 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
 
   // 年間合計
   const totalFixed = monthlyTotals.reduce((sum, m) => sum + m.fixedTotal, 0);
-  const totalVariable = monthlyTotals.reduce((sum, m) => sum + m.variableTotal, 0);
   const totalLabor = monthlyTotals.reduce((sum, m) => sum + m.laborTotal, 0);
-  const totalExpense = totalFixed + totalVariable + totalLabor;
+  const totalExpense = totalFixed + totalLabor;
 
   res.json({
     success: true,
@@ -254,10 +227,9 @@ router.get('/yearly', authenticate, async (req: AuthRequest, res: Response) => {
     data: {
       year,
       fixedByCategory,
-      variableByCategory,
       laborMonths,
       monthlyTotals,
-      yearlyTotals: { totalFixed, totalVariable, totalLabor, totalExpense },
+      yearlyTotals: { totalFixed, totalLabor, totalExpense },
     },
   });
 });

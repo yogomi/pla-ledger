@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -23,7 +23,6 @@ import { useTranslation } from 'react-i18next';
 import {
   useExpenseSimulationMonthly,
   useUpdateFixedExpenses,
-  useUpdateVariableExpenses,
   useDeleteFixedExpenses,
 } from '../hooks/useSalesSimulation';
 import { ExpenseInputItem } from '../types/SalesSimulation';
@@ -35,10 +34,6 @@ interface ExpenseMonthlyEditorProps {
 }
 
 interface FixedFormValues {
-  expenses: ExpenseInputItem[];
-}
-
-interface VariableFormValues {
   expenses: ExpenseInputItem[];
 }
 
@@ -198,138 +193,7 @@ function FixedExpenseForm({
 }
 
 /**
- * 変動費テーブルの編集フォームコンポーネント。
- * 行の追加・削除ができる。
- */
-function VariableExpenseForm({
-  projectId,
-  yearMonth,
-  defaultExpenses,
-}: {
-  projectId: string;
-  yearMonth: string;
-  defaultExpenses: ExpenseInputItem[];
-}) {
-  const { t } = useTranslation();
-  const mutation = useUpdateVariableExpenses(projectId);
-  const { control, handleSubmit, reset } = useForm<VariableFormValues>({
-    defaultValues: { expenses: defaultExpenses },
-  });
-  const { fields, append, remove } = useFieldArray({ control, name: 'expenses' });
-
-  useEffect(() => {
-    reset({ expenses: defaultExpenses });
-  }, [defaultExpenses, reset]);
-
-  const onSubmit = (values: VariableFormValues) => {
-    mutation.mutate({ yearMonth, expenses: values.expenses });
-  };
-
-  return (
-    <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-      <Table size="small">
-        <TableHead>
-          <TableRow sx={{ backgroundColor: 'grey.100' }}>
-            <TableCell>{t('category_name_col')}</TableCell>
-            <TableCell align="right">{t('monthly_amount')}</TableCell>
-            <TableCell>{t('notes')}</TableCell>
-            <TableCell align="center">{t('action')}</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {fields.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={4} align="center">
-                <Typography variant="body2" color="text.secondary">{t('no_items')}</Typography>
-              </TableCell>
-            </TableRow>
-          )}
-          {fields.map((field, idx) => (
-            <TableRow key={field.id}>
-              <TableCell>
-                <Controller
-                  name={`expenses.${idx}.categoryName`}
-                  control={control}
-                  render={({ field: f }) => (
-                    <TextField {...f} size="small" variant="outlined" sx={{ minWidth: '160px' }} />
-                  )}
-                />
-              </TableCell>
-              <TableCell align="right">
-                <Controller
-                  name={`expenses.${idx}.amount`}
-                  control={control}
-                  render={({ field: f }) => (
-                    <TextField
-                      {...f}
-                      size="small"
-                      type="number"
-                      variant="outlined"
-                      inputProps={{ min: 0 }}
-                      sx={{ maxWidth: '120px' }}
-                      onChange={e => f.onChange(Number(e.target.value))}
-                    />
-                  )}
-                />
-              </TableCell>
-              <TableCell>
-                <Controller
-                  name={`expenses.${idx}.description`}
-                  control={control}
-                  render={({ field: f }) => (
-                    <TextField
-                      {...f}
-                      size="small"
-                      variant="outlined"
-                      value={f.value ?? ''}
-                      sx={{ minWidth: '180px' }}
-                    />
-                  )}
-                />
-              </TableCell>
-              <TableCell align="center">
-                <Tooltip title={t('delete_row')}>
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => remove(idx)}
-                    aria-label={t('delete_row')}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <Box display="flex" justifyContent="space-between" alignItems="center" p={1} gap={1}>
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={() => append({ categoryName: '', amount: 0, description: null })}
-        >
-          {t('add_row')}
-        </Button>
-        <Button
-          type="submit"
-          variant="contained"
-          size="small"
-          startIcon={<SaveIcon />}
-          disabled={mutation.isPending}
-        >
-          {mutation.isPending ? t('saving') : t('save')}
-        </Button>
-      </Box>
-      {mutation.isError && <Alert severity="error">{t('variable_save_error')}</Alert>}
-      {mutation.isSuccess && <Alert severity="success">{t('variable_save_success')}</Alert>}
-    </Box>
-  );
-}
-
-/**
- * 指定月の固定費・変動費を表示・編集し、損益サマリーを表示するコンポーネント。
+ * 指定月の固定費を表示・編集し、損益サマリーを表示するコンポーネント。
  */
 export default function ExpenseMonthlyEditor({
   projectId,
@@ -356,12 +220,6 @@ export default function ExpenseMonthlyEditor({
     description: e.description,
   }));
 
-  const variableExpenses: ExpenseInputItem[] = data.variableExpenses.map(e => ({
-    categoryName: e.categoryName,
-    amount: e.amount,
-    description: e.description,
-  }));
-
   return (
     <Box display="flex" flexDirection="column" gap={3}>
       {data.isInherited && (
@@ -380,18 +238,6 @@ export default function ExpenseMonthlyEditor({
           yearMonth={yearMonth}
           defaultExpenses={fixedExpenses}
           isInherited={data.isInherited}
-        />
-      </Paper>
-
-      {/* 変動費セクション */}
-      <Paper variant="outlined">
-        <Box p={2} borderBottom={1} borderColor="divider">
-          <Typography variant="h6">{t('variable_expenses_section')}</Typography>
-        </Box>
-        <VariableExpenseForm
-          projectId={projectId}
-          yearMonth={yearMonth}
-          defaultExpenses={variableExpenses}
         />
       </Paper>
 
@@ -422,10 +268,6 @@ export default function ExpenseMonthlyEditor({
               <TableRow>
                 <TableCell>{t('fixed_total_row')}</TableCell>
                 <TableCell align="right">{Math.round(data.fixedTotal).toLocaleString()} 円</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>{t('variable_total_row')}</TableCell>
-                <TableCell align="right">{Math.round(data.variableTotal).toLocaleString()} 円</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell>{t('labor_cost_section')}</TableCell>

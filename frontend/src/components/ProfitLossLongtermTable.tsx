@@ -1,4 +1,3 @@
-import React from 'react';
 import { useQueries } from '@tanstack/react-query';
 import {
   Alert,
@@ -82,10 +81,6 @@ export default function ProfitLossLongtermTable({
     {
       label: `${t('fixed_total_row')} (${currency})`,
       getValue: data => data?.yearly.totalFixed ?? 0,
-    },
-    {
-      label: `${t('variable_total_row')} (${currency})`,
-      getValue: data => data?.yearly.totalVariable ?? 0,
     },
     {
       label: `${t('labor_total_row')} (${currency})`,

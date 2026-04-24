@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Alert,
   Box,
@@ -91,7 +90,6 @@ export default function ProfitLossMonthlyView({
             {renderRow(`${t('sales_row')} (${currency})`, row.monthlySales)}
             {renderRow(`${t('cost_row')} (${currency})`, row.monthlyCost)}
             {renderRow(`${t('fixed_expenses_section')} (${currency})`, row.fixedTotal)}
-            {renderRow(`${t('variable_expenses_section')} (${currency})`, row.variableTotal)}
             {renderRow(`${t('labor_cost_section')} (${currency})`, row.laborTotal ?? 0)}
             {renderRow(`${t('depreciation')} (${currency})`, row.depreciation ?? 0)}
             {renderRow(`${t('expense_total_row')} (${currency})`, row.totalExpense, true)}

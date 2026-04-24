@@ -1,4 +1,3 @@
-import React from 'react';
 import { useQueries } from '@tanstack/react-query';
 import {
   Alert,
@@ -72,10 +71,6 @@ export default function ExpenseLongtermView({
     {
       label: t('fixed_total_row'),
       getValue: data => data?.yearlyTotals.totalFixed ?? 0,
-    },
-    {
-      label: t('variable_total_row'),
-      getValue: data => data?.yearlyTotals.totalVariable ?? 0,
     },
     {
       label: t('labor_total_row'),

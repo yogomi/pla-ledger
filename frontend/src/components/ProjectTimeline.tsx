@@ -1,4 +1,3 @@
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Alert,
@@ -26,8 +25,7 @@ interface ProjectTimelineProps {
 
 /**
  * キャッシュフローのコメントを時系列で表示するコンポーネント。
- * タイムライン一括取得APIを使い、開業予定日前後24ヶ月のコメント付き月を表示する。
- * 49件の並列リクエストを1件に削減することでレートリミット超過を防ぐ。
+ * タイムライン一括取得APIを使い、開業予定日の前12ヶ月・後60ヶ月のコメント付き月を表示する。
  */
 export default function ProjectTimeline({
   projectId,

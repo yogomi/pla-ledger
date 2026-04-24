@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Alert,
   Box,
@@ -82,7 +81,6 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
             <TableCell align="right">{t('sales_row')} ({currency})</TableCell>
             <TableCell align="right">{t('cost_row')} ({currency})</TableCell>
             <TableCell align="right">{t('fixed_expenses_section')} ({currency})</TableCell>
-            <TableCell align="right">{t('variable_expenses_section')} ({currency})</TableCell>
             <TableCell align="right">{t('labor_cost_section')} ({currency})</TableCell>
             <TableCell align="right">{t('depreciation')} ({currency})</TableCell>
             <TableCell align="right">{t('expense_total_row')} ({currency})</TableCell>
@@ -111,7 +109,6 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
                 <TableCell align="right">{Math.round(row.monthlySales).toLocaleString()}</TableCell>
                 <TableCell align="right">{Math.round(row.monthlyCost).toLocaleString()}</TableCell>
                 <TableCell align="right">{Math.round(row.fixedTotal).toLocaleString()}</TableCell>
-                <TableCell align="right">{Math.round(row.variableTotal).toLocaleString()}</TableCell>
                 <TableCell align="right">{Math.round(row.laborTotal ?? 0).toLocaleString()}</TableCell>
                 <TableCell align="right">{Math.round(row.depreciation ?? 0).toLocaleString()}</TableCell>
                 <TableCell align="right">{Math.round(row.totalExpense).toLocaleString()}</TableCell>
@@ -151,9 +148,6 @@ export default function ProfitLossYearlyTable({ projectId, year, currency }: Pro
             </TableCell>
             <TableCell align="right">
               <Typography fontWeight="bold">{Math.round(yearly.totalFixed).toLocaleString()}</Typography>
-            </TableCell>
-            <TableCell align="right">
-              <Typography fontWeight="bold">{Math.round(yearly.totalVariable).toLocaleString()}</Typography>
             </TableCell>
             <TableCell align="right">
               <Typography fontWeight="bold">

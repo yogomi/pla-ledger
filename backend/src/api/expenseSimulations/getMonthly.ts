@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
-  Project, FixedExpense, VariableExpense, SalesSimulationSnapshot, FixedExpenseMonth,
+  Project, FixedExpense, SalesSimulationSnapshot, FixedExpenseMonth,
   LaborCost, LaborCostMonth,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
@@ -16,9 +16,8 @@ import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
  * @description
  *   - 指定年月の経費シミュレーションデータを取得する
  *   - 売上原価はスナップショット（継承を含む）から取得する
- *   - 固定費・変動費・人件費は当月のデータを使用する
+ *   - 固定費・人件費は当月のデータを使用する
  *   - 固定費・人件費は未保存月のみ直近の過去月データを継承する（空保存後は継承しない）
- *   - 変動費は継承しない（当月データのみ返す）
  *   - viewer 以上の権限が必要
  *
  * @request
@@ -32,7 +31,7 @@ import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
  *   { success: false, code: 'invalid_query', message: エラー内容, data: null }
  *
  * @response
- *   成功時: { success: true, code: '', message: 'OK', data: { yearMonth, isInherited, monthlySales, monthlyCost, fixedExpenses, fixedTotal, variableExpenses, variableTotal, laborTotal, totalExpense, operatingProfit } }
+ *   成功時: { success: true, code: '', message: 'OK', data: { yearMonth, isInherited, monthlySales, monthlyCost, fixedExpenses, fixedTotal, laborTotal, totalExpense, operatingProfit } }
  *   失敗時:
  *     - 400: { success: false, code: 'invalid_query', message: エラー内容, data: null }
  *     - 401: { success: false, code: 'unauthorized', message: 'No token provided', data: null }
@@ -51,8 +50,6 @@ import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
  *       "monthlyCost": 500000,
  *       "fixedExpenses": [{ "id": "uuid", "categoryName": "人件費", "amount": 300000, "description": null }],
  *       "fixedTotal": 300000,
- *       "variableExpenses": [{ "id": "uuid", "categoryName": "減価償却費", "amount": 50000, "description": null }],
- *       "variableTotal": 50000,
  *       "totalExpense": 850000,
  *       "operatingProfit": 400000
  *     }
@@ -147,11 +144,6 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
     }
   }
 
-  // 変動費取得（継承なし）
-  const variableExpenses = await VariableExpense.findAll({
-    where: { project_id: projectId, year_month: yearMonth },
-  });
-
   // 人件費取得
   let laborCosts = await LaborCost.findAll({
     where: { project_id: projectId, year_month: yearMonth },
@@ -177,12 +169,11 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
   }
 
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const laborTotal = laborCosts.reduce(
     (sum, lc) => sum + calcLaborMonthlyTotal(lc, socialInsuranceRate),
     0,
   );
-  const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal;
+  const totalExpense = monthlyCost + fixedTotal + laborTotal;
   const operatingProfit = monthlySales - totalExpense;
 
   res.json({
@@ -201,13 +192,6 @@ router.get('/monthly', authenticate, async (req: AuthRequest, res: Response) => 
         description: e.description,
       })),
       fixedTotal,
-      variableExpenses: variableExpenses.map(e => ({
-        id: e.id,
-        categoryName: e.category_name,
-        amount: Number(e.amount),
-        description: e.description,
-      })),
-      variableTotal,
       laborTotal,
       totalExpense,
       operatingProfit,

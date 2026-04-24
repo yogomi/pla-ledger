@@ -395,42 +395,6 @@ FixedExpense.init({
   description: { type: DataTypes.TEXT, defaultValue: null },
 }, { sequelize, tableName: 'fixed_expenses', underscored: true });
 
-// ========== VariableExpense ==========
-interface VariableExpenseAttributes {
-  id: string;
-  project_id: string;
-  year_month: string;
-  category_name: string;
-  amount: number;
-  description: string | null;
-  created_at?: Date;
-  updated_at?: Date;
-}
-type VariableExpenseCreation = Optional<
-  VariableExpenseAttributes,
-  'id' | 'amount' | 'description'
->;
-
-export class VariableExpense
-  extends Model<VariableExpenseAttributes, VariableExpenseCreation>
-  implements VariableExpenseAttributes {
-  declare id: string;
-  declare project_id: string;
-  declare year_month: string;
-  declare category_name: string;
-  declare amount: number;
-  declare description: string | null;
-}
-
-VariableExpense.init({
-  id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-  project_id: { type: DataTypes.UUID, allowNull: false },
-  year_month: { type: DataTypes.STRING(7), allowNull: false },
-  category_name: { type: DataTypes.STRING, allowNull: false },
-  amount: { type: DataTypes.DECIMAL(15, 2), defaultValue: 0 },
-  description: { type: DataTypes.TEXT, defaultValue: null },
-}, { sequelize, tableName: 'variable_expenses', underscored: true });
-
 // ========== FixedExpenseMonth ==========
 // 固定費が明示的に保存された年月を追跡するテーブル。
 // このレコードが存在する年月は前月からの継承を行わない。
@@ -703,8 +667,6 @@ SalesSimulationSnapshot.belongsTo(Project, { foreignKey: 'project_id' });
 Project.hasMany(FixedExpense, { foreignKey: 'project_id', as: 'fixedExpenses' });
 FixedExpense.belongsTo(Project, { foreignKey: 'project_id' });
 
-Project.hasMany(VariableExpense, { foreignKey: 'project_id', as: 'variableExpenses' });
-VariableExpense.belongsTo(Project, { foreignKey: 'project_id' });
 
 Project.hasMany(Loan, { foreignKey: 'project_id', as: 'loans' });
 Loan.belongsTo(Project, { foreignKey: 'project_id' });

@@ -27,6 +27,9 @@ function addYears(yearMonth: string, delta: number): string {
   return `${Number(y) + delta}-${m}`;
 }
 
+const MIN_YEAR_MONTH = '2025-01';
+const MAX_YEAR_MONTH = '2035-12';
+
 /**
  * 売上シミュレーション用のページネーションコンポーネント。
  * 月次/年次の切り替えと前後ナビゲーションを提供する。
@@ -41,7 +44,16 @@ export default function SalesSimulationPagination({
   const { t } = useTranslation();
   const [year, month] = yearMonth.split('-');
 
+  const isPrevDisabled = viewMode === 'monthly'
+    ? yearMonth <= MIN_YEAR_MONTH
+    : Number(year) <= Number(MIN_YEAR_MONTH.split('-')[0]);
+
+  const isNextDisabled = viewMode === 'monthly'
+    ? yearMonth >= MAX_YEAR_MONTH
+    : Number(year) >= Number(MAX_YEAR_MONTH.split('-')[0]);
+
   const handlePrev = () => {
+    if (isPrevDisabled) return;
     if (viewMode === 'monthly') {
       onYearMonthChange(addMonths(yearMonth, -1));
     } else {
@@ -50,6 +62,7 @@ export default function SalesSimulationPagination({
   };
 
   const handleNext = () => {
+    if (isNextDisabled) return;
     if (viewMode === 'monthly') {
       onYearMonthChange(addMonths(yearMonth, 1));
     } else {
@@ -78,13 +91,13 @@ export default function SalesSimulationPagination({
         </ToggleButtonGroup>
       )}
       <Box display="flex" alignItems="center">
-        <IconButton size="small" onClick={handlePrev} aria-label={t('prev')}>
+        <IconButton size="small" onClick={handlePrev} disabled={isPrevDisabled} aria-label={t('prev')}>
           <ChevronLeftIcon />
         </IconButton>
         <Typography variant="subtitle1" sx={{ minWidth: '100px', textAlign: 'center' }}>
           {label}
         </Typography>
-        <IconButton size="small" onClick={handleNext} aria-label={t('next')}>
+        <IconButton size="small" onClick={handleNext} disabled={isNextDisabled} aria-label={t('next')}>
           <ChevronRightIcon />
         </IconButton>
       </Box>

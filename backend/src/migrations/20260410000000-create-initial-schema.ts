@@ -497,50 +497,6 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     { unique: true },
   );
 
-  // ========== variable_expenses ==========
-  await queryInterface.createTable('variable_expenses', {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-      allowNull: false,
-    },
-    project_id: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: { model: 'projects', key: 'id' },
-      onUpdate: 'CASCADE',
-      onDelete: 'CASCADE',
-    },
-    year_month: {
-      type: DataTypes.STRING(7),
-      allowNull: false,
-    },
-    category_name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    amount: {
-      type: DataTypes.DECIMAL(15, 2),
-      allowNull: false,
-      defaultValue: 0,
-    },
-    description: {
-      type: DataTypes.TEXT,
-      defaultValue: null,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-  });
-
-  await queryInterface.addIndex('variable_expenses', ['project_id', 'year_month']);
-
   // ========== loans ==========
   await queryInterface.createTable('loans', {
     id: {
@@ -1074,7 +1030,6 @@ export async function down(queryInterface: QueryInterface): Promise<void> {
   await queryInterface.dropTable('labor_costs');
   await queryInterface.dropTable('loan_repayments');
   await queryInterface.dropTable('loans');
-  await queryInterface.dropTable('variable_expenses');
   await queryInterface.dropTable('fixed_expense_months');
   await queryInterface.dropTable('fixed_expenses');
   await queryInterface.dropTable('sales_simulation_snapshots');

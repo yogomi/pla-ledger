@@ -4,7 +4,7 @@ import { sequelize } from '../../models';
 import {
   Project, Permission, ProjectSection,
   SalesSimulationSnapshot,
-  FixedExpense, FixedExpenseMonth, VariableExpense,
+  FixedExpense, FixedExpenseMonth,
   Loan, LoanRepayment, LaborCost, LaborCostMonth,
   CashFlowMonthly, Comment, ActivityLog,
   FixedAsset, FixedAssetDepreciationSchedule, StartupCost,
@@ -182,17 +182,6 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       await Promise.all(exportData.fixedExpenseMonths.map(m => FixedExpenseMonth.create({
         project_id: newProjectId,
         year_month: m.year_month,
-      }, { transaction })));
-    }
-
-    // 変動費作成
-    if (exportData.variableExpenses.length > 0) {
-      await Promise.all(exportData.variableExpenses.map(e => VariableExpense.create({
-        project_id: newProjectId,
-        year_month: e.year_month,
-        category_name: e.category_name,
-        amount: e.amount,
-        description: e.description,
       }, { transaction })));
     }
 

@@ -7,7 +7,6 @@ import {
   getSalesSimulationYearly,
   getExpenseSimulationYearly,
   updateFixedExpenses,
-  updateVariableExpenses,
   deleteSalesSimulationMonthly,
   deleteFixedExpenses,
 } from '../api/salesSimulations';
@@ -94,23 +93,6 @@ export function useUpdateFixedExpenses(projectId: string) {
   return useMutation({
     mutationFn: ({ yearMonth, expenses }: { yearMonth: string; expenses: ExpenseInputItem[] }) =>
       updateFixedExpenses(projectId, yearMonth, expenses),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['expenseSimulation', projectId] });
-      void queryClient.invalidateQueries({ queryKey: ['expenseSimulationYearly', projectId] });
-      void queryClient.invalidateQueries({ queryKey: ['profitLoss', projectId] });
-    },
-  });
-}
-
-/**
- * 変動費を更新するミューテーションフック。
- * 保存後に該当月の経費キャッシュを無効化する。
- */
-export function useUpdateVariableExpenses(projectId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ yearMonth, expenses }: { yearMonth: string; expenses: ExpenseInputItem[] }) =>
-      updateVariableExpenses(projectId, yearMonth, expenses),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['expenseSimulation', projectId] });
       void queryClient.invalidateQueries({ queryKey: ['expenseSimulationYearly', projectId] });

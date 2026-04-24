@@ -19,7 +19,6 @@ import salesSimulationsRouter from './salesSimulations';
 import expenseSimulationsRouter from './expenseSimulations';
 import profitLossRouter from './profitLoss';
 import fixedExpensesRouter from './fixedExpenses';
-import variableExpensesRouter from './variableExpenses';
 import loansRouter from './loans';
 
 import laborCostsRouter from './laborCosts';
@@ -50,7 +49,6 @@ router.use('/:projectId/sales-simulations', salesSimulationsRouter);
 router.use('/:projectId/expense-simulations', expenseSimulationsRouter);
 router.use('/:projectId/profit-loss', profitLossRouter);
 router.use('/:projectId/fixed-expenses', fixedExpensesRouter);
-router.use('/:projectId/variable-expenses', variableExpensesRouter);
 router.use('/:projectId/loans', loansRouter);
 router.use('/:projectId/labor-costs', laborCostsRouter);
 router.use('/:projectId/cash-flow', cashFlowRouter);

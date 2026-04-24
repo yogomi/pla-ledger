@@ -88,20 +88,6 @@ export async function updateFixedExpenses(
 }
 
 /**
- * 指定月の変動費を保存する。
- * @param projectId プロジェクトID
- * @param yearMonth 年月 (YYYY-MM)
- * @param expenses 経費項目一覧
- */
-export async function updateVariableExpenses(
-  projectId: string,
-  yearMonth: string,
-  expenses: ExpenseInputItem[],
-): Promise<void> {
-  await api.put(`/projects/${projectId}/variable-expenses/${yearMonth}`, { expenses });
-}
-
-/**
  * 指定月の人件費データを取得する。
  * @param projectId プロジェクトID
  * @param yearMonth 年月 (YYYY-MM)

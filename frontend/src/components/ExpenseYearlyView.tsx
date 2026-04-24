@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Alert,
   Box,
@@ -43,7 +42,7 @@ const tooltipFormatter = (v: unknown) =>
 
 /**
  * 経費管理の年次表示コンポーネント。
- * 固定費・変動費・人件費のカテゴリー別年間集計表と月次推移グラフを表示する。
+ * 固定費・人件費のカテゴリー別年間集計表と月次推移グラフを表示する。
  */
 export default function ExpenseYearlyView({ projectId, year, currency }: ExpenseYearlyViewProps) {
   const { t } = useTranslation();
@@ -63,11 +62,10 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
 
   const allMonths = data.monthlyTotals.map(mt => mt.yearMonth);
 
-  /** 月次グラフ用データ（固定費・変動費・人件費） */
+  /** 月次グラフ用データ（固定費・人件費） */
   const chartData = data.monthlyTotals.map(mt => ({
     name: mt.yearMonth.split('-')[1],
     [t('fixed_expenses_section')]: mt.fixedTotal,
-    [t('variable_expenses_section')]: mt.variableTotal,
     [t('labor_cost_section')]: mt.laborTotal,
   }));
 
@@ -172,13 +170,6 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
         t('fixed_total_row'),
       )}
 
-      {/* 変動費カテゴリー別表 */}
-      {renderCategoryTable(
-        t('variable_expenses_section'),
-        data.variableByCategory,
-        t('variable_total_row'),
-      )}
-
       {/* 人件費月次表 */}
       <Paper variant="outlined" sx={{ overflow: 'auto', mb: 3 }}>
         <Box p={2} borderBottom={1} borderColor="divider">
@@ -252,19 +243,6 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
               </TableCell>
             </TableRow>
             <TableRow>
-              <TableCell>{t('variable_total_row')}</TableCell>
-              {data.monthlyTotals.map(mt => (
-                <TableCell key={mt.yearMonth} align="right">
-                  {Math.round(mt.variableTotal).toLocaleString()}
-                </TableCell>
-              ))}
-              <TableCell align="right">
-                <Typography fontWeight="bold">
-                  {Math.round(data.yearlyTotals.totalVariable).toLocaleString()}
-                </Typography>
-              </TableCell>
-            </TableRow>
-            <TableRow>
               <TableCell>{t('labor_total_row')}</TableCell>
               {data.monthlyTotals.map(mt => (
                 <TableCell key={mt.yearMonth} align="right">
@@ -313,11 +291,6 @@ export default function ExpenseYearlyView({ projectId, year, currency }: Expense
             dataKey={t('fixed_expenses_section')}
             stackId="expense"
             fill="#f44336"
-          />
-          <Bar
-            dataKey={t('variable_expenses_section')}
-            stackId="expense"
-            fill="#ff9800"
           />
           <Bar
             dataKey={t('labor_cost_section')}

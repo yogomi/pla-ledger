@@ -50,8 +50,6 @@ export interface ExpenseSimulationData {
   monthlyCost: number;
   fixedExpenses: ExpenseItem[];
   fixedTotal: number;
-  variableExpenses: ExpenseItem[];
-  variableTotal: number;
   laborTotal: number;
   totalExpense: number;
   operatingProfit: number;
@@ -63,7 +61,6 @@ export interface MonthlyProfitLoss {
   monthlySales: number;
   monthlyCost: number;
   fixedTotal: number;
-  variableTotal: number;
   laborTotal: number;
   depreciation: number;
   totalExpense: number;
@@ -85,7 +82,6 @@ export interface ProfitLossYearlyData {
     totalSales: number;
     totalCost: number;
     totalFixed: number;
-    totalVariable: number;
     totalLabor: number;
     totalDepreciation: number;
     totalExpense: number;
@@ -240,7 +236,6 @@ export interface ExpenseCategoryYearly {
 export interface ExpenseMonthlyTotal {
   yearMonth: string;
   fixedTotal: number;
-  variableTotal: number;
   laborTotal: number;
   totalExpense: number;
 }
@@ -249,12 +244,10 @@ export interface ExpenseMonthlyTotal {
 export interface ExpenseYearlyData {
   year: string;
   fixedByCategory: ExpenseCategoryYearly[];
-  variableByCategory: ExpenseCategoryYearly[];
   laborMonths: ExpenseCategoryMonthly[];
   monthlyTotals: ExpenseMonthlyTotal[];
   yearlyTotals: {
     totalFixed: number;
-    totalVariable: number;
     totalLabor: number;
     totalExpense: number;
   };

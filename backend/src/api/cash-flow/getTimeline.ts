@@ -10,9 +10,9 @@ import { YearMonthSchema } from '../../schemas/salesSimulation';
 /**
  * @api {GET} /api/projects/:projectId/cash-flow/timeline タイムライン一括取得
  * @description
- *   - 指定基準月（base）の前後24ヶ月の範囲内で、コメント（note_ja または note_en）が
+ *   - 指定基準月（base）の前12ヶ月・後60ヶ月の範囲内で、コメント（note_ja または note_en）が
  *     存在する月のデータを一括取得して返す。
- *   - 49件の並列リクエストを回避するための一括取得エンドポイント。
+ *   - 複数月の並列リクエストを回避するための一括取得エンドポイント。
  *   - viewer 以上の権限が必要。
  *
  * @request
@@ -57,11 +57,11 @@ const QuerySchema = z.object({
   base: YearMonthSchema,
 });
 
-/** YYYY-MM 形式の年月から前後 N ヶ月の範囲 [from, to] を生成する */
-function buildMonthRange(base: string, months: number): { from: string; to: string } {
+/** YYYY-MM 形式の年月から前 before ヶ月・後 after ヶ月の範囲 [from, to] を生成する */
+function buildMonthRange(base: string, before: number, after: number): { from: string; to: string } {
   const [y, m] = base.split('-').map(Number);
-  const fromTotal = (y - 1) * 12 + (m - 1) - months;
-  const toTotal = (y - 1) * 12 + (m - 1) + months;
+  const fromTotal = (y - 1) * 12 + (m - 1) - before;
+  const toTotal = (y - 1) * 12 + (m - 1) + after;
 
   const fromYear = Math.floor(fromTotal / 12) + 1;
   const fromMonth = (fromTotal % 12) + 1;
@@ -110,7 +110,7 @@ router.get('/timeline', authenticate, async (req: AuthRequest, res: Response) =>
     return;
   }
 
-  const { from, to } = buildMonthRange(base, 24);
+  const { from, to } = buildMonthRange(base, 12, 60);
 
   const records = await CashFlowMonthly.findAll({
     where: {

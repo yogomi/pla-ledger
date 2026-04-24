@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
   Project, CashFlowMonthly, LoanRepayment, Loan,
-  SalesSimulationSnapshot, FixedExpense, VariableExpense, LaborCost, LaborCostMonth, FixedExpenseMonth,
+  SalesSimulationSnapshot, FixedExpense, LaborCost, LaborCostMonth, FixedExpenseMonth,
   StartupCost,
 } from '../../models';
 import { authenticate, AuthRequest } from '../../middleware/auth';
@@ -67,10 +67,6 @@ async function fetchProfitAndInterest(
     }
   }
 
-  const variableExpenses = await VariableExpense.findAll({
-    where: { project_id: projectId, year_month: yearMonth },
-  });
-
   let laborCosts = await LaborCost.findAll({
     where: { project_id: projectId, year_month: yearMonth },
   });
@@ -92,7 +88,6 @@ async function fetchProfitAndInterest(
   }
 
   const fixedTotal = fixedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const variableTotal = variableExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   const project = await Project.findByPk(projectId, { attributes: ['social_insurance_rate'] });
   const socialInsuranceRate = Number(project?.social_insurance_rate ?? 0);
   const laborTotal = laborCosts.reduce(
@@ -101,7 +96,7 @@ async function fetchProfitAndInterest(
   );
   // 減価償却費は営業利益の計算に含める（損益計算書と一致させるため）
   const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
-  const totalExpense = monthlyCost + fixedTotal + variableTotal + laborTotal + depreciation;
+  const totalExpense = monthlyCost + fixedTotal + laborTotal + depreciation;
   const operatingProfit = monthlySales - totalExpense;
 
   // 利息支払額：当月の返済スケジュールから集計する

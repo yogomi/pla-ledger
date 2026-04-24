@@ -63,19 +63,6 @@ export const FixedExpensesUpdateSchema = z.object({
   expenses: z.array(FixedExpenseItemSchema),
 });
 
-/** 変動費アイテム */
-export const VariableExpenseItemSchema = z.object({
-  categoryName: z.string().min(1),
-  amount: z.number().min(0),
-  description: z.string().nullable().optional(),
-});
-
-/** 変動費更新リクエストボディ */
-export const VariableExpensesUpdateSchema = z.object({
-  expenses: z.array(VariableExpenseItemSchema),
-});
-
 export type ItemSnapshot = z.infer<typeof ItemSnapshotSchema>;
 export type SalesSimulationUpdate = z.infer<typeof SalesSimulationUpdateSchema>;
 export type FixedExpenseItem = z.infer<typeof FixedExpenseItemSchema>;
-export type VariableExpenseItem = z.infer<typeof VariableExpenseItemSchema>;

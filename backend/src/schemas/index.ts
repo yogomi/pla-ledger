@@ -123,17 +123,6 @@ const FixedExpenseMonthDataSchema = z.object({
   created_at: z.string().optional(),
 });
 
-const VariableExpenseDataSchema = z.object({
-  id: z.string(),
-  project_id: z.string(),
-  year_month: z.string(),
-  category_name: z.string(),
-  amount: z.coerce.number(),
-  description: z.string().nullable(),
-  created_at: z.string().optional(),
-  updated_at: z.string().optional(),
-});
-
 const LoanDataSchema = z.object({
   id: z.string(),
   project_id: z.string(),
@@ -294,7 +283,6 @@ export const ProjectExportSchema = z.object({
   salesSnapshots: z.array(SalesSimulationSnapshotDataSchema),
   fixedExpenses: z.array(FixedExpenseDataSchema),
   fixedExpenseMonths: z.array(FixedExpenseMonthDataSchema),
-  variableExpenses: z.array(VariableExpenseDataSchema),
   loans: z.array(LoanDataSchema),
   loanRepayments: z.array(LoanRepaymentDataSchema),
   laborCosts: z.array(LaborCostDataSchema),
