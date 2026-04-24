@@ -374,7 +374,25 @@ export default function SimulationViewContainer({
   canEdit = false,
 }: SimulationViewContainerProps) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState(0);
+
+  // 表示側タブの概念 ID 順（入力側とインデックスが異なる）
+  const VIEW_TABS = ['sales', 'expense', 'loans', 'cashflow', 'profit_loss'] as const;
+  // 入力側にない概念 ID を表示側の最近傍にフォールバック
+  const VIEW_FALLBACK: Record<string, string> = { fixed_assets: 'expense' };
+
+  const [tab, setTab] = useState(() => {
+    const stored = localStorage.getItem(`simTab_${projectId}`);
+    if (!stored) return 0;
+    const mapped = VIEW_FALLBACK[stored] ?? stored;
+    const idx = VIEW_TABS.indexOf(mapped as typeof VIEW_TABS[number]);
+    return idx >= 0 ? idx : 0;
+  });
+
+  const handleTabChange = (_e: React.SyntheticEvent, v: number) => {
+    setTab(v);
+    localStorage.setItem(`simTab_${projectId}`, VIEW_TABS[v]);
+  };
+
   const [viewMode, setViewMode] = useState<'monthly' | 'yearly' | 'longterm'>(() => {
     const cached = localStorage.getItem(`sim_viewMode_${projectId}`);
     if (cached === 'monthly' || cached === 'yearly' || cached === 'longterm') return cached;
@@ -403,7 +421,7 @@ export default function SimulationViewContainer({
   return (
     <Box>
       <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" mb={2}>
-        <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
+        <Tabs value={tab} onChange={handleTabChange}>
           <Tab label={t('sales_simulation_tab')} />
           <Tab label={t('expense_management_tab')} />
           <Tab label={t('loan_management_tab')} />

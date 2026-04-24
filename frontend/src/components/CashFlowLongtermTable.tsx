@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import {
   Alert,
@@ -23,6 +24,13 @@ import { CashFlowYearlyData } from '../types/CashFlow';
 
 const yFmt = (v: unknown) => typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
+/** オートスクロールの速度 (px/秒) */
+const SCROLL_SPEED = 30;
+/** 先頭でスクロール開始前の待機時間 (ms) */
+const SCROLL_START_PAUSE_MS = 3000;
+/** 最下部到達後、先頭に戻るまでの待機時間 (ms) */
+const SCROLL_BOTTOM_PAUSE_MS = 2000;
+
 interface CashFlowLongtermTableProps {
   projectId: string;
   /** 表示開始年 (YYYY)。 */
@@ -42,6 +50,7 @@ type RowDef = {
 /**
  * キャッシュフローの長期展望コンポーネント。
  * 指定開始年から yearsCount 年分の年次キャッシュフロー合計を表示する。
+ * グラフホバー時にその年の月次コメントをオートスクロールで表示する。
  */
 export default function CashFlowLongtermTable({
   projectId,
@@ -49,7 +58,9 @@ export default function CashFlowLongtermTable({
   yearsCount,
   currency,
 }: CashFlowLongtermTableProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const [activeYear, setActiveYear] = useState<string | null>(null);
+  const commentScrollRef = useRef<HTMLDivElement>(null);
   const years = Array.from({ length: yearsCount }, (_, i) => String(Number(startYear) + i));
 
   const results = useQueries({
@@ -59,6 +70,55 @@ export default function CashFlowLongtermTable({
       enabled: Boolean(projectId) && Boolean(year),
     })),
   });
+
+  // activeYear が変わるたびにスクロール位置をリセットしてオートスクロール開始
+  useEffect(() => {
+    const el = commentScrollRef.current;
+    if (!el) return;
+
+    el.scrollTop = 0;
+    if (el.scrollHeight <= el.clientHeight) return;
+
+    let animId: number;
+    let timeoutId: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+    let lastTs: number | null = null;
+
+    const startScroll = () => {
+      lastTs = null;
+      animId = requestAnimationFrame(tick);
+    };
+
+    const tick = (ts: number) => {
+      if (cancelled || !commentScrollRef.current) return;
+      const target = commentScrollRef.current;
+      if (lastTs !== null) {
+        target.scrollTop += (SCROLL_SPEED * (ts - lastTs)) / 1000;
+      }
+      lastTs = ts;
+
+      if (target.scrollTop + target.clientHeight >= target.scrollHeight - 1) {
+        // 最下部：2秒待ち → 先頭へ → 3秒待ち → スクロール再開
+        timeoutId = setTimeout(() => {
+          if (cancelled || !commentScrollRef.current) return;
+          commentScrollRef.current.scrollTop = 0;
+          timeoutId = setTimeout(() => {
+            if (!cancelled) startScroll();
+          }, SCROLL_START_PAUSE_MS);
+        }, SCROLL_BOTTOM_PAUSE_MS);
+      } else {
+        animId = requestAnimationFrame(tick);
+      }
+    };
+
+    // 先頭で3秒待ってからスクロール開始
+    timeoutId = setTimeout(startScroll, SCROLL_START_PAUSE_MS);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(animId);
+      clearTimeout(timeoutId);
+    };
+  }, [activeYear]);
 
   const isLoading = results.some(r => r.isLoading);
   const isError = results.some(r => r.isError);
@@ -76,28 +136,11 @@ export default function CashFlowLongtermTable({
   }
 
   const rows: RowDef[] = [
-    {
-      label: t('operating_cf'),
-      getValue: data => data?.yearly.totalOperatingCF ?? 0,
-    },
-    {
-      label: t('investing_cf'),
-      getValue: data => data?.yearly.totalInvestingCF ?? 0,
-    },
-    {
-      label: t('financing_cf'),
-      getValue: data => data?.yearly.totalFinancingCF ?? 0,
-    },
-    {
-      label: t('net_cash_change'),
-      getValue: data => data?.yearly.netCashChange ?? 0,
-      bold: true,
-    },
-    {
-      label: t('cash_ending'),
-      getValue: data => data?.yearly.cashEnding ?? 0,
-      bold: true,
-    },
+    { label: t('operating_cf'), getValue: data => data?.yearly.totalOperatingCF ?? 0 },
+    { label: t('investing_cf'), getValue: data => data?.yearly.totalInvestingCF ?? 0 },
+    { label: t('financing_cf'), getValue: data => data?.yearly.totalFinancingCF ?? 0 },
+    { label: t('net_cash_change'), getValue: data => data?.yearly.netCashChange ?? 0, bold: true },
+    { label: t('cash_ending'), getValue: data => data?.yearly.cashEnding ?? 0, bold: true },
   ];
 
   const chartData = years.map((year, i) => ({
@@ -108,6 +151,12 @@ export default function CashFlowLongtermTable({
     [t('cash_ending')]: results[i].data?.yearly.cashEnding ?? 0,
   }));
 
+  // ホバー中の年のコメント付き月を言語に合わせて抽出
+  const isJa = i18n.language === 'ja';
+  const activeIdx = activeYear ? years.indexOf(activeYear) : -1;
+  const activeData = activeIdx >= 0 ? results[activeIdx].data : null;
+  const notedMonths = (activeData?.months ?? []).filter(m => isJa ? m.noteJa : m.noteEn);
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
@@ -115,7 +164,16 @@ export default function CashFlowLongtermTable({
       </Typography>
 
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData} margin={{ top: 4, right: 16, left: 16, bottom: 4 }}>
+        <LineChart
+          data={chartData}
+          margin={{ top: 4, right: 16, left: 16, bottom: 4 }}
+          onMouseMove={state => {
+            if (state.isTooltipActive && state.activeLabel) {
+              setActiveYear(state.activeLabel as string);
+            }
+          }}
+          onMouseLeave={() => setActiveYear(null)}
+        >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis tickFormatter={yFmt} width={90} />
@@ -124,9 +182,61 @@ export default function CashFlowLongtermTable({
           <Line type="monotone" dataKey={t('operating_cf')} stroke="#4caf50" dot={false} />
           <Line type="monotone" dataKey={t('investing_cf')} stroke="#f44336" dot={false} />
           <Line type="monotone" dataKey={t('financing_cf')} stroke="#2196f3" dot={false} />
-          <Line type="monotone" dataKey={t('cash_ending')} stroke="#9c27b0" strokeWidth={2} dot={false} />
+          <Line
+            type="monotone"
+            dataKey={t('cash_ending')}
+            stroke="#9c27b0"
+            strokeWidth={2}
+            dot={false}
+          />
         </LineChart>
       </ResponsiveContainer>
+
+      {/* ホバーした年のコメントエリア。グラフから離れても最後の年を表示し続ける。 */}
+      <Box
+        sx={{
+          mt: 1,
+          mb: 1,
+          minHeight: 56,
+          transition: 'opacity 0.2s',
+          opacity: activeYear ? 1 : 0,
+        }}
+      >
+        {activeYear && (
+          <Paper variant="outlined" sx={{ px: 2, pt: 1, pb: 0.5, bgcolor: 'grey.50' }}>
+            {/* 年ラベル（固定ヘッダー） */}
+            <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+              {t('year_label', { year: activeYear })} — {t('cf_comment_label')}
+            </Typography>
+            {/* コメント一覧（オートスクロール対象） */}
+            <Box
+              ref={commentScrollRef}
+              sx={{ maxHeight: 130, overflowY: 'hidden', pb: 0.5 }}
+            >
+              {notedMonths.length === 0 ? (
+                <Typography variant="body2" color="text.disabled">
+                  {t('no_comment')}
+                </Typography>
+              ) : (
+                notedMonths.map(m => (
+                  <Box key={m.yearMonth} display="flex" gap={1} mb={0.25}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ flexShrink: 0, minWidth: 32 }}
+                    >
+                      {m.yearMonth.slice(5)}
+                    </Typography>
+                    <Typography variant="body2">
+                      {isJa ? m.noteJa : m.noteEn}
+                    </Typography>
+                  </Box>
+                ))
+              )}
+            </Box>
+          </Paper>
+        )}
+      </Box>
 
       <Divider sx={{ my: 2 }} />
       <TableContainer component={Paper} sx={{ overflow: 'auto' }}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Box, Tab, Tabs } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import SalesSimulationPagination from './SalesSimulationPagination';
@@ -31,12 +31,29 @@ export default function SimulationSheetContainer({
   currency,
 }: SimulationSheetContainerProps) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState(0);
+
+  // 入力側タブの概念 ID 順（表示側とインデックスが異なる）
+  const INPUT_TABS = ['sales', 'expense', 'fixed_assets', 'loans', 'cashflow'] as const;
+  // 表示側にない概念 ID を入力側の最近傍にフォールバック
+  const INPUT_FALLBACK: Record<string, string> = { profit_loss: 'sales' };
+
+  const [tab, setTab] = useState(() => {
+    const stored = localStorage.getItem(`simTab_${projectId}`);
+    if (!stored) return 0;
+    const mapped = INPUT_FALLBACK[stored] ?? stored;
+    const idx = INPUT_TABS.indexOf(mapped as typeof INPUT_TABS[number]);
+    return idx >= 0 ? idx : 0;
+  });
+
+  const handleTabChange = (_e: React.SyntheticEvent, v: number) => {
+    setTab(v);
+    localStorage.setItem(`simTab_${projectId}`, INPUT_TABS[v]);
+  };
 
   return (
     <Box>
       <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" mb={2}>
-        <Tabs value={tab} onChange={(_e, v: number) => setTab(v)}>
+        <Tabs value={tab} onChange={handleTabChange}>
           <Tab label={t('sales_simulation_tab')} />
           <Tab label={t('expense_management_tab')} />
           <Tab label={t('fixed_asset_management_tab')} />

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box, Typography, CircularProgress, Alert, Chip, Button, Divider,
   Paper, Grid, TextField, List, ListItem, ListItemText, Tab, Tabs, Snackbar,
@@ -16,7 +16,6 @@ import { z } from 'zod';
 import { useAuth } from '../app/AuthContext';
 import api from '../utils/api';
 import StartupCostTable, { StartupCostItem } from '../components/StartupCostTable';
-import StartupCostSummaryTable from '../components/StartupCostSummaryTable';
 import StartupCostDetailPanel from '../components/StartupCostDetailPanel';
 import SimulationViewContainer from '../components/SimulationViewContainer';
 import SimulationSheetContainer from '../components/SimulationSheetContainer';
@@ -26,18 +25,10 @@ import { getStartupCosts, updateStartupCosts } from '../api/startupCosts';
 import { getCashFlowMonthly } from '../api/cashFlow';
 import { useLoans } from '../hooks/useLoan';
 
-interface Comment { id: string; author_id: string; body: string; created_at: string; }
-interface Version {
-  id: string;
-  created_by: string;
-  summary: string | null;
-  created_at: string;
-}
-interface Section { id: string; type: string; content: Record<string, unknown>; version: number; }
 interface Project {
   id: string; title: string; summary: string | null;
   visibility: string; currency: string; tags: string[];
-  owner_id: string; sections: Section[];
+  owner_id: string;
   social_insurance_rate: number | null;
   planned_opening_date: string | null;
 }
@@ -78,13 +69,8 @@ export default function ProjectViewPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [owner, setOwner] = useState<{ id: string; name: string; email: string } | null>(null);
   const [role, setRole] = useState<string | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [commentBody, setCommentBody] = useState('');
-  const [innerTabValue, setInnerTabValue] = useState(0);
-
   /** Simulation / Simulation Input タブ間で共有する年月 (YYYY-MM)。プロジェクト別に localStorage でキャッシュする。 */
   const [simulationYearMonth, setSimulationYearMonth] = useState(() => {
     const cached = localStorage.getItem(`sim_yearMonth_${id}`);
@@ -132,20 +118,16 @@ export default function ProjectViewPage() {
   const [grantUserId, setGrantUserId] = useState('');
   const [grantRole, setGrantRole] = useState<'editor' | 'viewer'>('viewer');
 
-  /** プロジェクト情報・コメント・バージョンを並行取得 */
+  /** プロジェクト情報を取得 */
   useEffect(() => {
     Promise.all([
       api.get(`/projects/${id}`),
-      api.get(`/projects/${id}/comments`),
-      api.get(`/projects/${id}/versions`),
       getStartupCosts(id!),
-    ]).then(([pRes, cRes, vRes, startupCosts]) => {
+    ]).then(([pRes, startupCosts]) => {
       const p = pRes.data.data.project;
       setProject(p);
       setOwner(pRes.data.data.owner);
       setRole(pRes.data.data.role);
-      setComments(cRes.data.data.comments);
-      setVersions(vRes.data.data.versions);
       setStartupCostItems(startupCosts);
 
       // 編集フォームに既存データを反映
@@ -189,17 +171,6 @@ export default function ProjectViewPage() {
       loadAccessData();
     }
   }, [activeTab, id]);
-
-  const handleAddComment = async () => {
-    if (!commentBody.trim()) return;
-    try {
-      const r = await api.post(`/projects/${id}/comments`, { body: commentBody });
-      setComments(prev => [...prev, r.data.data.comment]);
-      setCommentBody('');
-    } catch {
-      alert('Failed to add comment');
-    }
-  };
 
   const handleDelete = async () => {
     if (!window.confirm('Delete this project?')) return;
@@ -306,11 +277,11 @@ export default function ProjectViewPage() {
   const isOwner = user?.id === project.owner_id;
   const canEdit = role === 'owner' || role === 'editor';
   const canView = Boolean(role) || project.visibility === 'public';
-  const financeSection = project.sections?.find(s => s.type === 'finances');
 
   /** 権限に応じて表示するタブ一覧を構築 */
   const visibleTabs = [
     { value: 'project', label: t('project_tab') },
+    ...(canView ? [{ value: 'startup-costs-view', label: t('startup_costs_tab') }] : []),
     ...(canView ? [{ value: 'simulation', label: t('simulation') }] : []),
     ...(canEdit ? [{ value: 'simulation-input', label: t('simulation_edit') }] : []),
     ...(canEdit ? [{ value: 'startup-costs', label: t('startup_costs_input') }] : []),
@@ -384,7 +355,7 @@ export default function ProjectViewPage() {
         </Tabs>
       </Paper>
 
-      {/* ===== Project タブ ===== */}
+      {/* ===== Project タブ（タイムラインのみ） ===== */}
       {activeTab === 'project' && (
         <Box>
           {project.summary && (
@@ -397,7 +368,20 @@ export default function ProjectViewPage() {
               {project.tags.map(tag => <Chip key={tag} label={tag} size="small" />)}
             </Box>
           )}
-          {/* 財務サマリーカード */}
+          <Paper elevation={1} sx={{ p: 2 }}>
+            <Typography variant="h6" mb={2}>{t('timeline')}</Typography>
+            <ProjectTimeline
+              projectId={id!}
+              plannedOpeningDate={project.planned_opening_date}
+              enabled={canView}
+            />
+          </Paper>
+        </Box>
+      )}
+
+      {/* ===== Startup Costs View タブ ===== */}
+      {activeTab === 'startup-costs-view' && canView && (
+        <Box>
           <FinancialSummaryCards
             startupCostItems={startupCostItems}
             openingCapital={openingCapital}
@@ -405,98 +389,8 @@ export default function ProjectViewPage() {
             currency={project.currency}
             loans={loanData?.loans ?? []}
           />
-          <Divider sx={{ mb: 2 }} />
-          <Tabs value={innerTabValue} onChange={(_, v) => setInnerTabValue(v)} sx={{ mb: 2 }}>
-            <Tab label={t('plan_overview')} />
-            <Tab label={t('startup_costs_tab')} />
-            <Tab label={t('comments')} />
-            <Tab label={t('versions')} />
-          </Tabs>
-
-          {innerTabValue === 0 && (
-            <Grid container spacing={2}>
-              {/* 事業タイムライン（キャッシュフローコメント時系列） */}
-              <Grid item xs={12}>
-                <Paper elevation={1} sx={{ p: 2 }}>
-                  <Typography variant="h6" mb={2}>{t('timeline')}</Typography>
-                  <ProjectTimeline
-                    projectId={id!}
-                    plannedOpeningDate={project.planned_opening_date}
-                    enabled={canView}
-                  />
-                </Paper>
-              </Grid>
-              {financeSection && (
-                <Grid item xs={12}>
-                  <Paper elevation={1} sx={{ p: 2 }}>
-                    <Typography variant="h6" mb={2}>{t('startup_costs_section')}</Typography>
-                    <StartupCostSummaryTable
-                      items={startupCostItems}
-                      currency={project.currency}
-                    />
-                  </Paper>
-                </Grid>
-              )}
-            </Grid>
-          )}
-
-          {innerTabValue === 1 && (
-            <Box>
-              <StartupCostDetailPanel items={startupCostItems} currency={project.currency} />
-            </Box>
-          )}
-
-          {innerTabValue === 2 && (
-            <Box>
-              <List>
-                {comments.map(c => (
-                  <ListItem key={c.id} alignItems="flex-start" divider>
-                    <ListItemText
-                      primary={c.body}
-                      secondary={new Date(c.created_at).toLocaleString()}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-              {user && (
-                <Box mt={2} display="flex" gap={2}>
-                  <TextField
-                    value={commentBody}
-                    onChange={e => setCommentBody(e.target.value)}
-                    label={t('add_comment')}
-                    fullWidth
-                    multiline
-                    rows={2}
-                  />
-                  <Button
-                    variant="contained"
-                    onClick={handleAddComment}
-                    sx={{ alignSelf: 'flex-end' }}
-                  >
-                    {t('submit')}
-                  </Button>
-                </Box>
-              )}
-              {!user && (
-                <Typography color="text.secondary" mt={2}>
-                  <RouterLink to="/signin">Sign in</RouterLink> to comment.
-                </Typography>
-              )}
-            </Box>
-          )}
-
-          {innerTabValue === 3 && (
-            <List>
-              {versions.map(v => (
-                <ListItem key={v.id} divider>
-                  <ListItemText
-                    primary={v.summary ?? 'Version'}
-                    secondary={new Date(v.created_at).toLocaleString()}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
+          <Divider sx={{ my: 2 }} />
+          <StartupCostDetailPanel items={startupCostItems} currency={project.currency} />
         </Box>
       )}
 
