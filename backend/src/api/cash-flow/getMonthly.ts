@@ -554,6 +554,7 @@ router.get('/monthly/:yearMonth', authenticate, async (req: AuthRequest, res: Re
         intangible: startupTotals.intangible,
         founding: startupTotals.founding,
         marketing: startupTotals.marketing,
+        consumables: startupTotals.consumables,
         initialInventory: startupTotals.initialInventory,
       },
     },
