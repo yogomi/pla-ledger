@@ -77,10 +77,10 @@ export function useUpdateSalesSimulation(projectId: string) {
   return useMutation({
     mutationFn: ({ yearMonth, items }: { yearMonth: string; items: ItemInputData[] }) =>
       updateSalesSimulationMonthly(projectId, yearMonth, items),
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: ['salesSimulation', projectId, variables.yearMonth],
-      });
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['salesSimulation', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['salesSimulationYearly', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['profitLoss', projectId] });
     },
   });
 }
@@ -94,10 +94,10 @@ export function useUpdateFixedExpenses(projectId: string) {
   return useMutation({
     mutationFn: ({ yearMonth, expenses }: { yearMonth: string; expenses: ExpenseInputItem[] }) =>
       updateFixedExpenses(projectId, yearMonth, expenses),
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: ['expenseSimulation', projectId, variables.yearMonth],
-      });
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['expenseSimulation', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['expenseSimulationYearly', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['profitLoss', projectId] });
     },
   });
 }
@@ -111,10 +111,10 @@ export function useUpdateVariableExpenses(projectId: string) {
   return useMutation({
     mutationFn: ({ yearMonth, expenses }: { yearMonth: string; expenses: ExpenseInputItem[] }) =>
       updateVariableExpenses(projectId, yearMonth, expenses),
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: ['expenseSimulation', projectId, variables.yearMonth],
-      });
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['expenseSimulation', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['expenseSimulationYearly', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['profitLoss', projectId] });
     },
   });
 }
@@ -128,10 +128,10 @@ export function useDeleteSalesSimulationMonthly(projectId: string) {
   return useMutation({
     mutationFn: ({ yearMonth }: { yearMonth: string }) =>
       deleteSalesSimulationMonthly(projectId, yearMonth),
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: ['salesSimulation', projectId, variables.yearMonth],
-      });
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['salesSimulation', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['salesSimulationYearly', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['profitLoss', projectId] });
     },
   });
 }
@@ -145,10 +145,10 @@ export function useDeleteFixedExpenses(projectId: string) {
   return useMutation({
     mutationFn: ({ yearMonth }: { yearMonth: string }) =>
       deleteFixedExpenses(projectId, yearMonth),
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: ['expenseSimulation', projectId, variables.yearMonth],
-      });
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['expenseSimulation', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['expenseSimulationYearly', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['profitLoss', projectId] });
     },
   });
 }

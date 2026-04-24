@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -254,6 +254,9 @@ export default function SalesSimulationMonthlyEditor({
   const mutation = useUpdateSalesSimulation(projectId);
   const deleteMutation = useDeleteSalesSimulationMonthly(projectId);
 
+  // フォームの初期化済み年月を追跡し、再フェッチによる意図しないリセットを防ぐ
+  const initializedYearMonthRef = useRef<string | null>(null);
+
   // カテゴリ一覧をローカル状態で管理する（マスタAPIではなくスナップショットに直接反映）
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -268,9 +271,11 @@ export default function SalesSimulationMonthlyEditor({
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const watchedItems = useWatch({ control, name: 'items' }) ?? [];
 
-  // APIレスポンスでフォームとカテゴリ一覧を初期化する
+  // 年月が変わった時だけフォームとカテゴリ一覧を初期化する。
+  // data の再フェッチ（キャッシュ無効化）では初期化しない（未保存の編集を保護するため）。
   useEffect(() => {
-    if (data) {
+    if (data && initializedYearMonthRef.current !== yearMonth) {
+      initializedYearMonthRef.current = yearMonth;
       setCategories(data.categories.map(cat => ({
         categoryId: cat.categoryId,
         categoryName: cat.categoryName,
@@ -296,7 +301,7 @@ export default function SalesSimulationMonthlyEditor({
       );
       reset({ items: flat });
     }
-  }, [data, reset]);
+  }, [data, yearMonth, reset]);
 
   const onSubmit = (values: FormValues) => {
     mutation.mutate({ yearMonth, items: values.items });
@@ -391,19 +396,17 @@ export default function SalesSimulationMonthlyEditor({
     remove(idx);
   };
 
-  // カテゴリを order 順に並べ、各カテゴリに属するフィールドインデックスを付与する
-  const categoryGroups = useMemo(() =>
-    [...categories]
-      .sort((a, b) => a.categoryOrder - b.categoryOrder)
-      .map(cat => ({
-        ...cat,
-        fieldIndices: fields.reduce<number[]>((acc, f, idx) => {
-          if (f.categoryId === cat.categoryId) acc.push(idx);
-          return acc;
-        }, []),
-      })),
-    [categories, fields],
-  );
+  // カテゴリを order 順に並べ、各カテゴリに属するフィールドインデックスを付与する。
+  // useMemo を使わず毎レンダーで計算することで、append/remove 後の fields の更新を確実に反映する。
+  const categoryGroups = [...categories]
+    .sort((a, b) => a.categoryOrder - b.categoryOrder)
+    .map(cat => ({
+      ...cat,
+      fieldIndices: fields.reduce<number[]>((acc, f, idx) => {
+        if (f.categoryId === cat.categoryId) acc.push(idx);
+        return acc;
+      }, []),
+    }));
 
   if (isLoading) {
     return (
