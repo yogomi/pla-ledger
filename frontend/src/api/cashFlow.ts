@@ -51,7 +51,8 @@ export interface TimelineEntry {
 
 /**
  * タイムラインデータを一括取得する。
- * 基準月前後24ヶ月の範囲でコメントが存在する月のみを返す。
+ * 基準月の前12ヶ月・後60ヶ月の範囲でコメントが存在する月のみを返す。
+ * 期間定数は frontend/src/utils/timelinePeriod.ts で管理している。
  * @param projectId プロジェクトID
  * @param base 基準年月 (YYYY-MM)
  */

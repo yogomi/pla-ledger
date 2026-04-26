@@ -110,6 +110,9 @@ router.get('/timeline', optionalAuthenticate, async (req: AuthRequest, res: Resp
     return;
   }
 
+  // ★ この期間定数 (before=12, after=60) はフロントエンドと連動しています。
+  //    変更する場合は frontend/src/utils/timelinePeriod.ts の
+  //    TIMELINE_MONTHS_BEFORE / TIMELINE_MONTHS_AFTER も必ず同時に変更してください。
   const { from, to } = buildMonthRange(base, 12, 60);
 
   const records = await CashFlowMonthly.findAll({

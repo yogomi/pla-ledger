@@ -216,14 +216,14 @@ export default function CashFlowMonthlyEditor({
           <Box display="flex" flexDirection="column" gap={2}>
             <TextField
               label={`${t('profit_before_tax')} ${t('auto_linked')}`}
-              value={data?.operating.profitBeforeTax ?? 0}
+              value={Math.round(data?.operating.profitBeforeTax ?? 0)}
               disabled
               size="small"
               inputProps={{ style: { backgroundColor: '#f5f5f5' } }}
             />
             <TextField
               label={`${t('depreciation')} ${t('auto_linked')}`}
-              value={data?.operating.depreciation ?? 0}
+              value={Math.round(data?.operating.depreciation ?? 0)}
               disabled
               size="small"
               inputProps={{ style: { backgroundColor: '#f5f5f5' } }}
@@ -258,7 +258,7 @@ export default function CashFlowMonthlyEditor({
               size="small"
             />
             <Typography variant="subtitle1" fontWeight="bold">
-              {t('subtotal')}: {calculatedValues.operatingSubtotal.toLocaleString()}
+              {t('subtotal')}: {Math.round(calculatedValues.operatingSubtotal).toLocaleString()}
             </Typography>
           </Box>
         </AccordionDetails>
@@ -300,7 +300,7 @@ export default function CashFlowMonthlyEditor({
               size="small"
             />
             <Typography variant="subtitle1" fontWeight="bold">
-              {t('subtotal')}: {calculatedValues.investingSubtotal.toLocaleString()}
+              {t('subtotal')}: {Math.round(calculatedValues.investingSubtotal).toLocaleString()}
             </Typography>
           </Box>
         </AccordionDetails>
@@ -315,14 +315,14 @@ export default function CashFlowMonthlyEditor({
           <Box display="flex" flexDirection="column" gap={2}>
             <TextField
               label={`${t('borrowing_proceeds')} ${t('auto_linked')}`}
-              value={data?.financing.borrowingProceeds ?? 0}
+              value={Math.round(data?.financing.borrowingProceeds ?? 0)}
               disabled
               size="small"
               inputProps={{ style: { backgroundColor: '#f5f5f5' } }}
             />
             <TextField
               label={`${t('loan_repayment')} ${t('auto_linked')}`}
-              value={data?.financing.loanRepayment ?? 0}
+              value={Math.round(data?.financing.loanRepayment ?? 0)}
               disabled
               size="small"
               inputProps={{ style: { backgroundColor: '#f5f5f5' } }}
@@ -349,7 +349,7 @@ export default function CashFlowMonthlyEditor({
               size="small"
             />
             <Typography variant="subtitle1" fontWeight="bold">
-              {t('subtotal')}: {calculatedValues.financingSubtotal.toLocaleString()}
+              {t('subtotal')}: {Math.round(calculatedValues.financingSubtotal).toLocaleString()}
             </Typography>
           </Box>
         </AccordionDetails>
@@ -358,10 +358,10 @@ export default function CashFlowMonthlyEditor({
       {/* サマリー */}
       <Box mt={2} p={2} border={1} borderColor="divider" borderRadius={1}>
         <Typography variant="h6">
-          {t('net_cash_change')}: {calculatedValues.netCashChange.toLocaleString()}
+          {t('net_cash_change')}: {Math.round(calculatedValues.netCashChange).toLocaleString()}
         </Typography>
         <Typography>
-          {t('cash_ending')}: {calculatedValues.cashEnding.toLocaleString()}
+          {t('cash_ending')}: {Math.round(calculatedValues.cashEnding).toLocaleString()}
         </Typography>
       </Box>
 
@@ -382,7 +382,7 @@ export default function CashFlowMonthlyEditor({
               {(['equipment', 'renovation', 'deposit', 'intangible'] as const).map(k =>
                 data.startupCostBreakdown[k] !== 0 ? (
                   <Typography key={k} variant="body2" sx={{ pl: 1 }}>
-                    {t(`cost_type_${k}`)}: {data.startupCostBreakdown[k].toLocaleString()}
+                    {t(`cost_type_${k}`)}: {Math.round(data.startupCostBreakdown[k]).toLocaleString()}
                   </Typography>
                 ) : null,
               )}
@@ -396,22 +396,22 @@ export default function CashFlowMonthlyEditor({
               <Typography variant="caption" color="text.secondary">{t('operating_activities')}</Typography>
               {data.startupCostBreakdown.founding !== 0 && (
                 <Typography variant="body2" sx={{ pl: 1 }}>
-                  {t('cost_type_founding')}: {data.startupCostBreakdown.founding.toLocaleString()}
+                  {t('cost_type_founding')}: {Math.round(data.startupCostBreakdown.founding).toLocaleString()}
                 </Typography>
               )}
               {data.startupCostBreakdown.marketing !== 0 && (
                 <Typography variant="body2" sx={{ pl: 1 }}>
-                  {t('cost_type_marketing')}: {data.startupCostBreakdown.marketing.toLocaleString()}
+                  {t('cost_type_marketing')}: {Math.round(data.startupCostBreakdown.marketing).toLocaleString()}
                 </Typography>
               )}
               {data.startupCostBreakdown.consumables !== 0 && (
                 <Typography variant="body2" sx={{ pl: 1 }}>
-                  {t('cost_type_consumables')}: {data.startupCostBreakdown.consumables.toLocaleString()}
+                  {t('cost_type_consumables')}: {Math.round(data.startupCostBreakdown.consumables).toLocaleString()}
                 </Typography>
               )}
               {data.startupCostBreakdown.initialInventory !== 0 && (
                 <Typography variant="body2" sx={{ pl: 1 }}>
-                  {t('cost_type_initial_inventory')}: {data.startupCostBreakdown.initialInventory.toLocaleString()}
+                  {t('cost_type_initial_inventory')}: {Math.round(data.startupCostBreakdown.initialInventory).toLocaleString()}
                 </Typography>
               )}
             </Box>

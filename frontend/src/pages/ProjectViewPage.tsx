@@ -17,6 +17,7 @@ import { useAuth } from '../app/AuthContext';
 import api from '../utils/api';
 import StartupCostTable, { StartupCostItem } from '../components/StartupCostTable';
 import StartupCostDetailPanel from '../components/StartupCostDetailPanel';
+import PlanSummaryDownload from '../components/PlanSummaryDownload';
 import SimulationViewContainer from '../components/SimulationViewContainer';
 import SimulationSheetContainer from '../components/SimulationSheetContainer';
 import FinancialSummaryCards from '../components/FinancialSummaryCards';
@@ -283,6 +284,7 @@ export default function ProjectViewPage() {
     { value: 'project', label: t('project_tab') },
     ...(canView ? [{ value: 'startup-costs-view', label: t('startup_costs_tab') }] : []),
     ...(canView ? [{ value: 'simulation', label: t('simulation') }] : []),
+    ...(canView ? [{ value: 'plan-summary', label: t('plan_summary_tab') }] : []),
     ...(canEdit ? [{ value: 'simulation-input', label: t('simulation_edit') }] : []),
     ...(canEdit ? [{ value: 'startup-costs', label: t('startup_costs_input') }] : []),
     ...(canEdit ? [{ value: 'edit', label: t('edit_project') }] : []),
@@ -401,6 +403,16 @@ export default function ProjectViewPage() {
           yearMonth={simulationYearMonth}
           onYearMonthChange={setSimulationYearMonth}
           currency={project.currency}
+        />
+      )}
+
+      {/* ===== Plan Summary Download タブ ===== */}
+      {activeTab === 'plan-summary' && canView && (
+        <PlanSummaryDownload
+          projectId={id!}
+          projectName={project.title}
+          currency={project.currency}
+          plannedOpeningDate={project.planned_opening_date}
         />
       )}
 
