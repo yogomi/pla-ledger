@@ -9,7 +9,9 @@
     "start": "node dist/index.js",
     "migrate": "npm run build && sequelize-cli db:migrate",
     "migrate:undo": "npm run build && sequelize-cli db:migrate:undo",
-    "migrate:status": "npm run build && sequelize-cli db:migrate:status"
+    "migrate:status": "npm run build && sequelize-cli db:migrate:status",
+    "backup": "ts-node src/scripts/db-backup.ts",
+    "restore": "ts-node src/scripts/db-restore.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
