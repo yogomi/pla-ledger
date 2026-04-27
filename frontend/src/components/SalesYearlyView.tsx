@@ -119,10 +119,14 @@ export default function SalesYearlyView({
         });
       }
       const entry = catSalesMap.get(cat.categoryName)!;
-      cat.months.forEach(m => entry.monthAmounts.set(m.yearMonth, {
-        monthlySales: m.monthlySales,
-        monthlyCost: m.monthlyCost,
-      }));
+      // 同一カテゴリー名が複数エントリ（異なるcategoryId）で返される場合があるため加算する
+      cat.months.forEach(m => {
+        const prev = entry.monthAmounts.get(m.yearMonth);
+        entry.monthAmounts.set(m.yearMonth, {
+          monthlySales: (prev?.monthlySales ?? 0) + m.monthlySales,
+          monthlyCost: (prev?.monthlyCost ?? 0) + m.monthlyCost,
+        });
+      });
     });
   });
 
@@ -193,10 +197,14 @@ export default function SalesYearlyView({
           });
         }
         const itemEntry = catEntry.items.get(item.itemName)!;
-        item.months.forEach(m => itemEntry.monthAmounts.set(m.yearMonth, {
-          monthlySales: m.monthlySales,
-          monthlyCost: m.monthlyCost,
-        }));
+        // 同一品目名が複数エントリで返される場合があるため加算する
+        item.months.forEach(m => {
+          const prev = itemEntry.monthAmounts.get(m.yearMonth);
+          itemEntry.monthAmounts.set(m.yearMonth, {
+            monthlySales: (prev?.monthlySales ?? 0) + m.monthlySales,
+            monthlyCost: (prev?.monthlyCost ?? 0) + m.monthlyCost,
+          });
+        });
       });
     });
   });
