@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Alert,
   Box,
@@ -16,7 +15,8 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
-import { useCashFlowYearly } from '../hooks/useCashFlow';
+import { useQueries } from '@tanstack/react-query';
+import { getCashFlowYearly } from '../api/cashFlow';
 import ChartTooltip from './ChartTooltip';
 
 const COLORS = {
@@ -26,18 +26,32 @@ const COLORS = {
 /**
  * キャッシュフローグラフコンポーネント。
  * 月次現金残高推移（折れ線チャート）を表示する。
+ * displayMonths が指定された場合は事業年度順（開業月始まり）で表示する。
  */
 export default function CashFlowCharts({
   projectId,
   year,
+  displayMonths = null,
 }: {
   projectId: string;
   year: string;
+  displayMonths?: string[] | null;
 }) {
   const { t } = useTranslation();
-  const { data, isLoading, isError } = useCashFlowYearly(projectId, year);
 
-  if (isLoading) {
+  const calendarYears = displayMonths
+    ? [...new Set(displayMonths.map(ym => ym.split('-')[0]))]
+    : [year];
+
+  const queryResults = useQueries({
+    queries: calendarYears.map(y => ({
+      queryKey: ['cashFlowYearly', projectId, y] as const,
+      queryFn: () => getCashFlowYearly(projectId, y),
+      enabled: Boolean(projectId) && Boolean(y),
+    })),
+  });
+
+  if (queryResults.some(r => r.isLoading)) {
     return (
       <Box display="flex" justifyContent="center" mt={4}>
         <CircularProgress />
@@ -45,12 +59,21 @@ export default function CashFlowCharts({
     );
   }
 
-  if (isError || !data) {
+  if (queryResults.some(r => r.isError || !r.data)) {
     return <Alert severity="error">{t('load_error')}</Alert>;
   }
 
-  // 月次推移チャート用データ
-  const monthlyChartData = data.months.map(m => ({
+  const allFetchedMonths = queryResults.flatMap(r => r.data!.months);
+  const monthDataMap = new Map(allFetchedMonths.map(m => [m.yearMonth, m]));
+
+  // 表示順の月リスト
+  const orderedMonths = displayMonths
+    ? displayMonths
+        .map(ym => monthDataMap.get(ym))
+        .filter((m): m is NonNullable<typeof m> => Boolean(m))
+    : queryResults[0]!.data!.months;
+
+  const monthlyChartData = orderedMonths.map(m => ({
     name: m.yearMonth.split('-')[1],
     [t('cash_balance')]: m.cashEnding,
     noteJa: m.noteJa,

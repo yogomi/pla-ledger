@@ -5,6 +5,7 @@ import {
   getExpenseSimulationMonthly,
   getProfitLossYearly,
   getSalesSimulationYearly,
+  getSalesSimulationYearlyItems,
   getExpenseSimulationYearly,
   updateFixedExpenses,
   deleteSalesSimulationMonthly,
@@ -52,6 +53,17 @@ export function useSalesSimulationYearly(projectId: string, year: string) {
   return useQuery({
     queryKey: ['salesSimulationYearly', projectId, year],
     queryFn: () => getSalesSimulationYearly(projectId, year),
+    enabled: Boolean(projectId) && Boolean(year),
+  });
+}
+
+/**
+ * 指定年の売上シミュレーションデータを品目レベルで取得するフック。
+ */
+export function useSalesSimulationYearlyItems(projectId: string, year: string) {
+  return useQuery({
+    queryKey: ['salesSimulationYearlyItems', projectId, year],
+    queryFn: () => getSalesSimulationYearlyItems(projectId, year),
     enabled: Boolean(projectId) && Boolean(year),
   });
 }

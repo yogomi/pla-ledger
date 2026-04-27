@@ -403,6 +403,7 @@ export default function ProjectViewPage() {
           yearMonth={simulationYearMonth}
           onYearMonthChange={setSimulationYearMonth}
           currency={project.currency}
+          plannedOpeningDate={project.planned_opening_date}
         />
       )}
 

@@ -4,6 +4,7 @@ import {
   ExpenseSimulationData,
   ProfitLossYearlyData,
   SalesYearlyData,
+  SalesYearlyItemsData,
   ExpenseYearlyData,
   ItemInputData,
   ExpenseInputItem,
@@ -167,6 +168,22 @@ export async function getSalesSimulationYearly(
     { params: { year } },
   );
   return res.data.data as SalesYearlyData;
+}
+
+/**
+ * 指定年の売上シミュレーションデータを品目レベルで取得する。
+ * @param projectId プロジェクトID
+ * @param year 年 (YYYY)
+ */
+export async function getSalesSimulationYearlyItems(
+  projectId: string,
+  year: string,
+): Promise<SalesYearlyItemsData> {
+  const res = await api.get(
+    `/projects/${projectId}/sales-simulations/yearly-items`,
+    { params: { year } },
+  );
+  return res.data.data as SalesYearlyItemsData;
 }
 
 /**

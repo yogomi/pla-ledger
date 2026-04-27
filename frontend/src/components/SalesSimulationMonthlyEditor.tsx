@@ -260,6 +260,7 @@ export default function SalesSimulationMonthlyEditor({
   // カテゴリ一覧をローカル状態で管理する（マスタAPIではなくスナップショットに直接反映）
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryNameError, setNewCategoryNameError] = useState('');
   const [newCategoryOrder, setNewCategoryOrder] = useState<number | ''>('');
   const [addingCategory, setAddingCategory] = useState(false);
   const [editingOrders, setEditingOrders] = useState<Record<string, number | ''>>({});
@@ -314,17 +315,23 @@ export default function SalesSimulationMonthlyEditor({
 
   /** カテゴリをスナップショットに追加する（マスタAPIを使わない） */
   const handleAddCategory = () => {
-    if (!newCategoryName.trim()) return;
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+    if (categories.some(c => c.categoryName === trimmed)) {
+      setNewCategoryNameError(t('category_name_duplicate'));
+      return;
+    }
     const categoryId = crypto.randomUUID();
     const order = typeof newCategoryOrder === 'number'
       ? newCategoryOrder
       : (categories.length > 0 ? Math.max(...categories.map(c => c.categoryOrder)) + 1 : 0);
     setCategories(prev => [...prev, {
       categoryId,
-      categoryName: newCategoryName.trim(),
+      categoryName: trimmed,
       categoryOrder: order,
     }]);
     setNewCategoryName('');
+    setNewCategoryNameError('');
     setNewCategoryOrder('');
     setAddingCategory(false);
   };
@@ -570,7 +577,10 @@ export default function SalesSimulationMonthlyEditor({
               size="small"
               placeholder={t('new_category_name_placeholder')}
               value={newCategoryName}
-              onChange={e => setNewCategoryName(e.target.value)}
+              onChange={e => {
+                setNewCategoryName(e.target.value);
+                if (newCategoryNameError) setNewCategoryNameError('');
+              }}
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -578,6 +588,8 @@ export default function SalesSimulationMonthlyEditor({
                 }
                 if (e.key === 'Escape') setAddingCategory(false);
               }}
+              error={Boolean(newCategoryNameError)}
+              helperText={newCategoryNameError}
               autoFocus
               aria-label={t('new_category_name_placeholder')}
             />
@@ -601,7 +613,11 @@ export default function SalesSimulationMonthlyEditor({
             >
               {t('add')}
             </Button>
-            <Button size="small" onClick={() => setAddingCategory(false)}>{t('cancel')}</Button>
+            <Button size="small" onClick={() => {
+              setAddingCategory(false);
+              setNewCategoryNameError('');
+              setNewCategoryName('');
+            }}>{t('cancel')}</Button>
           </Box>
         ) : (
           <Button

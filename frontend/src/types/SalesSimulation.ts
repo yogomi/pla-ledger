@@ -247,6 +247,36 @@ export interface ExpenseMonthlyTotal {
   totalExpense: number;
 }
 
+/** 品目別年次の月次データ */
+export interface SalesItemMonthly {
+  yearMonth: string;
+  monthlySales: number;
+  monthlyCost: number;
+}
+
+/** 品目別年次データ */
+export interface SalesItemYearly {
+  itemId: string;
+  itemName: string;
+  months: SalesItemMonthly[];
+  yearlyTotal: number;
+  yearlyCost: number;
+}
+
+/** 品目別年次カテゴリデータ */
+export interface SalesCategoryItemsYearly {
+  categoryId: string;
+  categoryName: string;
+  items: SalesItemYearly[];
+  categoryYearlyTotal: number;
+}
+
+/** 品目別年次データ（APIレスポンス用） */
+export interface SalesYearlyItemsData {
+  year: string;
+  categories: SalesCategoryItemsYearly[];
+}
+
 /** 経費年次データ（APIレスポンス用） */
 export interface ExpenseYearlyData {
   year: string;

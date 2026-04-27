@@ -16,10 +16,20 @@ import {
   TableRow,
   Tabs,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTranslation } from 'react-i18next';
+import {
+  buildQuarterLayout,
+  buildFiscalYearMonths,
+  buildFiscalQuarterLayout,
+  getCookie,
+  setCookie,
+  QuarterDef,
+} from '../utils/quarterUtils';
 import { useSalesSimulationMonthly, useExpenseSimulationMonthly } from '../hooks/useSalesSimulation';
 import { useLaborCostMonthly } from '../hooks/useLaborCost';
 import ProfitLossYearlyTable from './ProfitLossYearlyTable';
@@ -48,6 +58,8 @@ interface SimulationViewContainerProps {
   currency: string;
   /** 編集権限の有無。借入管理タブで利用する。 */
   canEdit?: boolean;
+  /** 開業予定月 (YYYY-MM)。事業年度四半期の計算に使用する。 */
+  plannedOpeningDate?: string | null;
 }
 
 /** 月次売上データの読み取り専用表示 */
@@ -372,6 +384,7 @@ export default function SimulationViewContainer({
   onYearMonthChange,
   currency,
   canEdit = false,
+  plannedOpeningDate = null,
 }: SimulationViewContainerProps) {
   const { t } = useTranslation();
 
@@ -407,6 +420,30 @@ export default function SimulationViewContainer({
     return 5;
   });
 
+  // 四半期表示設定 ─ Cookie で永続化（プロジェクト横断で共通）
+  const [quarterDisplay, setQuarterDisplay] = useState<'monthly' | 'quarterly'>(() => {
+    const v = getCookie('sim_qDisplay');
+    return v === 'quarterly' ? 'quarterly' : 'monthly';
+  });
+  const [quarterType, setQuarterType] = useState<'calendar' | 'fiscal'>(() => {
+    const v = getCookie('sim_qType');
+    return v === 'calendar' ? 'calendar' : 'fiscal';
+  });
+
+  const handleQuarterDisplayChange = (_: React.SyntheticEvent, v: string | null) => {
+    if (!v) return;
+    const next = v as 'monthly' | 'quarterly';
+    setQuarterDisplay(next);
+    setCookie('sim_qDisplay', next);
+  };
+
+  const handleQuarterTypeChange = (_: React.SyntheticEvent, v: string | null) => {
+    if (!v) return;
+    const next = v as 'calendar' | 'fiscal';
+    setQuarterType(next);
+    setCookie('sim_qType', next);
+  };
+
   /** viewMode / longtermYears が変化するたびにプロジェクト別キャッシュへ保存する */
   useEffect(() => {
     localStorage.setItem(`sim_viewMode_${projectId}`, viewMode);
@@ -418,17 +455,39 @@ export default function SimulationViewContainer({
 
   const year = yearMonth.split('-')[0];
 
+  // 開業月 (1〜12)。未設定時は 1 月（= カレンダー年度と同等）にフォールバック
+  const openingMonth = plannedOpeningDate
+    ? Number(plannedOpeningDate.split('-')[1]) || 1
+    : 1;
+
+  const fiscalMonths = buildFiscalYearMonths(year, openingMonth);
+
+  // 四半期表示かつ事業年度モードの場合のみ、開業月始まり12ヶ月を表示対象とする
+  // 月毎表示は常に暦年（1月〜12月）固定
+  const displayMonths: string[] | null =
+    viewMode === 'yearly' && quarterDisplay === 'quarterly' && quarterType === 'fiscal'
+      ? fiscalMonths
+      : null;
+
+  // 年次モードかつ四半期表示の場合のみレイアウトを計算する
+  // 事業年度モード: 常に Q1→Q4 の順になる buildFiscalQuarterLayout を使用
+  const quarterLayout: QuarterDef[] | null =
+    viewMode === 'yearly' && quarterDisplay === 'quarterly'
+      ? (quarterType === 'fiscal'
+          ? buildFiscalQuarterLayout(fiscalMonths)
+          : buildQuarterLayout(year, openingMonth, 'calendar'))
+      : null;
+
   return (
     <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" mb={2}>
-        <Tabs value={tab} onChange={handleTabChange}>
-          <Tab label={t('sales_simulation_tab')} />
-          <Tab label={t('expense_management_tab')} />
-          <Tab label={t('loan_management_tab')} />
-          <Tab label={t('cash_flow_tab')} />
-          <Tab label={t('profit_loss_tab')} />
-        </Tabs>
-        <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+      <Tabs value={tab} onChange={handleTabChange} sx={{ mb: 1 }}>
+        <Tab label={t('sales_simulation_tab')} />
+        <Tab label={t('expense_management_tab')} />
+        <Tab label={t('loan_management_tab')} />
+        <Tab label={t('cash_flow_tab')} />
+        <Tab label={t('profit_loss_tab')} />
+      </Tabs>
+      <Box display="flex" alignItems="center" gap={2} flexWrap="wrap" mb={2}>
           <SalesSimulationPagination
             yearMonth={yearMonth}
             onYearMonthChange={onYearMonthChange}
@@ -446,12 +505,35 @@ export default function SimulationViewContainer({
                 const v = Number(e.target.value);
                 if (v >= 1 && v <= 30) setLongtermYears(v);
               }}
-              inputProps={{ min: 1, max: 30 }}
+              slotProps={{ htmlInput: { min: 1, max: 30 } }}
               sx={{ width: 100 }}
             />
           )}
+          {viewMode === 'yearly' && (
+            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={quarterDisplay}
+                onChange={handleQuarterDisplayChange}
+              >
+                <ToggleButton value="monthly">{t('quarter_mode_monthly')}</ToggleButton>
+                <ToggleButton value="quarterly">{t('quarter_mode_quarterly')}</ToggleButton>
+              </ToggleButtonGroup>
+              {quarterDisplay === 'quarterly' && (
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  value={quarterType}
+                  onChange={handleQuarterTypeChange}
+                >
+                  <ToggleButton value="calendar">{t('quarter_type_calendar')}</ToggleButton>
+                  <ToggleButton value="fiscal">{t('quarter_type_fiscal')}</ToggleButton>
+                </ToggleButtonGroup>
+              )}
+            </Box>
+          )}
         </Box>
-      </Box>
 
       <Divider sx={{ mb: 2 }} />
 
@@ -474,23 +556,53 @@ export default function SimulationViewContainer({
 
       {/* 年次表示 */}
       {viewMode === 'yearly' && tab === 0 && (
-        <SalesYearlyView projectId={projectId} year={year} currency={currency} />
+        <SalesYearlyView
+          projectId={projectId}
+          year={year}
+          currency={currency}
+          quarterLayout={quarterLayout}
+          displayMonths={displayMonths}
+        />
       )}
       {viewMode === 'yearly' && tab === 1 && (
-        <ExpenseYearlyView projectId={projectId} year={year} currency={currency} />
+        <ExpenseYearlyView
+          projectId={projectId}
+          year={year}
+          currency={currency}
+          quarterLayout={quarterLayout}
+          displayMonths={displayMonths}
+        />
       )}
       {viewMode === 'yearly' && tab === 2 && (
-        <LoanYearlyView projectId={projectId} year={year} currency={currency} />
+        <LoanYearlyView
+          projectId={projectId}
+          year={year}
+          currency={currency}
+          quarterLayout={quarterLayout}
+          displayMonths={displayMonths}
+        />
       )}
       {viewMode === 'yearly' && tab === 3 && (
         <>
-          <CashFlowCharts projectId={projectId} year={year} />
+          <CashFlowCharts projectId={projectId} year={year} displayMonths={displayMonths} />
           <Divider sx={{ my: 2 }} />
-          <CashFlowYearlyTable projectId={projectId} year={year} currency={currency} />
+          <CashFlowYearlyTable
+            projectId={projectId}
+            year={year}
+            currency={currency}
+            quarterLayout={quarterLayout}
+            displayMonths={displayMonths}
+          />
         </>
       )}
       {viewMode === 'yearly' && tab === 4 && (
-        <ProfitLossYearlyTable projectId={projectId} year={year} currency={currency} />
+        <ProfitLossYearlyTable
+          projectId={projectId}
+          year={year}
+          currency={currency}
+          quarterLayout={quarterLayout}
+          displayMonths={displayMonths}
+        />
       )}
 
       {/* 長期展望表示 */}
