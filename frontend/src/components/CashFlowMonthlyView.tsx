@@ -104,6 +104,10 @@ export default function CashFlowMonthlyView({
               {renderRow(t('inventory_change'), data.operating.inventoryChange)}
               {renderRow(t('accounts_payable_change'), data.operating.accountsPayableChange)}
               {renderRow(t('other_operating'), data.operating.otherOperating)}
+              {(data.operating.taxPayment ?? 0) !== 0 && renderRow(
+                t('corporate_tax_payment'),
+                data.operating.taxPayment ?? 0,
+              )}
               {renderStartupRow('cost_type_founding', data.startupCostBreakdown.founding)}
               {renderStartupRow('cost_type_marketing', data.startupCostBreakdown.marketing)}
               {renderStartupRow('cost_type_consumables', data.startupCostBreakdown.consumables)}

@@ -107,6 +107,56 @@ docker compose exec backend npx sequelize-cli db:migrate
 
 ---
 
+## 手動アップデート手順
+
+`update.sh` を使って一括実行できる。
+
+```bash
+chmod +x update.sh
+./update.sh
+```
+
+以下は各ステップの説明。
+
+### 1. コードを取得
+
+```bash
+cd /var/www/pla-ledger
+git pull origin main
+```
+
+### 2. フロントエンドをビルド
+
+```bash
+cd frontend
+npm install
+npm run build
+cd ..
+```
+
+`frontend/dist/` が docker-compose.yml のボリュームマウント先のため、ビルド後すぐに反映される。
+
+### 3. バックエンドイメージを再ビルドして再起動
+
+```bash
+docker compose build backend
+docker compose up -d backend
+```
+
+起動時に `docker-entrypoint.sh` 内で `sequelize-cli db:migrate` が自動実行されるため、DBスキーマの変更も自動適用される。
+
+### 4. ログで正常起動を確認
+
+```bash
+docker compose logs -f backend
+```
+
+`Running database migrations...` → `Starting application...` の順に出力されれば正常。
+
+> **注意：** postgres コンテナの再起動は不要。
+
+---
+
 ## 継続デプロイ（GitHub Actions）
 
 main ブランチへのプッシュで自動デプロイが実行される。

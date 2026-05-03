@@ -7,6 +7,7 @@ export interface OperatingActivities {
   inventoryChange: number;
   accountsPayableChange: number;
   otherOperating: number;
+  taxPayment?: number;
   subtotal: number;
 }
 

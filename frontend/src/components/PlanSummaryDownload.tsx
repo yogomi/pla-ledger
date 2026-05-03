@@ -10,7 +10,7 @@ import {
   TIMELINE_MONTHS_BEFORE,
   TIMELINE_MONTHS_AFTER,
 } from '../utils/timelinePeriod';
-import { getProfitLossYearly } from '../api/salesSimulations';
+import { getProfitLossYearly, getFiscalYearSummary } from '../api/salesSimulations';
 import { getCashFlowYearly } from '../api/cashFlow';
 import { getStartupCosts } from '../api/startupCosts';
 import { getLoans, getLoanRepaymentSchedule } from '../api/loans';
@@ -55,13 +55,15 @@ export default function PlanSummaryDownload({
     setDownloadError('');
     try {
       // 全データを並列取得
-      const [plResults, cfResults, startupCosts, loansData, assetsData] = await Promise.all([
-        Promise.all(years.map(y => getProfitLossYearly(projectId, y))),
-        Promise.all(years.map(y => getCashFlowYearly(projectId, y))),
-        getStartupCosts(projectId),
-        getLoans(projectId),
-        getFixedAssets(projectId),
-      ]);
+      const [plResults, cfResults, startupCosts, loansData, assetsData, fiscalSummary] =
+        await Promise.all([
+          Promise.all(years.map(y => getProfitLossYearly(projectId, y))),
+          Promise.all(years.map(y => getCashFlowYearly(projectId, y))),
+          getStartupCosts(projectId),
+          getLoans(projectId),
+          getFixedAssets(projectId),
+          getFiscalYearSummary(projectId),
+        ]);
 
       // 借入返済スケジュールを取得（各借入ごと）
       const loanSchedules = await Promise.all(
@@ -92,6 +94,9 @@ export default function PlanSummaryDownload({
             startup_costs: '初期費用の明細リスト（品目・数量・単価・費用区分・計上月）。',
             loans: '借入情報と出力期間内の月次返済スケジュール。',
             fixed_assets: '固定資産リスト（毎月の償却費は profit_loss の depreciation に反映済み）。',
+            ...(fiscalSummary.enabled
+              ? { corporate_tax: '事業年度別の法人税等計算結果。課税所得・各税額内訳・納税月を含む。' }
+              : {}),
           },
         },
         project: {
@@ -183,6 +188,24 @@ export default function PlanSummaryDownload({
               remaining_balance: Math.round(r.remainingBalance),
             })),
         })),
+        ...(fiscalSummary.enabled
+          ? {
+              corporate_tax: fiscalSummary.fiscalYears.map(fy => ({
+                label: fy.label,
+                period: `${fy.start} 〜 ${fy.end}`,
+                payment_month: fy.paymentMonth,
+                taxable_income: Math.round(fy.taxableIncome),
+                corporate_tax: Math.round(fy.breakdown.corporateTax),
+                local_corporate_tax: Math.round(fy.breakdown.localCorporateTax),
+                prefectural_tax: Math.round(fy.breakdown.prefecturalTax),
+                municipal_tax: Math.round(fy.breakdown.municipalTax),
+                business_tax: Math.round(fy.breakdown.businessTax),
+                special_business_tax: Math.round(fy.breakdown.specialBusinessTax),
+                flat_tax: Math.round(fy.breakdown.flatTax),
+                total_tax: Math.round(fy.breakdown.totalTax),
+              })),
+            }
+          : {}),
         fixed_assets: assetsData.assets.map(asset => ({
           asset_name: asset.assetName,
           asset_category: asset.assetCategory,

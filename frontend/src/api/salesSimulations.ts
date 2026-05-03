@@ -3,6 +3,7 @@ import {
   SalesSimulationData,
   ExpenseSimulationData,
   ProfitLossYearlyData,
+  FiscalYearSummaryData,
   SalesYearlyData,
   SalesYearlyItemsData,
   ExpenseYearlyData,
@@ -116,6 +117,17 @@ export async function updateLaborCosts(
   laborCosts: LaborCostInput[],
 ): Promise<void> {
   await api.put(`/projects/${projectId}/labor-costs/${yearMonth}`, { laborCosts });
+}
+
+/**
+ * プロジェクトの事業年度別法人税計算サマリーを取得する。
+ * @param projectId プロジェクトID
+ */
+export async function getFiscalYearSummary(
+  projectId: string,
+): Promise<FiscalYearSummaryData> {
+  const res = await api.get(`/projects/${projectId}/profit-loss/fiscal-summary`);
+  return res.data.data as FiscalYearSummaryData;
 }
 
 /**

@@ -26,6 +26,19 @@ export const ChangePasswordSchema = z.object({
   newPassword: z.string().min(8),
 });
 
+const TaxRatesSchema = z.object({
+  corporateTaxLow: z.number().min(0).max(100),
+  corporateTaxHigh: z.number().min(0).max(100),
+  localCorporateTax: z.number().min(0).max(100),
+  prefecturalTaxRate: z.number().min(0).max(100),
+  municipalTaxRate: z.number().min(0).max(100),
+  businessTaxLow: z.number().min(0).max(100),
+  businessTaxMid: z.number().min(0).max(100),
+  businessTaxHigh: z.number().min(0).max(100),
+  specialBusinessTax: z.number().min(0).max(100),
+  annualFlatTax: z.number().min(0),
+});
+
 export const ProjectCreateSchema = z.object({
   title: z.string().min(1),
   summary: z.string().optional(),
@@ -35,6 +48,9 @@ export const ProjectCreateSchema = z.object({
   sections: z.array(z.object({ type: z.string(), content: z.any() })).optional(),
   social_insurance_rate: z.number().min(0).max(100).optional(),
   planned_opening_date: z.string().regex(/^\d{4}-\d{2}$/).nullable().optional(),
+  tax_calculation_enabled: z.boolean().optional(),
+  fiscal_end_month: z.number().int().min(1).max(12).optional(),
+  tax_rates: TaxRatesSchema.nullable().optional(),
 });
 
 export const ProjectUpdateSchema = ProjectCreateSchema.partial();
@@ -80,6 +96,10 @@ const ProjectDataSchema = z.object({
   published_at: z.string().nullable(),
   social_insurance_rate: z.coerce.number(),
   planned_opening_date: z.string().nullable().optional(),
+  // v2.0以降で追加（旧バージョンのファイルは存在しない場合がある）
+  tax_calculation_enabled: z.boolean().optional(),
+  fiscal_end_month: z.number().int().min(1).max(12).optional(),
+  tax_rates: z.record(z.unknown()).nullable().optional(),
   created_at: z.string().optional(),
   updated_at: z.string().optional(),
 });

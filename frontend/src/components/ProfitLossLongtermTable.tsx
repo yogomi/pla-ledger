@@ -20,6 +20,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getProfitLossYearly } from '../api/salesSimulations';
 import { ProfitLossYearlyData } from '../types/SalesSimulation';
+import FiscalYearTaxTable from './FiscalYearTaxTable';
 
 const yFmt = (v: unknown) => typeof v === 'number' ? Math.round(v).toLocaleString() : String(v);
 
@@ -31,6 +32,8 @@ interface ProfitLossLongtermTableProps {
   yearsCount: number;
   /** 通貨コード (例: JPY, USD)。 */
   currency: string;
+  /** 法人税テーブルの表示有無。tax_calculation_enabled に連動する。 */
+  taxEnabled?: boolean;
 }
 
 type RowDef = {
@@ -49,6 +52,7 @@ export default function ProfitLossLongtermTable({
   startYear,
   yearsCount,
   currency,
+  taxEnabled = false,
 }: ProfitLossLongtermTableProps) {
   const { t } = useTranslation();
   const years = Array.from({ length: yearsCount }, (_, i) => String(Number(startYear) + i));
@@ -198,6 +202,10 @@ export default function ProfitLossLongtermTable({
           </TableBody>
         </Table>
       </TableContainer>
+
+      {taxEnabled && (
+        <FiscalYearTaxTable projectId={projectId} currency={currency} />
+      )}
     </Box>
   );
 }

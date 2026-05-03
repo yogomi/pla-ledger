@@ -69,6 +69,9 @@ interface ProjectAttributes {
   published_at: Date | null;
   social_insurance_rate: number;
   planned_opening_date: string | null;
+  tax_calculation_enabled: boolean;
+  fiscal_end_month: number;
+  tax_rates: Record<string, unknown> | null;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -80,6 +83,9 @@ type ProjectCreation = Optional<
   | 'published_at'
   | 'social_insurance_rate'
   | 'planned_opening_date'
+  | 'tax_calculation_enabled'
+  | 'fiscal_end_month'
+  | 'tax_rates'
 >;
 
 export class Project
@@ -95,6 +101,9 @@ export class Project
   declare published_at: Date | null;
   declare social_insurance_rate: number;
   declare planned_opening_date: string | null;
+  declare tax_calculation_enabled: boolean;
+  declare fiscal_end_month: number;
+  declare tax_rates: Record<string, unknown> | null;
 }
 
 Project.init({
@@ -115,6 +124,23 @@ Project.init({
     type: DataTypes.STRING(7),
     allowNull: true,
     comment: '開業予定日（YYYY-MM形式）。未設定の場合は2025-01をデフォルト使用',
+  },
+  tax_calculation_enabled: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
+  fiscal_end_month: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 3,
+    comment: '決算月（1-12）',
+  },
+  tax_rates: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null,
+    comment: '税率設定JSON。nullの場合はデフォルト値を使用',
   },
 }, { sequelize, tableName: 'projects', underscored: true });
 

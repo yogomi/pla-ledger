@@ -145,7 +145,7 @@ router.get('/:id/export', authenticate, async (req: AuthRequest, res: Response) 
     code: '',
     message: 'Project exported successfully',
     data: {
-      version: '1.0',
+      version: '2.0',
       exportedAt: new Date().toISOString(),
       project: normalizeNumbers(project.toJSON()),
       sections: sections.map(r => r.toJSON()),

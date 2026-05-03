@@ -13,7 +13,7 @@ import { authenticate, AuthRequest } from '../../middleware/auth';
 import { ProjectImportSchema } from '../../schemas';
 import { formatZodError } from '../../utils/zodError';
 
-const SUPPORTED_VERSIONS = ['1.0'];
+const SUPPORTED_VERSIONS = ['1.0', '2.0'];
 
 /**
  * @api {POST} /api/projects/import プロジェクトインポート
@@ -132,6 +132,10 @@ router.post('/import', authenticate, async (req: AuthRequest, res: Response) => 
       published_at: exportData.project.visibility === 'public' ? new Date() : null,
       social_insurance_rate: exportData.project.social_insurance_rate,
       planned_opening_date: exportData.project.planned_opening_date ?? null,
+      // v2.0以降で追加。旧バージョン（1.0）はフィールドなし → デフォルト値を使用
+      tax_calculation_enabled: exportData.project.tax_calculation_enabled ?? false,
+      fiscal_end_month: exportData.project.fiscal_end_month ?? 3,
+      tax_rates: exportData.project.tax_rates ?? null,
     }, { transaction });
 
     // オーナー権限付与

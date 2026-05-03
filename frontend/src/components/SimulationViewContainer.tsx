@@ -60,6 +60,8 @@ interface SimulationViewContainerProps {
   canEdit?: boolean;
   /** 開業予定月 (YYYY-MM)。事業年度四半期の計算に使用する。 */
   plannedOpeningDate?: string | null;
+  /** 法人税自動計算が有効かどうか。長期展望テーブルに税額表示する。 */
+  taxEnabled?: boolean;
 }
 
 /** 月次売上データの読み取り専用表示 */
@@ -385,6 +387,7 @@ export default function SimulationViewContainer({
   currency,
   canEdit = false,
   plannedOpeningDate = null,
+  taxEnabled = false,
 }: SimulationViewContainerProps) {
   const { t } = useTranslation();
 
@@ -644,6 +647,7 @@ export default function SimulationViewContainer({
           startYear={year}
           yearsCount={longtermYears}
           currency={currency}
+          taxEnabled={taxEnabled}
         />
       )}
     </Box>

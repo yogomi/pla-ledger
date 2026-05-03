@@ -9,6 +9,7 @@ import { YearSchema } from '../../schemas/salesSimulation';
 import {
   fetchProfitAndInterest,
   fetchBorrowingData,
+  fetchTaxPayment,
   fetchStartupCostMap,
   StartupCostTotals,
 } from './getMonthly';
@@ -155,14 +156,15 @@ router.get('/yearly/:year', optionalAuthenticate, async (req: AuthRequest, res: 
       const r = y === targetYear ? recordMap.get(yearMonth) : undefined;
 
       if (r) {
-        // 保存済み月：手動調整項目はDBから取得し、自動連携項目（損益・借入）はライブ再計算する
+        // 保存済み月：手動調整項目はDBから取得し、自動連携項目（損益・借入・税金）はライブ再計算する
         const { profitBeforeTax, depreciation } =
           await fetchProfitAndInterest(projectId, yearMonth);
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
+        const taxPayment = await fetchTaxPayment(projectId, yearMonth);
 
         operatingCF =
-          profitBeforeTax + depreciation
+          profitBeforeTax + depreciation + taxPayment
           + Number(r.accounts_receivable_change)
           + Number(r.inventory_change) + startupTotals.initialInventory
           + Number(r.accounts_payable_change)
@@ -184,9 +186,10 @@ router.get('/yearly/:year', optionalAuthenticate, async (req: AuthRequest, res: 
           await fetchProfitAndInterest(projectId, yearMonth);
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
+        const taxPayment = await fetchTaxPayment(projectId, yearMonth);
 
         operatingCF =
-          profitBeforeTax + depreciation
+          profitBeforeTax + depreciation + taxPayment
           + Number(prevRecord.accounts_receivable_change)
           + Number(prevRecord.inventory_change) + startupTotals.initialInventory
           + Number(prevRecord.accounts_payable_change)
@@ -207,9 +210,10 @@ router.get('/yearly/:year', optionalAuthenticate, async (req: AuthRequest, res: 
           await fetchProfitAndInterest(projectId, yearMonth);
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
+        const taxPayment = await fetchTaxPayment(projectId, yearMonth);
 
         operatingCF =
-          profitBeforeTax + depreciation
+          profitBeforeTax + depreciation + taxPayment
           + startupTotals.founding + startupTotals.marketing + startupTotals.consumables + startupTotals.initialInventory;
         investingCF =
           startupTotals.equipment + startupTotals.renovation + startupTotals.deposit + startupTotals.intangible;

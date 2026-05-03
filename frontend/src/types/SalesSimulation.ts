@@ -277,6 +277,61 @@ export interface SalesYearlyItemsData {
   categories: SalesCategoryItemsYearly[];
 }
 
+/** 法人税等の内訳 */
+export interface CorporateTaxBreakdown {
+  corporateTax: number;
+  localCorporateTax: number;
+  prefecturalTax: number;
+  municipalTax: number;
+  businessTax: number;
+  specialBusinessTax: number;
+  flatTax: number;
+  totalTax: number;
+}
+
+/** 事業年度ごとの税計算結果 */
+export interface FiscalYearTaxData {
+  label: string;
+  start: string;
+  end: string;
+  paymentMonth: string;
+  taxableIncome: number;
+  breakdown: CorporateTaxBreakdown;
+}
+
+/** 事業年度別税計算サマリーAPIレスポンス */
+export interface FiscalYearSummaryData {
+  enabled: boolean;
+  fiscalYears: FiscalYearTaxData[];
+}
+
+/** 法人税率設定 */
+export interface TaxRates {
+  corporateTaxLow: number;
+  corporateTaxHigh: number;
+  localCorporateTax: number;
+  prefecturalTaxRate: number;
+  municipalTaxRate: number;
+  businessTaxLow: number;
+  businessTaxMid: number;
+  businessTaxHigh: number;
+  specialBusinessTax: number;
+  annualFlatTax: number;
+}
+
+export const DEFAULT_TAX_RATES: TaxRates = {
+  corporateTaxLow: 15.0,
+  corporateTaxHigh: 23.2,
+  localCorporateTax: 4.4,
+  prefecturalTaxRate: 1.0,
+  municipalTaxRate: 8.4,
+  businessTaxLow: 3.5,
+  businessTaxMid: 5.3,
+  businessTaxHigh: 6.7,
+  specialBusinessTax: 37.0,
+  annualFlatTax: 50000,
+};
+
 /** 経費年次データ（APIレスポンス用） */
 export interface ExpenseYearlyData {
   year: string;

@@ -13,6 +13,12 @@ import { z } from 'zod';
 import { getPreviousSnapshot, calculateSnapshotTotals } from '../../utils/salesSimulationHelper';
 import { calculateMonthlyDepreciation } from '../../utils/depreciationCalculator';
 import { calcLaborMonthlyTotal } from '../../utils/laborCostCalculator';
+import {
+  buildFiscalPeriods,
+  calcCorporateTax,
+  parseTaxRates,
+  DEFAULT_TAX_RATES,
+} from '../../utils/corporateTaxCalculator';
 
 const ParamsSchema = z.object({
   projectId: z.string().uuid(),
@@ -281,8 +287,9 @@ async function calculateCashBalanceUpToMonth(
           await fetchProfitAndInterest(projectId, yearMonth);
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
+        const taxPayment = await fetchTaxPayment(projectId, yearMonth);
         netCashChange =
-          profitBeforeTax + depreciation
+          profitBeforeTax + depreciation + taxPayment
           + Number(savedRecord.accounts_receivable_change)
           + Number(savedRecord.inventory_change) + startupTotals.initialInventory
           + Number(savedRecord.accounts_payable_change)
@@ -301,8 +308,9 @@ async function calculateCashBalanceUpToMonth(
           await fetchProfitAndInterest(projectId, yearMonth);
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
+        const taxPayment = await fetchTaxPayment(projectId, yearMonth);
         netCashChange =
-          profitBeforeTax + depreciation + borrowingProceeds + loanRepaymentAmount
+          profitBeforeTax + depreciation + taxPayment + borrowingProceeds + loanRepaymentAmount
           + startupOperating + startupInvesting;
       }
 
@@ -390,6 +398,7 @@ router.get('/monthly/:yearMonth', optionalAuthenticate, async (req: AuthRequest,
   const { profitBeforeTax, interestExpense, depreciation } =
     await fetchProfitAndInterest(projectId, yearMonth);
   const { borrowingProceeds, loanRepaymentAmount } = await fetchBorrowingData(projectId, yearMonth);
+  const taxPayment = await fetchTaxPayment(projectId, yearMonth);
 
   // スタートアップコストを取得
   const startupTotals = await fetchStartupCostTotals(projectId, yearMonth);
@@ -405,8 +414,9 @@ router.get('/monthly/:yearMonth', optionalAuthenticate, async (req: AuthRequest,
   if (!record) {
     // 未保存月はゼロ初期値で返す（自動継承なし）
     // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算
+    // taxPayment は納税月のみマイナス値、それ以外は0
     const operatingCfSubtotal =
-      profitBeforeTax + depreciation
+      profitBeforeTax + depreciation + taxPayment
       + startupTotals.founding + startupTotals.marketing + startupTotals.consumables + startupTotals.initialInventory;
     const investingCfSubtotal =
       startupTotals.equipment + startupTotals.renovation + startupTotals.deposit + startupTotals.intangible;
@@ -424,6 +434,7 @@ router.get('/monthly/:yearMonth', optionalAuthenticate, async (req: AuthRequest,
           profitBeforeTax,
           depreciation,
           interestExpense,
+          taxPayment,
           accountsReceivableChange: 0,
           inventoryChange: 0,
           accountsPayableChange: 0,
@@ -483,11 +494,12 @@ router.get('/monthly/:yearMonth', optionalAuthenticate, async (req: AuthRequest,
   const otherFinancing = Number(record.other_financing);
 
   // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算し、運転資本増減を調整する
+  // taxPayment は納税月のみマイナス値、それ以外は0
   // スタートアップコスト: equipment/renovation/deposit → 投資CF(capex行), intangible → 投資CF(無形資産行)
   //                       founding/marketing → 営業CF(その他営業行), initial_inventory → 営業CF(棚卸資産行)
   //                       working_capital → CFに含めない
   const operatingCfSubtotal =
-    profitBeforeTax + depreciation
+    profitBeforeTax + depreciation + taxPayment
     + accountsReceivableChange
     + inventoryChange + startupTotals.initialInventory
     + accountsPayableChange
@@ -512,6 +524,7 @@ router.get('/monthly/:yearMonth', optionalAuthenticate, async (req: AuthRequest,
         profitBeforeTax,
         depreciation,
         interestExpense,
+        taxPayment,
         accountsReceivableChange,
         inventoryChange,
         accountsPayableChange,
@@ -556,9 +569,59 @@ router.get('/monthly/:yearMonth', optionalAuthenticate, async (req: AuthRequest,
   });
 });
 
+/**
+ * 指定月の法人税支払額を計算する。
+ * その月が納税月（決算月+2ヶ月）でなければ0を返す。
+ * 納税月の場合は前事業年度の税引前利益から税額を計算しマイナス値で返す。
+ * tax_calculation_enabled が false のプロジェクトでは常に0を返す。
+ * @param projectId - プロジェクトID
+ * @param yearMonth - 対象年月 (YYYY-MM)
+ * @returns 法人税支払額（マイナス値）または0
+ */
+async function fetchTaxPayment(projectId: string, yearMonth: string): Promise<number> {
+  const project = await Project.findByPk(projectId, {
+    attributes: [
+      'tax_calculation_enabled', 'fiscal_end_month',
+      'planned_opening_date', 'tax_rates',
+    ],
+  });
+  if (!project || !project.tax_calculation_enabled) return 0;
+
+  const openingYearMonth = project.planned_opening_date ?? '2025-01';
+  const fiscalEndMonth = Number(project.fiscal_end_month);
+  const taxRates = parseTaxRates(project.tax_rates) ?? DEFAULT_TAX_RATES;
+
+  // 6期分生成して納税月が一致する事業年度を特定
+  const periods = buildFiscalPeriods(openingYearMonth, fiscalEndMonth, 6);
+  const targetPeriod = periods.find(p => p.paymentMonth === yearMonth);
+  if (!targetPeriod) return 0;
+
+  // 該当事業年度の全月の税引前利益を集計
+  // fetchProfitAndInterest は利息控除後の税引前利益を返す
+  const months: string[] = [];
+  let cur = targetPeriod.start;
+  while (cur <= targetPeriod.end) {
+    months.push(cur);
+    const [y, m] = cur.split('-').map(Number);
+    cur = m === 12
+      ? `${y + 1}-01`
+      : `${y}-${String(m + 1).padStart(2, '0')}`;
+  }
+
+  let totalProfitBeforeTax = 0;
+  for (const ym of months) {
+    const { profitBeforeTax } = await fetchProfitAndInterest(projectId, ym);
+    totalProfitBeforeTax += profitBeforeTax;
+  }
+
+  const breakdown = calcCorporateTax(totalProfitBeforeTax, taxRates);
+  return -breakdown.totalTax;
+}
+
 export {
   fetchProfitAndInterest,
   fetchBorrowingData,
+  fetchTaxPayment,
   calculateCashBalanceUpToMonth,
   fetchStartupCostTotals,
   fetchStartupCostMap,

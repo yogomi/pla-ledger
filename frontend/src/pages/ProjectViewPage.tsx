@@ -4,6 +4,7 @@ import {
   Box, Typography, CircularProgress, Alert, Chip, Button, Divider,
   Paper, Grid, TextField, List, ListItem, ListItemText, Tab, Tabs, Snackbar,
   IconButton, Select, MenuItem, FormControl, InputLabel, ListItemSecondaryAction,
+  Switch, FormControlLabel,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
@@ -25,6 +26,7 @@ import ProjectTimeline from '../components/ProjectTimeline';
 import { getStartupCosts, updateStartupCosts } from '../api/startupCosts';
 import { getCashFlowMonthly } from '../api/cashFlow';
 import { useLoans } from '../hooks/useLoan';
+import { TaxRates, DEFAULT_TAX_RATES } from '../types/SalesSimulation';
 
 interface Project {
   id: string; title: string; summary: string | null;
@@ -32,6 +34,9 @@ interface Project {
   owner_id: string;
   social_insurance_rate: number | null;
   planned_opening_date: string | null;
+  tax_calculation_enabled: boolean;
+  fiscal_end_month: number | null;
+  tax_rates: Record<string, number> | null;
 }
 interface AccessRequest {
   id: string; requester_id: string; request_type: string; message: string | null;
@@ -99,6 +104,11 @@ export default function ProjectViewPage() {
   const [startupCostItems, setStartupCostItems] = useState<StartupCostItem[]>([]);
   const [openingCapital, setOpeningCapital] = useState<number | null>(null);
 
+  // 法人税設定 state
+  const [taxEnabled, setTaxEnabled] = useState(false);
+  const [fiscalEndMonth, setFiscalEndMonth] = useState(3);
+  const [taxRates, setTaxRates] = useState<TaxRates>({ ...DEFAULT_TAX_RATES });
+
   /** 借入一覧（ロールがある場合のみ取得） */
   const { data: loanData } = useLoans(id ?? '');
   const {
@@ -141,6 +151,13 @@ export default function ProjectViewPage() {
         social_insurance_rate: p.social_insurance_rate != null ? Number(p.social_insurance_rate) : 15,
         planned_opening_date: p.planned_opening_date ?? '',
       });
+
+      // 法人税設定の反映
+      setTaxEnabled(Boolean(p.tax_calculation_enabled));
+      setFiscalEndMonth(p.fiscal_end_month != null ? Number(p.fiscal_end_month) : 3);
+      if (p.tax_rates && typeof p.tax_rates === 'object') {
+        setTaxRates({ ...DEFAULT_TAX_RATES, ...(p.tax_rates as Partial<TaxRates>) });
+      }
     }).catch(() => setError('Failed to load project')).finally(() => setLoading(false));
   }, [id]);
 
@@ -213,6 +230,9 @@ export default function ProjectViewPage() {
         tags,
         social_insurance_rate: data.social_insurance_rate,
         planned_opening_date: data.planned_opening_date || null,
+        tax_calculation_enabled: taxEnabled,
+        fiscal_end_month: fiscalEndMonth,
+        tax_rates: taxEnabled ? taxRates : null,
       });
       setEditSuccess(true);
     } catch (err: unknown) {
@@ -404,6 +424,7 @@ export default function ProjectViewPage() {
           onYearMonthChange={setSimulationYearMonth}
           currency={project.currency}
           plannedOpeningDate={project.planned_opening_date}
+          taxEnabled={project.tax_calculation_enabled}
         />
       )}
 
@@ -576,6 +597,74 @@ export default function ProjectViewPage() {
                   />
                 )}
               />
+
+              <Divider sx={{ my: 3 }} />
+
+              <Typography variant="h6" mb={1}>{t('corporate_tax_settings')}</Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={taxEnabled}
+                    onChange={e => setTaxEnabled(e.target.checked)}
+                  />
+                }
+                label={t('corporate_tax_enabled')}
+                sx={{ mb: 2 }}
+              />
+
+              {taxEnabled && (
+                <Box>
+                  <FormControl sx={{ minWidth: 160, mb: 1 }}>
+                    <InputLabel>{t('fiscal_end_month')}</InputLabel>
+                    <Select
+                      value={fiscalEndMonth}
+                      label={t('fiscal_end_month')}
+                      onChange={e => setFiscalEndMonth(Number(e.target.value))}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => (
+                        <MenuItem key={m} value={m}>{m}{t('month_suffix')}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <Typography variant="caption" color="text.secondary" display="block" mb={2}>
+                    {t('fiscal_end_month_note')}
+                  </Typography>
+
+                  <Typography variant="subtitle2" mb={1} mt={2}>
+                    {t('tax_rates_title')}
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {([
+                      ['corporateTaxLow', t('tax_rate_corporate_low'), '%'],
+                      ['corporateTaxHigh', t('tax_rate_corporate_high'), '%'],
+                      ['localCorporateTax', t('tax_rate_local_corporate'), '%'],
+                      ['prefecturalTaxRate', t('tax_rate_prefectural'), '%'],
+                      ['municipalTaxRate', t('tax_rate_municipal'), '%'],
+                      ['businessTaxLow', t('tax_rate_business_low'), '%'],
+                      ['businessTaxMid', t('tax_rate_business_mid'), '%'],
+                      ['businessTaxHigh', t('tax_rate_business_high'), '%'],
+                      ['specialBusinessTax', t('tax_rate_special_business'), '%'],
+                      ['annualFlatTax', t('tax_annual_flat'), t('currency_unit')],
+                    ] as [keyof TaxRates, string, string][]).map(([key, label, unit]) => (
+                      <Grid item xs={12} sm={6} md={4} key={key}>
+                        <TextField
+                          label={label}
+                          type="number"
+                          value={taxRates[key]}
+                          size="small"
+                          fullWidth
+                          inputProps={{ step: key === 'annualFlatTax' ? 1000 : 0.1, min: 0 }}
+                          InputProps={{ endAdornment: unit }}
+                          onChange={e => setTaxRates(prev => ({
+                            ...prev,
+                            [key]: Number(e.target.value),
+                          }))}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
 
               <Box mt={3} display="flex" gap={2} alignItems="center">
                 <Button type="submit" variant="contained" disabled={editSubmitting}>
