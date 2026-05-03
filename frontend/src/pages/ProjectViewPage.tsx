@@ -633,19 +633,51 @@ export default function ProjectViewPage() {
                   <Typography variant="subtitle2" mb={1} mt={2}>
                     {t('tax_rates_title')}
                   </Typography>
-                  <Grid container spacing={2}>
-                    {([
-                      ['corporateTaxLow', t('tax_rate_corporate_low'), '%'],
-                      ['corporateTaxHigh', t('tax_rate_corporate_high'), '%'],
-                      ['localCorporateTax', t('tax_rate_local_corporate'), '%'],
-                      ['prefecturalTaxRate', t('tax_rate_prefectural'), '%'],
-                      ['municipalTaxRate', t('tax_rate_municipal'), '%'],
-                      ['businessTaxLow', t('tax_rate_business_low'), '%'],
-                      ['businessTaxMid', t('tax_rate_business_mid'), '%'],
-                      ['businessTaxHigh', t('tax_rate_business_high'), '%'],
-                      ['specialBusinessTax', t('tax_rate_special_business'), '%'],
-                      ['annualFlatTax', t('tax_annual_flat'), t('currency_unit')],
-                    ] as [keyof TaxRates, string, string][]).map(([key, label, unit]) => (
+
+                  {/* 税率グループを描画するヘルパー */}
+                  {([
+                    {
+                      groupKey: 'tax_group_corporate',
+                      tieredFields: [
+                        ['corporateTaxLow', t('tax_rate_corporate_low'), '%'],
+                        ['corporateTaxHigh', t('tax_rate_corporate_high'), '%'],
+                      ],
+                      flatFields: [
+                        ['localCorporateTax', t('tax_rate_local_corporate'), '%'],
+                      ],
+                    },
+                    {
+                      groupKey: 'tax_group_resident',
+                      tieredFields: [],
+                      flatFields: [
+                        ['prefecturalTaxRate', t('tax_rate_prefectural'), '%'],
+                        ['municipalTaxRate', t('tax_rate_municipal'), '%'],
+                      ],
+                    },
+                    {
+                      groupKey: 'tax_group_business',
+                      tieredFields: [
+                        ['businessTaxLow', t('tax_rate_business_low'), '%'],
+                        ['businessTaxMid', t('tax_rate_business_mid'), '%'],
+                        ['businessTaxHigh', t('tax_rate_business_high'), '%'],
+                      ],
+                      flatFields: [
+                        ['specialBusinessTax', t('tax_rate_special_business'), '%'],
+                      ],
+                    },
+                    {
+                      groupKey: 'tax_group_flat',
+                      tieredFields: [],
+                      flatFields: [
+                        ['annualFlatTax', t('tax_annual_flat'), t('currency_unit')],
+                      ],
+                    },
+                  ] as {
+                    groupKey: string;
+                    tieredFields: [keyof TaxRates, string, string][];
+                    flatFields: [keyof TaxRates, string, string][];
+                  }[]).map(({ groupKey, tieredFields, flatFields }) => {
+                    const renderField = (key: keyof TaxRates, label: string, unit: string) => (
                       <Grid item xs={12} sm={6} md={4} key={key}>
                         <TextField
                           label={label}
@@ -661,8 +693,42 @@ export default function ProjectViewPage() {
                           }))}
                         />
                       </Grid>
-                    ))}
-                  </Grid>
+                    );
+                    return (
+                      <Box
+                        key={groupKey}
+                        sx={{ mt: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+                      >
+                        <Typography variant="subtitle2" mb={1.5}>
+                          {t(groupKey)}
+                        </Typography>
+
+                        {tieredFields.length > 0 && (
+                          <Box
+                            sx={{
+                              mb: flatFields.length > 0 ? 2 : 0,
+                              p: 1.5,
+                              bgcolor: 'grey.50',
+                              borderRadius: 1,
+                            }}
+                          >
+                            <Typography variant="caption" color="text.secondary" display="block" mb={1.5}>
+                              {t('tax_group_tiered_note')}
+                            </Typography>
+                            <Grid container spacing={2}>
+                              {tieredFields.map(([key, label, unit]) => renderField(key, label, unit))}
+                            </Grid>
+                          </Box>
+                        )}
+
+                        {flatFields.length > 0 && (
+                          <Grid container spacing={2}>
+                            {flatFields.map(([key, label, unit]) => renderField(key, label, unit))}
+                          </Grid>
+                        )}
+                      </Box>
+                    );
+                  })}
                 </Box>
               )}
 
