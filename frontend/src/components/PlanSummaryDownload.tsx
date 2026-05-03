@@ -90,7 +90,8 @@ export default function PlanSummaryDownload({
           sections: {
             project: 'プロジェクト基本情報（名称・通貨・開業予定日・出力期間）',
             profit_loss: '損益計算書。年次・月次の売上・経費・各利益を含む。継承値は展開済み実数値。',
-            cash_flow: 'キャッシュフロー計算書。営業・投資・財務活動別の月次合計と各月コメント。',
+            cash_flow: 'キャッシュフロー計算書。営業・投資・財務活動別の月次合計と各月コメント。' +
+              'tax_paymentは納税月（決算月の2ヶ月後）のみマイナス値で、operating_cfに内包済みの参考値。',
             startup_costs: '初期費用の明細リスト（品目・数量・単価・費用区分・計上月）。',
             loans: '借入情報と出力期間内の月次返済スケジュール。',
             fixed_assets: '固定資産リスト（毎月の償却費は profit_loss の depreciation に反映済み）。',
@@ -149,6 +150,7 @@ export default function PlanSummaryDownload({
               financing_cf: Math.round(m.financingCF),
               net_cash_change: Math.round(m.netCashChange),
               cash_ending: Math.round(m.cashEnding),
+              tax_payment: Math.round(m.taxPayment ?? 0),
               comment_ja: m.noteJa ?? null,
               comment_en: m.noteEn ?? null,
             })),
@@ -352,6 +354,7 @@ export default function PlanSummaryDownload({
         "financing_cf": number,
         "net_cash_change": number,
         "cash_ending": number,
+        "tax_payment": number,      // 法人税等支払額（納税月のみマイナス値、他は0）
         "comment_ja": string | null,
         "comment_en": string | null
       }],
@@ -387,7 +390,7 @@ export default function PlanSummaryDownload({
     "purchase_amount": number,
     "useful_life_years": number,
     "depreciation_method": string,      // "straight_line" | "diminishing"
-    "monthly_depreciation": number,
+    "monthly_depreciation": number,  // ※定率法(diminishing)の場合は初月のみの参考値
     "start_depreciation_date": string,
     "end_depreciation_date": string
   }]

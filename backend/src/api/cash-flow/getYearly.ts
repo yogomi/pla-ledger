@@ -151,6 +151,7 @@ router.get('/yearly/:year', optionalAuthenticate, async (req: AuthRequest, res: 
       let operatingCF: number;
       let investingCF: number;
       let financingCF: number;
+      let taxPaymentForMonth = 0;
 
       const startupTotals = startupCostMap.get(yearMonth) ?? { ...ZERO_TOTALS };
       const r = y === targetYear ? recordMap.get(yearMonth) : undefined;
@@ -162,13 +163,15 @@ router.get('/yearly/:year', optionalAuthenticate, async (req: AuthRequest, res: 
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
         const taxPayment = await fetchTaxPayment(projectId, yearMonth);
+        taxPaymentForMonth = taxPayment;
 
+        // founding/marketing/consumables は profitBeforeTax に内包済みのため除外
         operatingCF =
           profitBeforeTax + depreciation + taxPayment
           + Number(r.accounts_receivable_change)
           + Number(r.inventory_change) + startupTotals.initialInventory
           + Number(r.accounts_payable_change)
-          + Number(r.other_operating) + startupTotals.founding + startupTotals.marketing + startupTotals.consumables;
+          + Number(r.other_operating);
         investingCF =
           Number(r.capex_acquisition) + startupTotals.equipment + startupTotals.renovation + startupTotals.deposit
           + Number(r.asset_sale)
@@ -187,13 +190,15 @@ router.get('/yearly/:year', optionalAuthenticate, async (req: AuthRequest, res: 
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
         const taxPayment = await fetchTaxPayment(projectId, yearMonth);
+        taxPaymentForMonth = taxPayment;
 
+        // founding/marketing/consumables は profitBeforeTax に内包済みのため除外
         operatingCF =
           profitBeforeTax + depreciation + taxPayment
           + Number(prevRecord.accounts_receivable_change)
           + Number(prevRecord.inventory_change) + startupTotals.initialInventory
           + Number(prevRecord.accounts_payable_change)
-          + Number(prevRecord.other_operating) + startupTotals.founding + startupTotals.marketing + startupTotals.consumables;
+          + Number(prevRecord.other_operating);
         investingCF =
           Number(prevRecord.capex_acquisition) + startupTotals.equipment + startupTotals.renovation + startupTotals.deposit
           + Number(prevRecord.asset_sale)
@@ -211,10 +216,12 @@ router.get('/yearly/:year', optionalAuthenticate, async (req: AuthRequest, res: 
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
         const taxPayment = await fetchTaxPayment(projectId, yearMonth);
+        taxPaymentForMonth = taxPayment;
 
+        // founding/marketing/consumables は profitBeforeTax に内包済みのため除外
         operatingCF =
           profitBeforeTax + depreciation + taxPayment
-          + startupTotals.founding + startupTotals.marketing + startupTotals.consumables + startupTotals.initialInventory;
+          + startupTotals.initialInventory;
         investingCF =
           startupTotals.equipment + startupTotals.renovation + startupTotals.deposit + startupTotals.intangible;
         financingCF = borrowingProceeds + loanRepaymentAmount;
@@ -231,6 +238,7 @@ router.get('/yearly/:year', optionalAuthenticate, async (req: AuthRequest, res: 
         }
         months.push({
           yearMonth, operatingCF, investingCF, financingCF, netCashChange, cashEnding,
+          taxPayment: taxPaymentForMonth,
           noteJa: r?.note_ja ?? null,
           noteEn: r?.note_en ?? null,
         });

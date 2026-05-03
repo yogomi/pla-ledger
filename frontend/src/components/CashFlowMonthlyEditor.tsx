@@ -85,7 +85,7 @@ export default function CashFlowMonthlyEditor({
     const loanRepayment = data?.financing.loanRepayment ?? 0;
 
     const scb = data?.startupCostBreakdown;
-    const startupOperating = (scb?.founding ?? 0) + (scb?.marketing ?? 0) + (scb?.consumables ?? 0);
+    // founding/marketing/consumables は profitBeforeTax に内包済みのため operating には含めない
     const startupInventory = scb?.initialInventory ?? 0;
     const startupCapex = (scb?.equipment ?? 0) + (scb?.renovation ?? 0) + (scb?.deposit ?? 0);
     const startupIntangible = scb?.intangible ?? 0;
@@ -97,7 +97,7 @@ export default function CashFlowMonthlyEditor({
       + formData.accountsReceivableChange
       + formData.inventoryChange + startupInventory
       + formData.accountsPayableChange
-      + formData.otherOperating + startupOperating;
+      + formData.otherOperating;
 
     const investingSubtotal =
       formData.capexAcquisition + startupCapex
@@ -388,12 +388,12 @@ export default function CashFlowMonthlyEditor({
               )}
             </Box>
           )}
-          {/* 営業活動 */}
+          {/* 費用性（P&L反映）・初期棚卸資産（営業CF） */}
           {(['founding', 'marketing', 'consumables', 'initialInventory'] as const).some(
             k => data.startupCostBreakdown[k] !== 0,
           ) && (
             <Box mt={0.5}>
-              <Typography variant="caption" color="text.secondary">{t('operating_activities')}</Typography>
+              <Typography variant="caption" color="text.secondary">{t('profit_loss')} / {t('operating_activities')}</Typography>
               {data.startupCostBreakdown.founding !== 0 && (
                 <Typography variant="body2" sx={{ pl: 1 }}>
                   {t('cost_type_founding')}: {Math.round(data.startupCostBreakdown.founding).toLocaleString()}

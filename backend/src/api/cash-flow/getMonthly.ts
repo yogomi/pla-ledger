@@ -103,7 +103,11 @@ async function fetchProfitAndInterest(
   // 減価償却費は営業利益の計算に含める（損益計算書と一致させるため）
   const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
   const totalExpense = monthlyCost + fixedTotal + laborTotal + depreciation;
-  const operatingProfit = monthlySales - totalExpense;
+  // スタートアップコスト（費用性：founding/marketing/consumables）をP&Lに反映
+  // 値はマイナスなので加算で利益が減少する
+  const startupTotals = await fetchStartupCostTotals(projectId, yearMonth);
+  const operatingProfit = monthlySales - totalExpense
+    + startupTotals.founding + startupTotals.marketing + startupTotals.consumables;
 
   // 利息支払額：当月の返済スケジュールから集計する
   const repayments = await LoanRepayment.findAll({
@@ -275,8 +279,6 @@ async function calculateCashBalanceUpToMonth(
       }
 
       const startupTotals = startupCostMap.get(yearMonth) ?? { ...ZERO_TOTALS };
-      // スタートアップコスト由来の各合計
-      const startupOperating = startupTotals.founding + startupTotals.marketing + startupTotals.consumables + startupTotals.initialInventory;
       const startupInvesting = startupTotals.equipment + startupTotals.renovation + startupTotals.deposit + startupTotals.intangible;
 
       let netCashChange: number;
@@ -288,12 +290,13 @@ async function calculateCashBalanceUpToMonth(
         const { borrowingProceeds, loanRepaymentAmount } =
           await fetchBorrowingData(projectId, yearMonth);
         const taxPayment = await fetchTaxPayment(projectId, yearMonth);
+        // founding/marketing/consumables は profitBeforeTax に内包済みのため除外
         netCashChange =
           profitBeforeTax + depreciation + taxPayment
           + Number(savedRecord.accounts_receivable_change)
           + Number(savedRecord.inventory_change) + startupTotals.initialInventory
           + Number(savedRecord.accounts_payable_change)
-          + Number(savedRecord.other_operating) + startupTotals.founding + startupTotals.marketing + startupTotals.consumables
+          + Number(savedRecord.other_operating)
           + Number(savedRecord.capex_acquisition) + startupTotals.equipment + startupTotals.renovation + startupTotals.deposit
           + Number(savedRecord.asset_sale)
           + Number(savedRecord.intangible_acquisition) + startupTotals.intangible
@@ -311,7 +314,7 @@ async function calculateCashBalanceUpToMonth(
         const taxPayment = await fetchTaxPayment(projectId, yearMonth);
         netCashChange =
           profitBeforeTax + depreciation + taxPayment + borrowingProceeds + loanRepaymentAmount
-          + startupOperating + startupInvesting;
+          + startupTotals.initialInventory + startupInvesting;
       }
 
       runningBalance += netCashChange;
@@ -415,9 +418,10 @@ router.get('/monthly/:yearMonth', optionalAuthenticate, async (req: AuthRequest,
     // 未保存月はゼロ初期値で返す（自動継承なし）
     // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算
     // taxPayment は納税月のみマイナス値、それ以外は0
+    // founding/marketing/consumables は profitBeforeTax に内包済みのため除外
     const operatingCfSubtotal =
       profitBeforeTax + depreciation + taxPayment
-      + startupTotals.founding + startupTotals.marketing + startupTotals.consumables + startupTotals.initialInventory;
+      + startupTotals.initialInventory;
     const investingCfSubtotal =
       startupTotals.equipment + startupTotals.renovation + startupTotals.deposit + startupTotals.intangible;
     const financingCfSubtotal = borrowingProceeds + loanRepaymentAmount;
@@ -496,14 +500,14 @@ router.get('/monthly/:yearMonth', optionalAuthenticate, async (req: AuthRequest,
   // 間接法：税引前利益（利息控除済み）に減価償却費（非現金費用）を加算し、運転資本増減を調整する
   // taxPayment は納税月のみマイナス値、それ以外は0
   // スタートアップコスト: equipment/renovation/deposit → 投資CF(capex行), intangible → 投資CF(無形資産行)
-  //                       founding/marketing → 営業CF(その他営業行), initial_inventory → 営業CF(棚卸資産行)
-  //                       working_capital → CFに含めない
+  //                       founding/marketing/consumables → profitBeforeTax に内包済み（P&L反映済み）
+  //                       initial_inventory → 営業CF(棚卸資産行), working_capital → CFに含めない
   const operatingCfSubtotal =
     profitBeforeTax + depreciation + taxPayment
     + accountsReceivableChange
     + inventoryChange + startupTotals.initialInventory
     + accountsPayableChange
-    + otherOperating + startupTotals.founding + startupTotals.marketing + startupTotals.consumables;
+    + otherOperating;
   const investingCfSubtotal =
     capexAcquisition + startupTotals.equipment + startupTotals.renovation + startupTotals.deposit
     + assetSale

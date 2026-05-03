@@ -74,6 +74,7 @@ export interface CashFlowYearlyData {
     financingCF: number;
     netCashChange: number;
     cashEnding: number;
+    taxPayment?: number;
     noteJa: string | null;
     noteEn: string | null;
   }>;

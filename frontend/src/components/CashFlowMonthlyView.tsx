@@ -108,9 +108,6 @@ export default function CashFlowMonthlyView({
                 t('corporate_tax_payment'),
                 data.operating.taxPayment ?? 0,
               )}
-              {renderStartupRow('cost_type_founding', data.startupCostBreakdown.founding)}
-              {renderStartupRow('cost_type_marketing', data.startupCostBreakdown.marketing)}
-              {renderStartupRow('cost_type_consumables', data.startupCostBreakdown.consumables)}
               {renderStartupRow('cost_type_initial_inventory', data.startupCostBreakdown.initialInventory)}
               <TableRow sx={{ backgroundColor: 'grey.50' }}>
                 <TableCell>

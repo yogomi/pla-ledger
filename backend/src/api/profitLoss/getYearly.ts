@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
   Project, FixedExpense, SalesSimulationSnapshot, FixedExpenseMonth,
-  LoanRepayment, LaborCost, LaborCostMonth, CashFlowMonthly,
+  LoanRepayment, LaborCost, LaborCostMonth, CashFlowMonthly, StartupCost,
 } from '../../models';
 import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
@@ -20,6 +20,7 @@ interface MonthData {
   fixedTotal: number;
   laborTotal: number;
   depreciation: number;
+  startupExpenses: number;
   totalExpense: number;
   operatingProfit: number;
   interestExpense: number;
@@ -34,6 +35,7 @@ interface MonthData {
  * @param projectId - プロジェクトID
  * @param yearMonth - 対象年月 (YYYY-MM)
  * @param interestExpenseMap - 年月→利息支払額のマップ（一括取得済み）
+ * @param startupExpenseMap - 年月→費用性スタートアップコスト合計のマップ（一括取得済み）
  * @param socialInsuranceRate - 社会保険料率（%）
  * @returns 月次損益データ
  */
@@ -41,6 +43,7 @@ async function buildMonthData(
   projectId: string,
   yearMonth: string,
   interestExpenseMap: Map<string, number>,
+  startupExpenseMap: Map<string, number>,
   socialInsuranceRate: number,
 ): Promise<MonthData> {
   let snapshot: SalesSimulationSnapshot | null = await SalesSimulationSnapshot.findOne({
@@ -118,7 +121,9 @@ async function buildMonthData(
     0,
   );
   const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
-  const totalExpense = monthlyCost + fixedTotal + laborTotal + depreciation;
+  // スタートアップコスト（費用性）はループ前に一括取得済みのマップから参照する（N+1クエリ回避）
+  const startupExpenses = startupExpenseMap.get(yearMonth) ?? 0;
+  const totalExpense = monthlyCost + fixedTotal + laborTotal + depreciation + startupExpenses;
   const operatingProfit = monthlySales - totalExpense;
 
   // 利息支払額：一括取得済みのマップから参照する（N+1クエリ回避）
@@ -138,6 +143,7 @@ async function buildMonthData(
     fixedTotal,
     laborTotal,
     depreciation,
+    startupExpenses,
     totalExpense,
     operatingProfit,
     interestExpense,
@@ -277,11 +283,28 @@ router.get('/yearly', optionalAuthenticate, async (req: AuthRequest, res: Respon
     cashFlowRecords.map(r => [r.year_month, { noteJa: r.note_ja ?? null, noteEn: r.note_en ?? null }]),
   );
 
+  // 費用性スタートアップコストを一括取得してマップ化する（N+1クエリ回避）
+  const startupCostRecords = await StartupCost.findAll({
+    attributes: ['allocation_month', 'quantity', 'unit_price'],
+    where: {
+      project_id: projectId,
+      allocation_month: { [Op.like]: `${year}-%` },
+      cost_type: { [Op.in]: ['founding', 'marketing', 'consumables'] },
+    },
+  });
+  const startupExpenseMap = new Map<string, number>();
+  for (const c of startupCostRecords) {
+    const prev = startupExpenseMap.get(c.allocation_month) ?? 0;
+    startupExpenseMap.set(c.allocation_month, prev + Number(c.quantity) * Number(c.unit_price));
+  }
+
   // 1月〜12月の月次データを順次計算
   const months: Array<MonthData & { noteJa: string | null; noteEn: string | null }> = [];
   for (let m = 1; m <= 12; m++) {
     const yearMonth = `${year}-${String(m).padStart(2, '0')}`;
-    const monthData = await buildMonthData(projectId, yearMonth, interestExpenseMap, socialInsuranceRate);
+    const monthData = await buildMonthData(
+      projectId, yearMonth, interestExpenseMap, startupExpenseMap, socialInsuranceRate,
+    );
     const notes = noteMap.get(yearMonth) ?? { noteJa: null, noteEn: null };
     months.push({ ...monthData, noteJa: notes.noteJa, noteEn: notes.noteEn });
   }
@@ -292,6 +315,7 @@ router.get('/yearly', optionalAuthenticate, async (req: AuthRequest, res: Respon
   const totalFixed = months.reduce((sum, m) => sum + m.fixedTotal, 0);
   const totalLabor = months.reduce((sum, m) => sum + m.laborTotal, 0);
   const totalDepreciation = months.reduce((sum, m) => sum + m.depreciation, 0);
+  const totalStartupExpenses = months.reduce((sum, m) => sum + m.startupExpenses, 0);
   const totalExpense = months.reduce((sum, m) => sum + m.totalExpense, 0);
   const totalOperatingProfit = months.reduce((sum, m) => sum + m.operatingProfit, 0);
   const totalInterestExpense = months.reduce((sum, m) => sum + m.interestExpense, 0);
@@ -314,6 +338,7 @@ router.get('/yearly', optionalAuthenticate, async (req: AuthRequest, res: Respon
         totalFixed,
         totalLabor,
         totalDepreciation,
+        totalStartupExpenses,
         totalExpense,
         totalOperatingProfit,
         totalInterestExpense,

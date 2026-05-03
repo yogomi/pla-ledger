@@ -360,6 +360,13 @@ const en = {
     start_depreciation_date: 'Start Depreciation Date',
     end_depreciation_date: 'End Depreciation Date',
     monthly_depreciation_amount: 'Monthly Depreciation',
+    monthly_depreciation_amount_note:
+      '※ For diminishing balance method, the first-month value is shown.',
+    first_month_label: '1st mo.',
+    monthly_depreciation_amount_diminishing_first:
+      'Monthly Depreciation (Diminishing Balance — 1st month)',
+    monthly_depreciation_amount_straight_line_estimate:
+      'Monthly Depreciation (Straight-line estimate)',
     asset_notes: 'Notes',
     depreciation_schedule: 'Depreciation Schedule',
     accumulated_depreciation: 'Accumulated Depreciation',
@@ -789,6 +796,10 @@ const ja = {
     start_depreciation_date: '償却開始日',
     end_depreciation_date: '償却終了日',
     monthly_depreciation_amount: '月額償却費',
+    monthly_depreciation_amount_note: '※定率法は初月参考値',
+    first_month_label: '初月',
+    monthly_depreciation_amount_diminishing_first: '月次減価償却額（定率法 初月値）',
+    monthly_depreciation_amount_straight_line_estimate: '月次減価償却額（直線法 概算）',
     asset_notes: '備考',
     depreciation_schedule: '償却スケジュール',
     accumulated_depreciation: '累計償却額',
@@ -1220,6 +1231,13 @@ const uk = {
     start_depreciation_date: 'Дата початку амортизації',
     end_depreciation_date: 'Дата закінчення амортизації',
     monthly_depreciation_amount: 'Щомісячна амортизація',
+    monthly_depreciation_amount_note:
+      '※ Для методу зменшення залишку відображається значення за 1-й місяць.',
+    first_month_label: '1-й міс.',
+    monthly_depreciation_amount_diminishing_first:
+      'Щомісячна амортизація (зменшення залишку — 1-й місяць)',
+    monthly_depreciation_amount_straight_line_estimate:
+      'Щомісячна амортизація (прямолінійний метод — приблизно)',
     asset_notes: 'Примітки',
     depreciation_schedule: 'Графік амортизації',
     accumulated_depreciation: 'Накопичена амортизація',

@@ -83,6 +83,16 @@ export default function FixedAssetDialog({ open, asset, onClose, onSave, isSavin
     });
   };
 
+  const isDiminishing = form.depreciationMethod === 'diminishing';
+  const referenceMonthlyDepreciation = form.purchaseAmount > 0 && form.usefulLife > 0
+    ? isDiminishing
+      ? Math.floor(form.purchaseAmount * 2 / form.usefulLife / 12)
+      : Math.floor((form.purchaseAmount - (form.salvageValue ?? 0)) / (form.usefulLife * 12))
+    : null;
+  const depreciationLabel = isDiminishing
+    ? t('monthly_depreciation_amount_diminishing_first')
+    : t('monthly_depreciation_amount_straight_line_estimate');
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
@@ -189,11 +199,9 @@ export default function FixedAssetDialog({ open, asset, onClose, onSave, isSavin
           multiline
           rows={2}
         />
-        {form.purchaseAmount > 0 && form.usefulLife > 0 && (
+        {referenceMonthlyDepreciation !== null && (
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            {t('monthly_depreciation_amount')}:{' '}
-            {Math.floor((form.purchaseAmount - (form.salvageValue ?? 0)) / (form.usefulLife * 12)).toLocaleString()}
-            {' '}（{t('depreciation_method_straight_line')} 概算）
+            {depreciationLabel}: {referenceMonthlyDepreciation.toLocaleString()}
           </Typography>
         )}
       </DialogContent>

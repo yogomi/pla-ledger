@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { Op } from 'sequelize';
 import {
   Project, SalesSimulationSnapshot, FixedExpense, FixedExpenseMonth,
-  LaborCost, LaborCostMonth, LoanRepayment,
+  LaborCost, LaborCostMonth, LoanRepayment, StartupCost,
 } from '../../models';
 import { optionalAuthenticate, AuthRequest } from '../../middleware/auth';
 import { getProjectRole } from '../projects/utils';
@@ -77,6 +77,20 @@ async function calcFiscalPeriodIncome(
     interestMap.set(r.year_month, (interestMap.get(r.year_month) ?? 0) + Number(r.interest_payment));
   }
 
+  // 事業年度内の費用性スタートアップコストを一括取得（N+1クエリ回避）
+  const startupCostsAll = await StartupCost.findAll({
+    where: {
+      project_id: projectId,
+      allocation_month: { [Op.between]: [period.start, period.end] },
+      cost_type: { [Op.in]: ['founding', 'marketing', 'consumables'] },
+    },
+  });
+  const startupByMonth = new Map<string, number>();
+  for (const c of startupCostsAll) {
+    const prev = startupByMonth.get(c.allocation_month) ?? 0;
+    startupByMonth.set(c.allocation_month, prev + Number(c.quantity) * Number(c.unit_price));
+  }
+
   let totalProfitBeforeTax = 0;
 
   for (const yearMonth of months) {
@@ -141,7 +155,9 @@ async function calcFiscalPeriodIncome(
       0,
     );
     const depreciation = await calculateMonthlyDepreciation(projectId, yearMonth);
-    const totalExpense = monthlyCost + fixedTotal + laborTotal + depreciation;
+    // スタートアップコスト（費用性）をP&Lに反映
+    const startupExpenseThisMonth = startupByMonth.get(yearMonth) ?? 0;
+    const totalExpense = monthlyCost + fixedTotal + laborTotal + depreciation + startupExpenseThisMonth;
     const operatingProfit = monthlySales - totalExpense;
     const interestExpense = interestMap.get(yearMonth) ?? 0;
     totalProfitBeforeTax += operatingProfit - interestExpense;

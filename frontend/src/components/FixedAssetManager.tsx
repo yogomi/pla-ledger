@@ -136,7 +136,11 @@ export default function FixedAssetManager({ projectId }: Props) {
               <TableCell align="right">{t('purchase_amount')}</TableCell>
               <TableCell>{t('useful_life')}</TableCell>
               <TableCell>{t('depreciation_method')}</TableCell>
-              <TableCell align="right">{t('monthly_depreciation_amount')}</TableCell>
+              <TableCell align="right">
+                <Tooltip title={t('monthly_depreciation_amount_note')}>
+                  <span>{t('monthly_depreciation_amount')}</span>
+                </Tooltip>
+              </TableCell>
               <TableCell>{t('end_depreciation_date')}</TableCell>
               <TableCell>{t('action')}</TableCell>
             </TableRow>
@@ -150,7 +154,19 @@ export default function FixedAssetManager({ projectId }: Props) {
                 <TableCell align="right">{Number(asset.purchaseAmount).toLocaleString()}</TableCell>
                 <TableCell>{asset.usefulLife}{t('years_unit')}</TableCell>
                 <TableCell>{t(`depreciation_method_${asset.depreciationMethod}`)}</TableCell>
-                <TableCell align="right">{Number(asset.monthlyDepreciation).toLocaleString()}</TableCell>
+                <TableCell align="right">
+                  {Number(asset.monthlyDepreciation).toLocaleString()}
+                  {asset.depreciationMethod === 'diminishing' && (
+                    <Typography
+                      component="span"
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ ml: 0.5 }}
+                    >
+                      ({t('first_month_label')})
+                    </Typography>
+                  )}
+                </TableCell>
                 <TableCell>{asset.endDepreciationDate}</TableCell>
                 <TableCell>
                   <Tooltip title={t('edit_fixed_asset')}>
