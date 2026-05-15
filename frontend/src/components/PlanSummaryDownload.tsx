@@ -10,7 +10,13 @@ import {
   TIMELINE_MONTHS_BEFORE,
   TIMELINE_MONTHS_AFTER,
 } from '../utils/timelinePeriod';
-import { getProfitLossYearly, getFiscalYearSummary } from '../api/salesSimulations';
+import {
+  getProfitLossYearly,
+  getFiscalYearSummary,
+  getSalesSimulationYearly,
+  getSalesSimulationYearlyItems,
+  getExpenseSimulationYearly,
+} from '../api/salesSimulations';
 import { getCashFlowYearly } from '../api/cashFlow';
 import { getStartupCosts } from '../api/startupCosts';
 import { getLoans, getLoanRepaymentSchedule } from '../api/loans';
@@ -55,15 +61,27 @@ export default function PlanSummaryDownload({
     setDownloadError('');
     try {
       // 全データを並列取得
-      const [plResults, cfResults, startupCosts, loansData, assetsData, fiscalSummary] =
-        await Promise.all([
-          Promise.all(years.map(y => getProfitLossYearly(projectId, y))),
-          Promise.all(years.map(y => getCashFlowYearly(projectId, y))),
-          getStartupCosts(projectId),
-          getLoans(projectId),
-          getFixedAssets(projectId),
-          getFiscalYearSummary(projectId),
-        ]);
+      const [
+        plResults,
+        cfResults,
+        startupCosts,
+        loansData,
+        assetsData,
+        fiscalSummary,
+        salesYearlyResults,
+        salesItemsResults,
+        expenseYearlyResults,
+      ] = await Promise.all([
+        Promise.all(years.map(y => getProfitLossYearly(projectId, y))),
+        Promise.all(years.map(y => getCashFlowYearly(projectId, y))),
+        getStartupCosts(projectId),
+        getLoans(projectId),
+        getFixedAssets(projectId),
+        getFiscalYearSummary(projectId),
+        Promise.all(years.map(y => getSalesSimulationYearly(projectId, y))),
+        Promise.all(years.map(y => getSalesSimulationYearlyItems(projectId, y))),
+        Promise.all(years.map(y => getExpenseSimulationYearly(projectId, y))),
+      ]);
 
       // 借入返済スケジュールを取得（各借入ごと）
       const loanSchedules = await Promise.all(
@@ -89,7 +107,12 @@ export default function PlanSummaryDownload({
           currency_note: `全金額フィールドの単位は ${currency}。小数点以下は四捨五入済み。`,
           sections: {
             project: 'プロジェクト基本情報（名称・通貨・開業予定日・出力期間）',
-            profit_loss: '損益計算書。年次・月次の売上・経費・各利益を含む。継承値は展開済み実数値。',
+            profit_loss: '損益計算書。年次・月次の売上・経費・各利益を含む。継承値は展開済み実数値。' +
+              '売上・固定費・人件費は合計のみ。詳細は sales_detail / expense_detail を参照。',
+            sales_detail: '売上のカテゴリー別内訳。月次・年次の売上と原価をカテゴリー単位で記録。',
+            sales_items_detail: '売上の品目別内訳。カテゴリー → 品目 → 月次の階層で売上と原価を記録。',
+            expense_detail: '経費の年次内訳。固定費はカテゴリー別（家賃・通信費等）、' +
+              '人件費は種別（owner_salary / full_time / part_time）別に月次・年次で記録。',
             cash_flow: 'キャッシュフロー計算書。営業・投資・財務活動別の月次合計と各月コメント。' +
               'tax_paymentは納税月（決算月の2ヶ月後）のみマイナス値で、operating_cfに内包済みの参考値。',
             startup_costs: '初期費用の明細リスト（品目・数量・単価・費用区分・計上月）。',
@@ -138,6 +161,61 @@ export default function PlanSummaryDownload({
               total_net_profit: Math.round(pl.yearly.totalNetProfit),
               average_profit_rate_pct: Number(pl.yearly.averageProfitRate.toFixed(2)),
             },
+          })),
+        },
+        sales_detail: {
+          years: salesYearlyResults.map((sy, i) => ({
+            year: years[i],
+            by_category: sy.categories.map(cat => ({
+              category_name: cat.categoryName,
+              monthly: cat.months.map(m => ({
+                year_month: m.yearMonth,
+                sales: Math.round(m.monthlySales),
+                cost: Math.round(m.monthlyCost),
+              })),
+              yearly_total: Math.round(cat.yearlyTotal),
+              yearly_cost: Math.round(cat.yearlyCost),
+            })),
+          })),
+        },
+        sales_items_detail: {
+          years: salesItemsResults.map((si, i) => ({
+            year: years[i],
+            by_category: si.categories.map(cat => ({
+              category_name: cat.categoryName,
+              category_yearly_total: Math.round(cat.categoryYearlyTotal),
+              items: cat.items.map(item => ({
+                item_name: item.itemName,
+                monthly: item.months.map(m => ({
+                  year_month: m.yearMonth,
+                  sales: Math.round(m.monthlySales),
+                  cost: Math.round(m.monthlyCost),
+                })),
+                yearly_total: Math.round(item.yearlyTotal),
+                yearly_cost: Math.round(item.yearlyCost),
+              })),
+            })),
+          })),
+        },
+        expense_detail: {
+          years: expenseYearlyResults.map((ex, i) => ({
+            year: years[i],
+            fixed_by_category: ex.fixedByCategory.map(cat => ({
+              category_name: cat.categoryName,
+              monthly: cat.months.map(m => ({
+                year_month: m.yearMonth,
+                amount: Math.round(m.amount),
+              })),
+              yearly_total: Math.round(cat.yearlyTotal),
+            })),
+            labor_by_type: ex.laborByType.map(lt => ({
+              type: lt.categoryName,
+              monthly: lt.months.map(m => ({
+                year_month: m.yearMonth,
+                amount: Math.round(m.amount),
+              })),
+              yearly_total: Math.round(lt.yearlyTotal),
+            })),
           })),
         },
         cash_flow: {
@@ -327,10 +405,10 @@ export default function PlanSummaryDownload({
       "year": string,
       "monthly": [{
         "year_month": string,           // YYYY-MM
-        "sales": number,
-        "cost": number,                 // 原価
-        "fixed_expenses": number,       // 固定費合計
-        "labor_cost": number,           // 人件費合計
+        "sales": number,                // 売上合計（詳細は sales_detail）
+        "cost": number,                 // 原価合計
+        "fixed_expenses": number,       // 固定費合計（詳細は expense_detail）
+        "labor_cost": number,           // 人件費合計（詳細は expense_detail）
         "depreciation": number,
         "total_expense": number,
         "operating_profit": number,
@@ -342,6 +420,61 @@ export default function PlanSummaryDownload({
         "comment_en": string | null
       }],
       "yearly_total": { ... }           // 上記の年次合計
+    }]
+  },
+  "sales_detail": {
+    "years": [{
+      "year": string,
+      "by_category": [{
+        "category_name": string,
+        "monthly": [{
+          "year_month": string,         // YYYY-MM
+          "sales": number,
+          "cost": number
+        }],
+        "yearly_total": number,
+        "yearly_cost": number
+      }]
+    }]
+  },
+  "sales_items_detail": {
+    "years": [{
+      "year": string,
+      "by_category": [{
+        "category_name": string,
+        "category_yearly_total": number,
+        "items": [{
+          "item_name": string,
+          "monthly": [{
+            "year_month": string,       // YYYY-MM
+            "sales": number,
+            "cost": number
+          }],
+          "yearly_total": number,
+          "yearly_cost": number
+        }]
+      }]
+    }]
+  },
+  "expense_detail": {
+    "years": [{
+      "year": string,
+      "fixed_by_category": [{
+        "category_name": string,        // 家賃・通信費・水光熱費 等
+        "monthly": [{
+          "year_month": string,         // YYYY-MM
+          "amount": number
+        }],
+        "yearly_total": number
+      }],
+      "labor_by_type": [{
+        "type": string,                 // "owner_salary" | "full_time" | "part_time"
+        "monthly": [{
+          "year_month": string,         // YYYY-MM
+          "amount": number
+        }],
+        "yearly_total": number
+      }]
     }]
   },
   "cash_flow": {
