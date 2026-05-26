@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Alert,
   Accordion,
@@ -26,8 +26,6 @@ import {
   buildQuarterLayout,
   buildFiscalYearMonths,
   buildFiscalQuarterLayout,
-  getCookie,
-  setCookie,
   QuarterDef,
 } from '../utils/quarterUtils';
 import { useSalesSimulationMonthly, useExpenseSimulationMonthly } from '../hooks/useSalesSimulation';
@@ -390,71 +388,75 @@ export default function SimulationViewContainer({
   taxEnabled = false,
 }: SimulationViewContainerProps) {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // 表示側タブの概念 ID 順（入力側とインデックスが異なる）
   const VIEW_TABS = ['sales', 'expense', 'loans', 'cashflow', 'profit_loss'] as const;
   // 入力側にない概念 ID を表示側の最近傍にフォールバック
   const VIEW_FALLBACK: Record<string, string> = { fixed_assets: 'expense' };
 
-  const [tab, setTab] = useState(() => {
-    const stored = localStorage.getItem(`simTab_${projectId}`);
-    if (!stored) return 0;
-    const mapped = VIEW_FALLBACK[stored] ?? stored;
-    const idx = VIEW_TABS.indexOf(mapped as typeof VIEW_TABS[number]);
-    return idx >= 0 ? idx : 0;
-  });
+  const stored = searchParams.get('sim_tab');
+  const mappedTab = stored ? (VIEW_FALLBACK[stored] ?? stored) : null;
+  const tabIdx = mappedTab ? VIEW_TABS.indexOf(mappedTab as typeof VIEW_TABS[number]) : -1;
+  const tab = tabIdx >= 0 ? tabIdx : 0;
 
   const handleTabChange = (_e: React.SyntheticEvent, v: number) => {
-    setTab(v);
-    localStorage.setItem(`simTab_${projectId}`, VIEW_TABS[v]);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('sim_tab', VIEW_TABS[v]);
+      return next;
+    }, { replace: true });
   };
 
-  const [viewMode, setViewMode] = useState<'monthly' | 'yearly' | 'longterm'>(() => {
-    const cached = localStorage.getItem(`sim_viewMode_${projectId}`);
-    if (cached === 'monthly' || cached === 'yearly' || cached === 'longterm') return cached;
-    return 'yearly';
-  });
-  const [longtermYears, setLongtermYears] = useState(() => {
-    const cached = localStorage.getItem(`sim_longtermYears_${projectId}`);
-    if (cached) {
-      const n = Number(cached);
-      if (n >= 1 && n <= 30) return n;
-    }
-    return 5;
-  });
+  const rawView = searchParams.get('view');
+  const viewMode: 'monthly' | 'yearly' | 'longterm' =
+    rawView === 'monthly' || rawView === 'yearly' || rawView === 'longterm' ? rawView : 'yearly';
 
-  // 四半期表示設定 ─ Cookie で永続化（プロジェクト横断で共通）
-  const [quarterDisplay, setQuarterDisplay] = useState<'monthly' | 'quarterly'>(() => {
-    const v = getCookie('sim_qDisplay');
-    return v === 'quarterly' ? 'quarterly' : 'monthly';
-  });
-  const [quarterType, setQuarterType] = useState<'calendar' | 'fiscal'>(() => {
-    const v = getCookie('sim_qType');
-    return v === 'calendar' ? 'calendar' : 'fiscal';
-  });
+  const setViewMode = (mode: 'monthly' | 'yearly' | 'longterm') => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('view', mode);
+      return next;
+    }, { replace: true });
+  };
+
+  const rawYears = searchParams.get('years');
+  const longtermYearsNum = rawYears ? Number(rawYears) : NaN;
+  const longtermYears = !isNaN(longtermYearsNum) && longtermYearsNum >= 1 && longtermYearsNum <= 30
+    ? longtermYearsNum
+    : 5;
+
+  const setLongtermYears = (n: number) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('years', String(n));
+      return next;
+    }, { replace: true });
+  };
+
+  const rawQd = searchParams.get('qd');
+  const quarterDisplay: 'monthly' | 'quarterly' = rawQd === 'quarterly' ? 'quarterly' : 'monthly';
 
   const handleQuarterDisplayChange = (_: React.SyntheticEvent, v: string | null) => {
     if (!v) return;
-    const next = v as 'monthly' | 'quarterly';
-    setQuarterDisplay(next);
-    setCookie('sim_qDisplay', next);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('qd', v);
+      return next;
+    }, { replace: true });
   };
+
+  const rawQt = searchParams.get('qt');
+  const quarterType: 'calendar' | 'fiscal' = rawQt === 'calendar' ? 'calendar' : 'fiscal';
 
   const handleQuarterTypeChange = (_: React.SyntheticEvent, v: string | null) => {
     if (!v) return;
-    const next = v as 'calendar' | 'fiscal';
-    setQuarterType(next);
-    setCookie('sim_qType', next);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('qt', v);
+      return next;
+    }, { replace: true });
   };
-
-  /** viewMode / longtermYears が変化するたびにプロジェクト別キャッシュへ保存する */
-  useEffect(() => {
-    localStorage.setItem(`sim_viewMode_${projectId}`, viewMode);
-  }, [projectId, viewMode]);
-
-  useEffect(() => {
-    localStorage.setItem(`sim_longtermYears_${projectId}`, String(longtermYears));
-  }, [projectId, longtermYears]);
 
   const year = yearMonth.split('-')[0];
 

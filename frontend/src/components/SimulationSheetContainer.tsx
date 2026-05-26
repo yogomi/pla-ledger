@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Box, Tab, Tabs } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import SalesSimulationPagination from './SalesSimulationPagination';
@@ -32,22 +32,24 @@ export default function SimulationSheetContainer({
 }: SimulationSheetContainerProps) {
   const { t } = useTranslation();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // 入力側タブの概念 ID 順（表示側とインデックスが異なる）
   const INPUT_TABS = ['sales', 'expense', 'fixed_assets', 'loans', 'cashflow'] as const;
   // 表示側にない概念 ID を入力側の最近傍にフォールバック
   const INPUT_FALLBACK: Record<string, string> = { profit_loss: 'sales' };
 
-  const [tab, setTab] = useState(() => {
-    const stored = localStorage.getItem(`simTab_${projectId}`);
-    if (!stored) return 0;
-    const mapped = INPUT_FALLBACK[stored] ?? stored;
-    const idx = INPUT_TABS.indexOf(mapped as typeof INPUT_TABS[number]);
-    return idx >= 0 ? idx : 0;
-  });
+  const stored = searchParams.get('sim_tab');
+  const mappedTab = stored ? (INPUT_FALLBACK[stored] ?? stored) : null;
+  const tabIdx = mappedTab ? INPUT_TABS.indexOf(mappedTab as typeof INPUT_TABS[number]) : -1;
+  const tab = tabIdx >= 0 ? tabIdx : 0;
 
   const handleTabChange = (_e: React.SyntheticEvent, v: number) => {
-    setTab(v);
-    localStorage.setItem(`simTab_${projectId}`, INPUT_TABS[v]);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('sim_tab', INPUT_TABS[v]);
+      return next;
+    }, { replace: true });
   };
 
   return (

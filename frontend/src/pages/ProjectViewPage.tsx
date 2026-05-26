@@ -77,20 +77,22 @@ export default function ProjectViewPage() {
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  /** Simulation / Simulation Input タブ間で共有する年月 (YYYY-MM)。プロジェクト別に localStorage でキャッシュする。 */
-  const [simulationYearMonth, setSimulationYearMonth] = useState(() => {
-    const cached = localStorage.getItem(`sim_yearMonth_${id}`);
-    if (cached && /^\d{4}-\d{2}$/.test(cached)) return cached;
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    return `${y}-${m}`;
-  });
+  /** Simulation / Simulation Input タブ間で共有する年月 (YYYY-MM)。URL クエリパラメータ ?ym= で管理する。 */
+  const rawYm = searchParams.get('ym');
+  const simulationYearMonth = (rawYm && /^\d{4}-\d{2}$/.test(rawYm))
+    ? rawYm
+    : (() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      })();
 
-  /** simulationYearMonth が変化するたびにプロジェクト別キャッシュへ保存する */
-  useEffect(() => {
-    localStorage.setItem(`sim_yearMonth_${id}`, simulationYearMonth);
-  }, [id, simulationYearMonth]);
+  const setSimulationYearMonth = (ym: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('ym', ym);
+      return next;
+    }, { replace: true });
+  };
 
   // 編集フォーム
   const [editError, setEditError] = useState('');
