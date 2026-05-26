@@ -93,70 +93,101 @@ function SalesSimulationMonthlyView({
         </Alert>
       )}
 
-      {data.categories.map(cat => (
-        <Accordion key={cat.categoryId} defaultExpanded>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography fontWeight="bold">{cat.categoryName}</Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 0 }}>
-            <Paper variant="outlined" square>
-              <Table size="small">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: 'grey.100' }}>
-                    <TableCell>{t('item_name')}</TableCell>
-                    <TableCell align="right">{t('unit_price')}</TableCell>
-                    <TableCell align="center">{t('calc_type')}</TableCell>
-                    <TableCell align="right">{t('quantity')}</TableCell>
-                    <TableCell align="right">{t('operating_days')}</TableCell>
-                    <TableCell align="right">{t('monthly_quantity')}</TableCell>
-                    <TableCell align="right">{t('cost_rate')}</TableCell>
-                    <TableCell align="right">{t('monthly_sales_col')}</TableCell>
-                    <TableCell align="right">{t('monthly_cost_col')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {cat.items.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={9} align="center">
-                        <Typography variant="body2" color="text.secondary">
-                          {t('no_items')}
-                        </Typography>
-                      </TableCell>
+      {data.categories.map(cat => {
+        const catSales = cat.items.reduce((sum, item) => sum + item.monthlySales, 0);
+        const catCost = cat.items.reduce((sum, item) => sum + item.monthlyCost, 0);
+        return (
+          <Accordion key={cat.categoryId} defaultExpanded>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" width="100%" pr={1}>
+                <Typography fontWeight="bold">{cat.categoryName}</Typography>
+                <Box display="flex" gap={3}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('monthly_sales_col')}: {Math.round(catSales).toLocaleString()}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('monthly_cost_col')}: {Math.round(catCost).toLocaleString()}
+                  </Typography>
+                </Box>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0 }}>
+              <Paper variant="outlined" square>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: 'grey.100' }}>
+                      <TableCell>{t('item_name')}</TableCell>
+                      <TableCell align="right">{t('unit_price')}</TableCell>
+                      <TableCell align="center">{t('calc_type')}</TableCell>
+                      <TableCell align="right">{t('quantity')}</TableCell>
+                      <TableCell align="right">{t('operating_days')}</TableCell>
+                      <TableCell align="right">{t('monthly_quantity')}</TableCell>
+                      <TableCell align="right">{t('cost_rate')}</TableCell>
+                      <TableCell align="right">{t('monthly_sales_col')}</TableCell>
+                      <TableCell align="right">{t('monthly_cost_col')}</TableCell>
                     </TableRow>
-                  )}
-                  {cat.items.map(item => (
-                    <TableRow key={item.itemId}>
-                      <TableCell>{item.itemName}</TableCell>
-                      <TableCell align="right">{Math.round(item.unitPrice).toLocaleString()}</TableCell>
-                      <TableCell align="center">
-                        {t(item.calculationType === 'monthly' ? 'calc_type_monthly' : 'calc_type_daily')}
-                      </TableCell>
-                      <TableCell align="right">
-                        {item.calculationType === 'daily'
-                          ? Math.round(item.quantity).toLocaleString()
-                          : '—'}
-                      </TableCell>
-                      <TableCell align="right">
-                        {item.calculationType === 'daily'
-                          ? Math.round(item.operatingDays).toLocaleString()
-                          : '—'}
-                      </TableCell>
-                      <TableCell align="right">
-                        {item.calculationType === 'monthly'
-                          ? Math.round(item.monthlyQuantity ?? 0).toLocaleString()
-                          : '—'}
-                      </TableCell>
-                      <TableCell align="right">{item.costRate.toFixed(1)}</TableCell>
-                      <TableCell align="right">{Math.round(item.monthlySales).toLocaleString()}</TableCell>
-                      <TableCell align="right">{Math.round(item.monthlyCost).toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Paper>
-          </AccordionDetails>
-        </Accordion>
-      ))}
+                  </TableHead>
+                  <TableBody>
+                    {cat.items.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={9} align="center">
+                          <Typography variant="body2" color="text.secondary">
+                            {t('no_items')}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {cat.items.map(item => (
+                      <TableRow key={item.itemId}>
+                        <TableCell>{item.itemName}</TableCell>
+                        <TableCell align="right">{Math.round(item.unitPrice).toLocaleString()}</TableCell>
+                        <TableCell align="center">
+                          {t(item.calculationType === 'monthly' ? 'calc_type_monthly' : 'calc_type_daily')}
+                        </TableCell>
+                        <TableCell align="right">
+                          {item.calculationType === 'daily'
+                            ? Math.round(item.quantity).toLocaleString()
+                            : '—'}
+                        </TableCell>
+                        <TableCell align="right">
+                          {item.calculationType === 'daily'
+                            ? Math.round(item.operatingDays).toLocaleString()
+                            : '—'}
+                        </TableCell>
+                        <TableCell align="right">
+                          {item.calculationType === 'monthly'
+                            ? Math.round(item.monthlyQuantity ?? 0).toLocaleString()
+                            : '—'}
+                        </TableCell>
+                        <TableCell align="right">{item.costRate.toFixed(1)}</TableCell>
+                        <TableCell align="right">{Math.round(item.monthlySales).toLocaleString()}</TableCell>
+                        <TableCell align="right">{Math.round(item.monthlyCost).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                    {cat.items.length > 0 && (
+                      <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                        <TableCell colSpan={7} align="right">
+                          <Typography variant="body2" fontWeight="bold">{t('subtotal')}</Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" fontWeight="bold">
+                            {Math.round(catSales).toLocaleString()}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="body2" fontWeight="bold">
+                            {Math.round(catCost).toLocaleString()}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </Paper>
+            </AccordionDetails>
+          </Accordion>
+        );
+      })}
 
       <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
         <Typography variant="body2" color="text.secondary">
