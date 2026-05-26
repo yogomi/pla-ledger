@@ -332,6 +332,35 @@ export const DEFAULT_TAX_RATES: TaxRates = {
   annualFlatTax: 50000,
 };
 
+/** 補間APIで返される品目データ（保存時の ItemInputData と同じ構造のうちID系を除く） */
+export interface InterpolatedItemSnapshot {
+  itemId: string;
+  categoryId: string;
+  categoryName: string;
+  categoryOrder: number;
+  itemName: string;
+  itemOrder: number;
+  unitPrice: number;
+  quantity: number;
+  operatingDays: number;
+  costRate: number;
+  description: string | null;
+  calculationType: 'daily' | 'monthly';
+  monthlyQuantity: number;
+}
+
+/** 補間が利用不可な理由 */
+export type InterpolateUnavailableReason = 'no_previous' | 'no_next' | 'already_exists';
+
+/** 補間プレビューAPIのレスポンス */
+export interface InterpolatePreviewData {
+  available: boolean;
+  reason: InterpolateUnavailableReason | null;
+  prevYearMonth: string | null;
+  nextYearMonth: string | null;
+  items: InterpolatedItemSnapshot[];
+}
+
 /** 経費年次データ（APIレスポンス用） */
 export interface ExpenseYearlyData {
   year: string;

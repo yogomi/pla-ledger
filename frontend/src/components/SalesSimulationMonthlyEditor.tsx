@@ -10,6 +10,7 @@ import {
   CircularProgress,
   IconButton,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -25,6 +26,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import TimelineIcon from '@mui/icons-material/Timeline';
 import { useFieldArray, useForm, Controller, useWatch, Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
@@ -32,7 +34,12 @@ import {
   useUpdateSalesSimulation,
   useDeleteSalesSimulationMonthly,
 } from '../hooks/useSalesSimulation';
-import { ItemInputData, ItemSnapshotData } from '../types/SalesSimulation';
+import { getSalesSimulationInterpolatePreview } from '../api/salesSimulations';
+import {
+  ItemInputData,
+  ItemSnapshotData,
+  InterpolateUnavailableReason,
+} from '../types/SalesSimulation';
 
 interface SalesSimulationMonthlyEditorProps {
   projectId: string;
@@ -272,6 +279,12 @@ export default function SalesSimulationMonthlyEditor({
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const watchedItems = useWatch({ control, name: 'items' }) ?? [];
 
+  // 補間ボタンの状態管理
+  const [interpolating, setInterpolating] = useState(false);
+  const [snackOpen, setSnackOpen] = useState(false);
+  const [snackSeverity, setSnackSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('info');
+  const [snackMessage, setSnackMessage] = useState('');
+
   // 年月が変わった時だけフォームとカテゴリ一覧を初期化する。
   // data の再フェッチ（キャッシュ無効化）では初期化しない（未保存の編集を保護するため）。
   useEffect(() => {
@@ -403,6 +416,76 @@ export default function SalesSimulationMonthlyEditor({
     remove(idx);
   };
 
+  /**
+   * 前後の登録済みスナップショットから線形補間した値でフォームを初期化する。
+   * 既存の編集内容は上書きされる。
+   */
+  const handleInterpolate = async () => {
+    setInterpolating(true);
+    try {
+      const preview = await getSalesSimulationInterpolatePreview(projectId, yearMonth);
+      if (!preview.available) {
+        const reasonKey = ((): string => {
+          const reason: InterpolateUnavailableReason | null = preview.reason;
+          if (reason === 'no_previous') return 'interpolate_no_previous';
+          if (reason === 'no_next') return 'interpolate_no_next';
+          return 'interpolate_already_exists';
+        })();
+        setSnackSeverity('warning');
+        setSnackMessage(t(reasonKey));
+        setSnackOpen(true);
+        return;
+      }
+
+      const confirmMessage = t('interpolate_confirm', {
+        prev: preview.prevYearMonth ?? '',
+        next: preview.nextYearMonth ?? '',
+      });
+      if (!window.confirm(confirmMessage)) return;
+
+      // フォームの値を補間結果で置き換える。カテゴリ一覧も補間結果から再構築する。
+      const newItems: ItemInputData[] = preview.items.map(item => ({
+        itemId: item.itemId,
+        categoryId: item.categoryId,
+        categoryName: item.categoryName,
+        categoryOrder: item.categoryOrder,
+        itemName: item.itemName,
+        itemOrder: item.itemOrder,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        operatingDays: item.operatingDays,
+        costRate: item.costRate,
+        description: item.description,
+        calculationType: item.calculationType,
+        monthlyQuantity: item.monthlyQuantity,
+      }));
+
+      // 補間結果に含まれるカテゴリ一覧を再構築する
+      const catMap = new Map<string, CategoryInfo>();
+      for (const item of newItems) {
+        if (!catMap.has(item.categoryId)) {
+          catMap.set(item.categoryId, {
+            categoryId: item.categoryId,
+            categoryName: item.categoryName,
+            categoryOrder: item.categoryOrder,
+          });
+        }
+      }
+      setCategories(Array.from(catMap.values()));
+      reset({ items: newItems });
+
+      setSnackSeverity('success');
+      setSnackMessage(t('interpolate_success'));
+      setSnackOpen(true);
+    } catch {
+      setSnackSeverity('error');
+      setSnackMessage(t('interpolate_error'));
+      setSnackOpen(true);
+    } finally {
+      setInterpolating(false);
+    }
+  };
+
   // カテゴリを order 順に並べ、各カテゴリに属するフィールドインデックスを付与する。
   // useMemo を使わず毎レンダーで計算することで、append/remove 後の fields の更新を確実に反映する。
   const categoryGroups = [...categories]
@@ -430,7 +513,21 @@ export default function SalesSimulationMonthlyEditor({
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)}>
       {data.isInherited && (
-        <Alert severity="info" sx={{ mb: 2 }}>
+        <Alert
+          severity="info"
+          sx={{ mb: 2 }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              startIcon={<TimelineIcon />}
+              onClick={handleInterpolate}
+              disabled={interpolating}
+            >
+              {interpolating ? t('interpolating') : t('interpolate_from_neighbors')}
+            </Button>
+          }
+        >
           {t('inherited_info_sales')}
         </Alert>
       )}
@@ -691,6 +788,17 @@ export default function SalesSimulationMonthlyEditor({
           <Alert severity="success" sx={{ mt: 1 }}>{t('delete_success')}</Alert>
         )}
       </Paper>
+
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={snackSeverity} onClose={() => setSnackOpen(false)}>
+          {snackMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

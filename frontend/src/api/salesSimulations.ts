@@ -11,6 +11,7 @@ import {
   ExpenseInputItem,
   LaborCostMonthlyData,
   LaborCostInput,
+  InterpolatePreviewData,
 } from '../types/SalesSimulation';
 
 /**
@@ -196,6 +197,23 @@ export async function getSalesSimulationYearlyItems(
     { params: { year } },
   );
   return res.data.data as SalesYearlyItemsData;
+}
+
+/**
+ * 指定月の補間プレビューを取得する。
+ * 前後の登録済みスナップショットから線形補間した品目データを返す。
+ * @param projectId プロジェクトID
+ * @param yearMonth 年月 (YYYY-MM)
+ */
+export async function getSalesSimulationInterpolatePreview(
+  projectId: string,
+  yearMonth: string,
+): Promise<InterpolatePreviewData> {
+  const res = await api.get(
+    `/projects/${projectId}/sales-simulations/interpolate-preview`,
+    { params: { yearMonth } },
+  );
+  return res.data.data as InterpolatePreviewData;
 }
 
 /**

@@ -71,6 +71,40 @@ export async function getPreviousSnapshot(
 }
 
 /**
+ * 指定プロジェクト・指定月より後の直近スナップショットを取得する
+ * @param projectId - プロジェクトID
+ * @param yearMonth - 基準となる年月 (YYYY-MM)
+ * @returns 直近の未来スナップショット、存在しない場合は null
+ */
+export async function getNextSnapshot(
+  projectId: string,
+  yearMonth: string,
+): Promise<SalesSimulationSnapshot | null> {
+  const snapshots = await SalesSimulationSnapshot.findAll({
+    where: { project_id: projectId },
+    order: [['year_month', 'ASC']],
+  });
+  for (const snap of snapshots) {
+    if (snap.year_month > yearMonth) {
+      return snap;
+    }
+  }
+  return null;
+}
+
+/**
+ * YYYY-MM 形式の年月の差分を月数で計算する
+ * @param fromYearMonth - 開始年月 (YYYY-MM)
+ * @param toYearMonth - 終了年月 (YYYY-MM)
+ * @returns 月数差 (toYearMonth - fromYearMonth)
+ */
+export function diffMonths(fromYearMonth: string, toYearMonth: string): number {
+  const [fy, fm] = fromYearMonth.split('-').map(Number);
+  const [ty, tm] = toYearMonth.split('-').map(Number);
+  return (ty - fy) * 12 + (tm - fm);
+}
+
+/**
  * YYYY-MM 形式の年月に指定月数を加減算する
  * @param yearMonth - 基準年月 (YYYY-MM)
  * @param months - 加算する月数（負の値で減算）
