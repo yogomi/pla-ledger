@@ -157,7 +157,7 @@ export default function ProfitLossYearlyTable({
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
-            <YAxis />
+            <YAxis tickFormatter={v => Number(v).toLocaleString()} width={90} />
             <Tooltip content={props => <ChartTooltip {...props} />} />
             <Legend />
             <Line

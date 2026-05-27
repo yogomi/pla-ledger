@@ -452,7 +452,7 @@ export default function ExpenseYearlyView({
         <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
-          <YAxis tickFormatter={v => Number(v).toLocaleString()} />
+          <YAxis tickFormatter={v => Number(v).toLocaleString()} width={90} />
           <Tooltip formatter={tooltipFormatter} />
           <Legend />
           <Line
