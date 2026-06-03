@@ -313,9 +313,13 @@ export default function ProjectViewPage() {
     ...(isOwner ? [{ value: 'access', label: t('access_management') }] : []),
   ];
 
-  /** タブ切り替え時に URL クエリパラメータを更新 */
+  /** タブ切り替え時に URL クエリパラメータを更新（他のパラメータは保持する） */
   const handleTabChange = (_: React.SyntheticEvent, newTab: string) => {
-    setSearchParams({ tab: newTab }, { replace: true });
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', newTab);
+      return next;
+    }, { replace: true });
   };
 
   const accessStatusColor = (s: string) =>
@@ -740,7 +744,11 @@ export default function ProjectViewPage() {
                 </Button>
                 <Button
                   variant="outlined"
-                  onClick={() => setSearchParams({ tab: 'project' }, { replace: true })}
+                  onClick={() => setSearchParams(prev => {
+                    const next = new URLSearchParams(prev);
+                    next.set('tab', 'project');
+                    return next;
+                  }, { replace: true })}
                 >
                   {t('cancel')}
                 </Button>
